@@ -2,16 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/firebase';
 import { collection, query, onSnapshot, addDoc, deleteDoc, doc, updateDoc, serverTimestamp, getDocs } from 'firebase/firestore';
-import { Courier, UserProfile } from '../types';
-import { Truck, Trash2, Plus, Users, X } from 'lucide-react';
+import { Courier, UserProfile, Product } from '../types';
+import { Truck, Trash2, Plus, Users, X, Package, Settings, Edit, Save } from 'lucide-react';
 import SeedData from '../components/SeedData';
 
 const AdminDashboard: React.FC = () => {
   const { userProfile } = useAuth();
   const [couriers, setCouriers] = useState<Courier[]>([]);
   const [users, setUsers] = useState<UserProfile[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'couriers' | 'users'>('couriers');
+  const [activeTab, setActiveTab] = useState<'couriers' | 'users' | 'products'>('products');
 
   // New courier state
   const [isAddingCourier, setIsAddingCourier] = useState(false);
@@ -20,6 +21,19 @@ const AdminDashboard: React.FC = () => {
     baseRate: '',
     perKmRate: ''
   });
+
+  // Edit product state
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [editProduct, setEditProduct] = useState({
+    name: '',
+    description: '',
+    price: '',
+    stock: '',
+    category: 'Sayur',
+    imageUrl: ''
+  });
+
+  const categories = ['Sayur', 'Sembako', 'Minuman', 'Snack', 'Lainnya'];
 
   useEffect(() => {
     if (userProfile?.role !== 'admin') return;
@@ -40,12 +54,22 @@ const AdminDashboard: React.FC = () => {
         data.push({ uid: doc.id, ...doc.data() } as UserProfile);
       });
       setUsers(data);
+    });
+
+    const productsQ = query(collection(db, 'products'));
+    const unsubProducts = onSnapshot(productsQ, (snapshot) => {
+      const data: Product[] = [];
+      snapshot.forEach((doc) => {
+        data.push({ id: doc.id, ...doc.data() } as Product);
+      });
+      setProducts(data);
       setLoading(false);
     });
 
     return () => {
       unsubCouriers();
       unsubUsers();
+      unsubProducts();
     };
   }, [userProfile]);
 
@@ -90,6 +114,48 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const handleDeleteProduct = async (productId: string) => {
+    if (window.confirm('Apakah Anda yakin ingin menghapus produk ini secara permanen?')) {
+      try {
+        await deleteDoc(doc(db, 'products', productId));
+        alert('Produk berhasil dihapus.');
+      } catch (error) {
+        console.error("Error deleting product", error);
+        alert('Gagal menghapus produk.');
+      }
+    }
+  };
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProductId(product.id);
+    setEditProduct({
+      name: product.name,
+      description: product.description,
+      price: product.price.toString(),
+      stock: product.stock !== undefined ? product.stock.toString() : '',
+      category: product.category,
+      imageUrl: product.imageUrl
+    });
+  };
+
+  const handleSaveEditProduct = async (productId: string) => {
+    try {
+      await updateDoc(doc(db, 'products', productId), {
+        name: editProduct.name,
+        description: editProduct.description,
+        price: Number(editProduct.price),
+        stock: Number(editProduct.stock),
+        category: editProduct.category,
+        imageUrl: editProduct.imageUrl
+      });
+      setEditingProductId(null);
+      alert('Produk berhasil diperbarui!');
+    } catch (error) {
+      console.error("Error updating product", error);
+      alert('Gagal memperbarui produk.');
+    }
+  };
+
   const handleDeleteEmptyProducts = async () => {
     if (window.confirm('Hapus semua produk yang bernama "tidak ada" atau kosong?')) {
       try {
@@ -118,11 +184,8 @@ const AdminDashboard: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Dashboard Admin</h1>
 
-      <div className="mb-6">
+      <div className="mb-6 flex flex-wrap gap-4">
         <SeedData />
-      </div>
-
-      <div className="mb-6">
         <button 
           onClick={handleDeleteEmptyProducts}
           className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition"
@@ -132,24 +195,135 @@ const AdminDashboard: React.FC = () => {
         </button>
       </div>
 
-      <div className="flex border-b border-gray-200 mb-6">
+      <div className="flex overflow-x-auto border-b border-gray-200 mb-6 scrollbar-hide">
         <button
-          onClick={() => setActiveTab('couriers')}
-          className={`py-2 px-4 font-medium text-sm border-b-2 transition-colors ${
-            activeTab === 'couriers' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+          onClick={() => setActiveTab('products')}
+          className={`py-3 px-4 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
+            activeTab === 'products' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
           }`}
         >
-          <div className="flex items-center gap-2"><Truck className="h-4 w-4" /> Manajemen Kurir & Ongkir</div>
+          <div className="flex items-center gap-2"><Package className="h-4 w-4" /> Manajemen Produk</div>
         </button>
         <button
           onClick={() => setActiveTab('users')}
-          className={`py-2 px-4 font-medium text-sm border-b-2 transition-colors ${
+          className={`py-3 px-4 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
             activeTab === 'users' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
           }`}
         >
           <div className="flex items-center gap-2"><Users className="h-4 w-4" /> Manajemen Pengguna</div>
         </button>
+        <button
+          onClick={() => setActiveTab('couriers')}
+          className={`py-3 px-4 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
+            activeTab === 'couriers' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+          }`}
+        >
+          <div className="flex items-center gap-2"><Truck className="h-4 w-4" /> Manajemen Kurir & Ongkir</div>
+        </button>
       </div>
+
+      {activeTab === 'products' && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold text-gray-800">Daftar Semua Produk</h2>
+            <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full">
+              Total: {products.length} Produk
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produk</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kategori</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Harga & Stok</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Penjual</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {products.map((product) => (
+                  <tr key={product.id}>
+                    <td className="px-6 py-4">
+                      {editingProductId === product.id ? (
+                        <div className="space-y-2">
+                          <input type="text" value={editProduct.name} onChange={e => setEditProduct({...editProduct, name: e.target.value})} className="w-full border border-gray-300 rounded p-1 text-sm" placeholder="Nama Produk" />
+                          <input type="text" value={editProduct.imageUrl} onChange={e => setEditProduct({...editProduct, imageUrl: e.target.value})} className="w-full border border-gray-300 rounded p-1 text-sm" placeholder="URL Gambar" />
+                          <textarea value={editProduct.description} onChange={e => setEditProduct({...editProduct, description: e.target.value})} className="w-full border border-gray-300 rounded p-1 text-sm" placeholder="Deskripsi" rows={2} />
+                        </div>
+                      ) : (
+                        <div className="flex items-center">
+                          <div className="h-10 w-10 flex-shrink-0">
+                            <img className="h-10 w-10 rounded-md object-cover" src={product.imageUrl || 'https://picsum.photos/seed/product/100/100'} alt="" referrerPolicy="no-referrer" />
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900 truncate max-w-[200px]">{product.name}</div>
+                            <div className="text-xs text-gray-500 truncate max-w-[200px]">{product.description}</div>
+                          </div>
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {editingProductId === product.id ? (
+                        <select value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value})} className="border border-gray-300 rounded p-1 text-sm w-full">
+                          {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                        </select>
+                      ) : (
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                          {product.category}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {editingProductId === product.id ? (
+                        <div className="space-y-2">
+                          <input type="number" value={editProduct.price} onChange={e => setEditProduct({...editProduct, price: e.target.value})} className="w-full border border-gray-300 rounded p-1 text-sm" placeholder="Harga" />
+                          <input type="number" value={editProduct.stock} onChange={e => setEditProduct({...editProduct, stock: e.target.value})} className="w-full border border-gray-300 rounded p-1 text-sm" placeholder="Stok" />
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="text-sm text-gray-900 font-medium">Rp {product.price.toLocaleString('id-ID')}</div>
+                          <div className="text-xs text-gray-500">Stok: {product.stock !== undefined ? product.stock : '-'}</div>
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {product.sellerName}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      {editingProductId === product.id ? (
+                        <div className="flex justify-end gap-2">
+                          <button onClick={() => handleSaveEditProduct(product.id)} className="text-emerald-600 hover:text-emerald-900 p-2 rounded-full hover:bg-emerald-50 transition">
+                            <Save className="h-5 w-5" />
+                          </button>
+                          <button onClick={() => setEditingProductId(null)} className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-50 transition">
+                            <X className="h-5 w-5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex justify-end gap-2">
+                          <button onClick={() => handleEditProduct(product)} className="text-blue-600 hover:text-blue-900 p-2 rounded-full hover:bg-blue-50 transition">
+                            <Edit className="h-5 w-5" />
+                          </button>
+                          <button onClick={() => handleDeleteProduct(product.id)} className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-50 transition">
+                            <Trash2 className="h-5 w-5" />
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {products.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500">Belum ada produk di website.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {activeTab === 'couriers' && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -204,8 +378,8 @@ const AdminDashboard: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Rp {courier.baseRate.toLocaleString('id-ID')}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Rp {courier.perKmRate.toLocaleString('id-ID')}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button onClick={() => handleDeleteCourier(courier.id)} className="text-red-600 hover:text-red-900">
-                        <Trash2 className="h-5 w-5 inline" />
+                      <button onClick={() => handleDeleteCourier(courier.id)} className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-50 transition">
+                        <Trash2 className="h-5 w-5" />
                       </button>
                     </td>
                   </tr>
