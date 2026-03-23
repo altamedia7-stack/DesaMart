@@ -94,6 +94,9 @@ const Navbar: React.FC = () => {
                 </span>
               )}
             </Link>
+            <Link to="/orders" className="flex items-center gap-1.5 hover:text-emerald-200 transition cursor-pointer">
+              <ShoppingBag className="h-4 w-4" /> Pesanan Saya
+            </Link>
             <div className="flex items-center gap-1.5 hover:text-emerald-200 transition cursor-pointer">
               <HelpCircle className="h-4 w-4" /> Bantuan
             </div>

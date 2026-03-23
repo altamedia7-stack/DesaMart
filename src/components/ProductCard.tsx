@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Product, Courier } from '../types';
-import { MessageCircle, Truck, X, ShoppingCart, Store } from 'lucide-react';
+import { MessageCircle, Truck, X, ShoppingCart, Store, Share2 } from 'lucide-react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useCart } from '../contexts/CartContext';
@@ -49,6 +49,25 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     window.open(url, '_blank');
   };
 
+  const handleShare = async () => {
+    const shareData = {
+      title: product.name,
+      text: `Lihat produk ${product.name} di DesaMart!`,
+      url: `${window.location.origin}/products/${product.id}`,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(shareData.url);
+        alert('Link produk berhasil disalin ke clipboard!');
+      }
+    } catch (err) {
+      console.error('Error sharing:', err);
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition duration-300 flex flex-col h-full">
       <div className="relative h-28 sm:h-48 w-full bg-gray-100 group">
@@ -60,8 +79,17 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             referrerPolicy="no-referrer"
           />
         </Link>
-        <div className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-emerald-500 text-white text-[9px] sm:text-xs font-bold px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-sm sm:rounded-full pointer-events-none shadow-sm">
-          {product.category}
+        <div className="absolute top-1 right-1 sm:top-2 sm:right-2 flex flex-col gap-1 items-end">
+          <div className="bg-emerald-500 text-white text-[9px] sm:text-xs font-bold px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-sm sm:rounded-full pointer-events-none shadow-sm">
+            {product.category}
+          </div>
+          <button 
+            onClick={handleShare}
+            className="bg-white/90 hover:bg-white text-gray-700 p-1 sm:p-1.5 rounded-full shadow-sm transition-all border border-gray-100"
+            title="Bagikan Produk"
+          >
+            <Share2 className="h-3 w-3 sm:h-4 sm:w-4" />
+          </button>
         </div>
       </div>
       

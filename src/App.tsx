@@ -14,6 +14,7 @@ import ProductDetail from './pages/ProductDetail';
 import SellerProfile from './pages/SellerProfile';
 import Cart from './pages/Cart';
 import Notifications from './pages/Notifications';
+import MyOrders from './pages/MyOrders';
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
                   <Route path="/seller/:id" element={<SellerProfile />} />
                   <Route path="/cart" element={<Cart />} />
                   <Route path="/notifications" element={<Notifications />} />
+                  <Route path="/orders" element={<MyOrders />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/seller" element={<SellerDashboard />} />

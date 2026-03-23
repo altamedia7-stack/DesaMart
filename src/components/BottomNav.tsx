@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Bell, User, Store } from 'lucide-react';
+import { Home, Bell, User, Store, ShoppingBag } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 
@@ -29,6 +29,14 @@ const BottomNav: React.FC = () => {
           <span className="text-[10px] font-medium">Beranda</span>
         </Link>
         
+        <Link 
+          to="/orders" 
+          className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/orders') ? 'text-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}
+        >
+          <ShoppingBag className="h-5 w-5" />
+          <span className="text-[10px] font-medium">Pesanan</span>
+        </Link>
+
         <Link 
           to="/seller" 
           className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/seller') ? 'text-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}

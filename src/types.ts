@@ -1,4 +1,5 @@
 export type Role = 'admin' | 'seller' | 'buyer';
+export type OrderStatus = 'pending' | 'shipped' | 'in_transit' | 'delivered' | 'cancelled';
 
 export interface UserProfile {
   uid: string;
@@ -54,4 +55,17 @@ export interface Notification {
   message: string;
   isRead: boolean;
   createdAt: any; // Firestore Timestamp
+}
+
+export interface Order {
+  id: string;
+  buyerId: string;
+  buyerName: string;
+  sellerId: string;
+  sellerName: string;
+  items: CartItem[];
+  totalPrice: number;
+  status: OrderStatus;
+  createdAt: any; // Firestore Timestamp
+  updatedAt: any; // Firestore Timestamp
 }
