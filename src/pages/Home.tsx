@@ -3,7 +3,7 @@ import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Product } from '../types';
 import ProductCard from '../components/ProductCard';
-import SeedData from '../components/SeedData';
+import BannerSlider from '../components/BannerSlider';
 import { Search, Filter, ArrowUpDown } from 'lucide-react';
 
 const Home: React.FC = () => {
@@ -73,7 +73,7 @@ const Home: React.FC = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-        <SeedData />
+        <BannerSlider />
         
         {/* Categories and Sort */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">

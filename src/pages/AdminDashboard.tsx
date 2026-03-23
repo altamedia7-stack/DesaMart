@@ -4,6 +4,7 @@ import { db } from '../lib/firebase';
 import { collection, query, onSnapshot, addDoc, deleteDoc, doc, updateDoc, serverTimestamp, getDocs } from 'firebase/firestore';
 import { Courier, UserProfile } from '../types';
 import { Truck, Trash2, Plus, Users, X } from 'lucide-react';
+import SeedData from '../components/SeedData';
 
 const AdminDashboard: React.FC = () => {
   const { userProfile } = useAuth();
@@ -116,6 +117,10 @@ const AdminDashboard: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Dashboard Admin</h1>
+
+      <div className="mb-6">
+        <SeedData />
+      </div>
 
       <div className="mb-6">
         <button 

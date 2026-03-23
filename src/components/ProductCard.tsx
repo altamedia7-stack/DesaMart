@@ -67,7 +67,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         <Link to={`/products/${product.id}`} className="hover:text-emerald-600 transition">
           <h3 className="text-lg font-semibold text-gray-800 line-clamp-2 mb-1">{product.name}</h3>
         </Link>
-        <p className="text-emerald-600 font-bold text-xl mb-2">Rp {product.price.toLocaleString('id-ID')}</p>
+        <div className="flex justify-between items-center mb-2">
+          <p className="text-emerald-600 font-bold text-xl">Rp {product.price.toLocaleString('id-ID')}</p>
+          <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2 py-1 rounded-md">
+            Stok: {product.stock !== undefined ? product.stock : '-'}
+          </span>
+        </div>
         
         <div className="text-sm text-gray-500 mb-4 flex-grow line-clamp-3">
           {product.description}

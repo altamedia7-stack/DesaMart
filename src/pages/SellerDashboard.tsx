@@ -21,6 +21,7 @@ const SellerDashboard: React.FC = () => {
     name: '',
     description: '',
     price: '',
+    stock: '',
     category: 'Sayur',
     imageUrl: ''
   });
@@ -31,6 +32,7 @@ const SellerDashboard: React.FC = () => {
     name: '',
     description: '',
     price: '',
+    stock: '',
     category: 'Sayur',
     imageUrl: ''
   });
@@ -85,13 +87,14 @@ const SellerDashboard: React.FC = () => {
         name: newProduct.name,
         description: newProduct.description,
         price: Number(newProduct.price),
+        stock: Number(newProduct.stock),
         category: newProduct.category,
         imageUrl: newProduct.imageUrl || `https://picsum.photos/seed/${newProduct.name}/400/300`,
         createdAt: serverTimestamp()
       });
       
       setIsAddingProduct(false);
-      setNewProduct({ name: '', description: '', price: '', category: 'Sayur', imageUrl: '' });
+      setNewProduct({ name: '', description: '', price: '', stock: '', category: 'Sayur', imageUrl: '' });
       alert('Produk berhasil ditambahkan!');
     } catch (error) {
       console.error("Error adding product", error);
@@ -116,6 +119,7 @@ const SellerDashboard: React.FC = () => {
       name: product.name,
       description: product.description,
       price: product.price.toString(),
+      stock: product.stock?.toString() || '0',
       category: product.category,
       imageUrl: product.imageUrl || ''
     });
@@ -130,6 +134,7 @@ const SellerDashboard: React.FC = () => {
         name: editProduct.name,
         description: editProduct.description,
         price: Number(editProduct.price),
+        stock: Number(editProduct.stock),
         category: editProduct.category,
         imageUrl: editProduct.imageUrl || `https://picsum.photos/seed/${editProduct.name}/400/300`
       });
@@ -244,12 +249,16 @@ const SellerDashboard: React.FC = () => {
                 <input required type="number" min="0" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} className="w-full border border-gray-300 rounded-md p-2" />
               </div>
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Stok *</label>
+                <input required type="number" min="0" value={newProduct.stock} onChange={e => setNewProduct({...newProduct, stock: e.target.value})} className="w-full border border-gray-300 rounded-md p-2" />
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Kategori *</label>
                 <select value={newProduct.category} onChange={e => setNewProduct({...newProduct, category: e.target.value})} className="w-full border border-gray-300 rounded-md p-2">
                   {categories.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
-              <div>
+              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">URL Gambar (Opsional)</label>
                 <input type="text" placeholder="https://..." value={newProduct.imageUrl} onChange={e => setNewProduct({...newProduct, imageUrl: e.target.value})} className="w-full border border-gray-300 rounded-md p-2" />
               </div>
@@ -278,6 +287,7 @@ const SellerDashboard: React.FC = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produk</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kategori</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Harga</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stok</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                 </tr>
               </thead>
@@ -286,7 +296,7 @@ const SellerDashboard: React.FC = () => {
                   <React.Fragment key={product.id}>
                     {editingProductId === product.id ? (
                       <tr>
-                        <td colSpan={4} className="px-6 py-4">
+                        <td colSpan={5} className="px-6 py-4">
                           <form onSubmit={handleUpdateProduct} className="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
                             <h4 className="font-medium text-emerald-800 mb-3">Edit Produk</h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -299,12 +309,16 @@ const SellerDashboard: React.FC = () => {
                                 <input required type="number" min="0" value={editProduct.price} onChange={e => setEditProduct({...editProduct, price: e.target.value})} className="w-full border border-gray-300 rounded p-1.5 text-sm" />
                               </div>
                               <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Stok *</label>
+                                <input required type="number" min="0" value={editProduct.stock} onChange={e => setEditProduct({...editProduct, stock: e.target.value})} className="w-full border border-gray-300 rounded p-1.5 text-sm" />
+                              </div>
+                              <div>
                                 <label className="block text-xs font-medium text-gray-700 mb-1">Kategori *</label>
                                 <select value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value})} className="w-full border border-gray-300 rounded p-1.5 text-sm">
                                   {categories.map(c => <option key={c} value={c}>{c}</option>)}
                                 </select>
                               </div>
-                              <div>
+                              <div className="md:col-span-2">
                                 <label className="block text-xs font-medium text-gray-700 mb-1">URL Gambar (Opsional)</label>
                                 <input type="text" value={editProduct.imageUrl} onChange={e => setEditProduct({...editProduct, imageUrl: e.target.value})} className="w-full border border-gray-300 rounded p-1.5 text-sm" />
                               </div>
@@ -339,6 +353,9 @@ const SellerDashboard: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           Rp {product.price.toLocaleString('id-ID')}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {product.stock !== undefined ? product.stock : '-'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <button onClick={() => handleEditClick(product)} className="text-blue-600 hover:text-blue-900 mr-3">

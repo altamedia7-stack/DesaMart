@@ -170,9 +170,14 @@ const ProductDetail: React.FC = () => {
             {/* Product Details */}
             <div className="p-6 md:p-10 flex flex-col">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
-              <p className="text-3xl font-extrabold text-emerald-600 mb-6">
-                Rp {product.price.toLocaleString('id-ID')}
-              </p>
+              <div className="flex justify-between items-center mb-6">
+                <p className="text-3xl font-extrabold text-emerald-600">
+                  Rp {product.price.toLocaleString('id-ID')}
+                </p>
+                <span className="text-sm font-medium bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg">
+                  Stok: {product.stock !== undefined ? product.stock : '-'}
+                </span>
+              </div>
 
               <div className="prose prose-sm sm:prose text-gray-600 mb-8 flex-grow">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Deskripsi Produk</h3>
