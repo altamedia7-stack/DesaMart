@@ -114,11 +114,11 @@ const Navbar: React.FC = () => {
         </div>
 
         {/* Main Bar */}
-        <div className="flex items-center justify-between py-4 gap-4 sm:gap-8">
+        <div className="flex items-center justify-between py-3 sm:py-4 gap-2 sm:gap-8">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 text-2xl sm:text-3xl font-bold flex-shrink-0">
-            <ShoppingBag className="h-8 w-8 sm:h-10 sm:w-10" />
-            <span>DesaMart</span>
+          <Link to="/" className="flex items-center gap-1.5 sm:gap-2 text-lg sm:text-3xl font-bold flex-shrink-0">
+            <ShoppingBag className="h-6 w-6 sm:h-10 sm:w-10" />
+            <span className="hidden sm:block">DesaMart</span>
           </Link>
 
           {/* Search Bar (Desktop) */}
@@ -144,33 +144,33 @@ const Navbar: React.FC = () => {
             </div>
           </div>
 
+          {/* Search Bar (Mobile) */}
+          <div className="sm:hidden flex-grow mx-1">
+            <form onSubmit={handleSearch} className="flex w-full bg-white rounded-md overflow-hidden p-0.5 shadow-sm">
+              <input 
+                type="text" 
+                placeholder="Cari..." 
+                className="w-full px-2.5 py-1.5 text-gray-700 outline-none text-xs bg-transparent"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+              />
+              <button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded transition flex items-center justify-center">
+                <Search className="h-3.5 w-3.5" />
+              </button>
+            </form>
+          </div>
+
           {/* Cart */}
           <div className="flex items-center flex-shrink-0 sm:pr-4">
-            <Link to="/cart" className="relative p-2 hover:bg-emerald-700 rounded-full transition">
-              <ShoppingCart className="h-7 w-7 sm:h-8 sm:w-8" />
+            <Link to="/cart" className="relative p-1.5 sm:p-2 hover:bg-emerald-700 rounded-full transition">
+              <ShoppingCart className="h-6 w-6 sm:h-8 sm:w-8" />
               {totalItems > 0 && (
-                <span className="absolute top-0 right-0 bg-white text-emerald-600 border-2 border-emerald-600 text-xs font-bold rounded-full h-5 w-5 sm:h-6 sm:w-6 flex items-center justify-center transform translate-x-1 -translate-y-1">
+                <span className="absolute top-0 right-0 bg-white text-emerald-600 border-2 border-emerald-600 text-[10px] sm:text-xs font-bold rounded-full h-4 w-4 sm:h-6 sm:w-6 flex items-center justify-center transform translate-x-1 -translate-y-1">
                   {totalItems}
                 </span>
               )}
             </Link>
           </div>
-        </div>
-
-        {/* Mobile Search Bar */}
-        <div className="sm:hidden pb-4">
-          <form onSubmit={handleSearch} className="flex w-full bg-white rounded-sm overflow-hidden p-1 shadow-inner">
-            <input 
-              type="text" 
-              placeholder="Cari di DesaMart..." 
-              className="w-full px-3 py-2 text-gray-700 outline-none text-sm"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-            />
-            <button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-sm transition flex items-center justify-center">
-              <Search className="h-4 w-4" />
-            </button>
-          </form>
         </div>
       </div>
     </nav>

@@ -51,36 +51,41 @@ const Home: React.FC = () => {
     <div className="min-h-screen bg-gray-50 pb-12 pt-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Categories and Sort */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 bg-white p-3 sm:p-0 rounded-xl sm:bg-transparent shadow-sm sm:shadow-none border border-gray-100 sm:border-none">
           {/* Categories */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 hide-scrollbar w-full sm:w-auto">
-            <Filter className="h-5 w-5 text-gray-500 mr-2 flex-shrink-0" />
-            {categories.map(category => (
-              <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                  selectedCategory === category 
-                    ? 'bg-emerald-600 text-white shadow-md' 
-                    : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
-                }`}
-              >
-                {category}
-              </button>
-            ))}
+          <div className="flex items-center w-full sm:w-auto overflow-hidden">
+            <Filter className="h-5 w-5 text-emerald-600 mr-3 flex-shrink-0 hidden sm:block" />
+            <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar w-full pb-1 sm:pb-0">
+              {categories.map(category => (
+                <button
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                    selectedCategory === category 
+                      ? 'bg-emerald-600 text-white shadow-md ring-2 ring-emerald-600 ring-offset-1' 
+                      : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Sort Dropdown */}
-          <div className="flex items-center gap-2 flex-shrink-0 self-end sm:self-auto">
-            <ArrowUpDown className="h-4 w-4 text-gray-500" />
+          <div className="flex items-center justify-between w-full sm:w-auto border-t sm:border-t-0 pt-3 sm:pt-0 border-gray-100">
+            <div className="flex items-center gap-2 sm:hidden text-gray-500">
+              <ArrowUpDown className="h-4 w-4" />
+              <span className="text-sm font-medium">Urutkan</span>
+            </div>
             <select
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value)}
-              className="border border-gray-300 rounded-lg text-sm p-2 bg-white focus:ring-emerald-500 focus:border-emerald-500 outline-none cursor-pointer text-gray-700"
+              className="border border-gray-300 rounded-lg text-sm py-1.5 px-3 bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none cursor-pointer text-gray-700 w-auto shadow-sm"
             >
               <option value="newest">Terbaru</option>
-              <option value="price-asc">Harga: Rendah ke Tinggi</option>
-              <option value="price-desc">Harga: Tinggi ke Rendah</option>
+              <option value="price-asc">Harga Terendah</option>
+              <option value="price-desc">Harga Tertinggi</option>
             </select>
           </div>
         </div>
@@ -91,7 +96,7 @@ const Home: React.FC = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
           </div>
         ) : filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
             {filteredProducts.map(product => (
               <ProductCard key={product.id} product={product} />
             ))}

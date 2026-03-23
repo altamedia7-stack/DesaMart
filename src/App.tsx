@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
 import Navbar from './components/Navbar';
+import BottomNav from './components/BottomNav';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -17,7 +18,7 @@ function App() {
     <AuthProvider>
       <CartProvider>
         <Router>
-          <div className="min-h-screen bg-gray-50 flex flex-col">
+          <div className="min-h-screen bg-gray-50 flex flex-col pb-14 sm:pb-0">
             <Navbar />
             <main className="flex-grow">
               <Routes>
@@ -31,9 +32,10 @@ function App() {
                 <Route path="/admin" element={<AdminDashboard />} />
               </Routes>
             </main>
-            <footer className="bg-white border-t border-gray-200 py-8 text-center text-gray-500 text-sm">
+            <footer className="bg-white border-t border-gray-200 py-8 text-center text-gray-500 text-sm hidden sm:block">
               <p>&copy; {new Date().getFullYear()} DesaMart - Marketplace Desa Digital.</p>
             </footer>
+            <BottomNav />
           </div>
         </Router>
       </CartProvider>
