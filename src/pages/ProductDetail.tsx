@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { doc, getDoc, collection, getDocs, query, where, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Product, Courier, Review } from '../types';
-import { MessageCircle, Truck, ArrowLeft, Store, Star, ShoppingCart } from 'lucide-react';
+import { MessageCircle, Truck, ArrowLeft, Store, Star, ShoppingCart, ChevronRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 
@@ -11,7 +11,7 @@ const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { userProfile } = useAuth();
-  const { addToCart } = useCart();
+  const { addToCart, totalItems } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   
@@ -144,156 +144,178 @@ const ProductDetail: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-5xl mx-auto">
+    <div className="min-h-screen bg-gray-100 pb-16 sm:pb-20">
+      {/* Floating Header for Mobile */}
+      <div className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center p-4 sm:hidden pointer-events-none">
+        <button onClick={() => navigate(-1)} className="bg-black/40 text-white p-2 rounded-full pointer-events-auto backdrop-blur-sm">
+          <ArrowLeft className="h-6 w-6" />
+        </button>
+        <button onClick={() => navigate('/cart')} className="bg-black/40 text-white p-2 rounded-full pointer-events-auto backdrop-blur-sm relative">
+          <ShoppingCart className="h-6 w-6" />
+          {totalItems > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center border border-white">
+              {totalItems}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Desktop Back Button */}
+      <div className="hidden sm:block max-w-5xl mx-auto pt-8 px-4 sm:px-6 lg:px-8">
         <button 
           onClick={() => navigate(-1)} 
-          className="flex items-center gap-2 text-gray-600 hover:text-emerald-600 mb-6 transition font-medium"
+          className="flex items-center gap-2 text-gray-600 hover:text-emerald-600 mb-4 transition font-medium"
         >
           <ArrowLeft className="h-5 w-5" />
           Kembali
         </button>
+      </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
-            {/* Product Image */}
-            <div className="h-64 md:h-auto relative bg-gray-100">
-              <img 
-                src={product.imageUrl || 'https://picsum.photos/seed/product/800/800'} 
-                alt={product.name} 
-                className="w-full h-full object-cover absolute inset-0"
-                referrerPolicy="no-referrer"
-              />
-              <div className="absolute top-4 left-4 bg-emerald-500 text-white text-sm font-bold px-3 py-1 rounded-full shadow-md">
-                {product.category}
+      <div className="max-w-5xl mx-auto sm:px-6 lg:px-8">
+        <div className="bg-gray-100 sm:bg-white sm:rounded-2xl sm:shadow-sm overflow-hidden flex flex-col md:flex-row">
+          
+          {/* Product Image */}
+          <div className="w-full md:w-1/2 aspect-square relative bg-white">
+            <img 
+              src={product.imageUrl || 'https://picsum.photos/seed/product/800/800'} 
+              alt={product.name} 
+              className="w-full h-full object-cover"
+              referrerPolicy="no-referrer"
+            />
+          </div>
+
+          {/* Product Details */}
+          <div className="w-full md:w-1/2 flex flex-col">
+            
+            {/* Price & Title Block */}
+            <div className="bg-white p-4 sm:p-6 mb-2 sm:mb-0">
+              <p className="text-2xl sm:text-3xl font-bold text-emerald-600 mb-2">
+                Rp {product.price.toLocaleString('id-ID')}
+              </p>
+              <h1 className="text-lg sm:text-xl font-medium text-gray-900 leading-snug mb-3">
+                {product.name}
+              </h1>
+              <div className="flex items-center justify-between text-sm text-gray-500">
+                <div className="flex items-center gap-1">
+                  <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                  <span className="font-medium text-gray-700">4.9</span>
+                  <span className="mx-1">•</span>
+                  <span>100+ Terjual</span>
+                </div>
+                <span>Stok: {product.stock !== undefined ? product.stock : '-'}</span>
               </div>
             </div>
 
-            {/* Product Details */}
-            <div className="p-6 md:p-10 flex flex-col">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
-              <div className="flex justify-between items-center mb-6">
-                <p className="text-3xl font-extrabold text-emerald-600">
-                  Rp {product.price.toLocaleString('id-ID')}
-                </p>
-                <span className="text-sm font-medium bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg">
-                  Stok: {product.stock !== undefined ? product.stock : '-'}
-                </span>
-              </div>
+            {/* Shipping Block */}
+            <div className="bg-white p-4 sm:p-6 mb-2 sm:mb-0 sm:border-t sm:border-gray-100">
+              {!showShipping ? (
+                <button 
+                  onClick={() => setShowShipping(true)}
+                  className="w-full flex items-center justify-between text-gray-700 hover:text-emerald-600 transition"
+                >
+                  <div className="flex items-center gap-3">
+                    <Truck className="h-5 w-5 text-emerald-600" />
+                    <div className="text-left">
+                      <p className="text-sm font-medium">Ongkos Kirim</p>
+                      <p className="text-xs text-gray-500">Cek estimasi ongkir ke lokasimu</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-gray-400" />
+                </button>
+              ) : (
+                <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
+                  <div className="flex justify-between items-center mb-3">
+                    <h4 className="font-semibold text-emerald-800 flex items-center gap-2">
+                      <Truck className="h-4 w-4" /> Estimasi Ongkir
+                    </h4>
+                    <button onClick={() => setShowShipping(false)} className="text-emerald-600 hover:text-emerald-800 text-sm font-medium">
+                      Tutup
+                    </button>
+                  </div>
+                  
+                  {couriers.length === 0 ? (
+                    <p className="text-sm text-emerald-600 italic">Belum ada kurir tersedia.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm text-emerald-700 mb-1">Pilih Kurir Desa</label>
+                        <select 
+                          className="w-full border-emerald-200 rounded-lg p-2 text-sm bg-white focus:ring-emerald-500 focus:border-emerald-500"
+                          value={selectedCourier?.id || ''}
+                          onChange={(e) => setSelectedCourier(couriers.find(c => c.id === e.target.value) || null)}
+                        >
+                          {couriers.map(c => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm text-emerald-700 mb-1">Estimasi Jarak (KM)</label>
+                        <input 
+                          type="number" 
+                          min="1" 
+                          value={distance} 
+                          onChange={(e) => setDistance(Number(e.target.value))}
+                          className="w-full border-emerald-200 rounded-lg p-2 text-sm bg-white focus:ring-emerald-500 focus:border-emerald-500"
+                        />
+                      </div>
+                      {selectedCourier && (
+                        <div className="pt-3 border-t border-emerald-200 mt-3 flex justify-between items-center">
+                          <span className="text-sm font-medium text-emerald-800">Total Ongkir:</span>
+                          <span className="text-lg font-bold text-emerald-700">
+                            Rp {(selectedCourier.baseRate + (selectedCourier.perKmRate * distance)).toLocaleString('id-ID')}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
-              <div className="prose prose-sm sm:prose text-gray-600 mb-8 flex-grow">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Deskripsi Produk</h3>
-                <p className="whitespace-pre-line">{product.description}</p>
-              </div>
-
-              <div className="bg-gray-50 rounded-xl p-5 border border-gray-100 mb-6">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                  <Store className="h-4 w-4 text-gray-500" />
-                  Informasi Penjual
-                </h3>
-                <div className="flex flex-col">
-                  <Link to={`/seller/${product.sellerId}`} className="font-bold text-emerald-600 hover:text-emerald-700 hover:underline text-lg w-fit">{product.sellerName}</Link>
-                  <span className="text-gray-600 flex items-center gap-2 mt-1">
-                    <MessageCircle className="h-4 w-4 text-green-500" />
-                    {product.sellerWhatsapp || 'Nomor tidak tersedia'}
-                  </span>
+            {/* Store Block */}
+            <div className="bg-white p-4 sm:p-6 mb-2 sm:mb-0 sm:border-t sm:border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 border border-gray-200">
+                  <Store className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900 text-sm">{product.sellerName}</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">Aktif 5 menit lalu</p>
                 </div>
               </div>
-
-              {/* Shipping Calculator */}
-              <div className="mb-6">
-                {!showShipping ? (
-                  <button 
-                    onClick={() => setShowShipping(true)}
-                    className="w-full py-3 px-4 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition flex items-center justify-center gap-2"
-                  >
-                    <Truck className="h-5 w-5" />
-                    Cek Ongkos Kirim
-                  </button>
-                ) : (
-                  <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
-                    <div className="flex justify-between items-center mb-3">
-                      <h4 className="font-semibold text-emerald-800 flex items-center gap-2">
-                        <Truck className="h-4 w-4" /> Estimasi Ongkir
-                      </h4>
-                      <button onClick={() => setShowShipping(false)} className="text-emerald-600 hover:text-emerald-800 text-sm font-medium">
-                        Tutup
-                      </button>
-                    </div>
-                    
-                    {couriers.length === 0 ? (
-                      <p className="text-sm text-emerald-600 italic">Belum ada kurir tersedia.</p>
-                    ) : (
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-sm text-emerald-700 mb-1">Pilih Kurir Desa</label>
-                          <select 
-                            className="w-full border-emerald-200 rounded-lg p-2 text-sm bg-white focus:ring-emerald-500 focus:border-emerald-500"
-                            value={selectedCourier?.id || ''}
-                            onChange={(e) => setSelectedCourier(couriers.find(c => c.id === e.target.value) || null)}
-                          >
-                            {couriers.map(c => (
-                              <option key={c.id} value={c.id}>{c.name}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-sm text-emerald-700 mb-1">Estimasi Jarak (KM)</label>
-                          <input 
-                            type="number" 
-                            min="1" 
-                            value={distance} 
-                            onChange={(e) => setDistance(Number(e.target.value))}
-                            className="w-full border-emerald-200 rounded-lg p-2 text-sm bg-white focus:ring-emerald-500 focus:border-emerald-500"
-                          />
-                        </div>
-                        {selectedCourier && (
-                          <div className="pt-3 border-t border-emerald-200 mt-3 flex justify-between items-center">
-                            <span className="text-sm font-medium text-emerald-800">Total Ongkir:</span>
-                            <span className="text-lg font-bold text-emerald-700">
-                              Rp {(selectedCourier.baseRate + (selectedCourier.perKmRate * distance)).toLocaleString('id-ID')}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-4">
-                <button 
-                  onClick={() => {
-                    addToCart(product);
-                    alert('Produk ditambahkan ke keranjang!');
-                  }}
-                  className="flex-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 py-4 px-6 rounded-xl font-bold text-lg shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center gap-2"
-                >
-                  <ShoppingCart className="h-6 w-6" />
-                  Tambah ke Keranjang
-                </button>
-                <button 
-                  onClick={handleWhatsApp}
-                  className="flex-1 bg-[#25D366] hover:bg-[#1DA851] text-white py-4 px-6 rounded-xl font-bold text-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2"
-                >
-                  <MessageCircle className="h-6 w-6" />
-                  Pesan ke WhatsApp
-                </button>
-              </div>
+              <Link 
+                to={`/seller/${product.sellerId}`} 
+                className="border border-emerald-600 text-emerald-600 px-3 py-1.5 rounded text-xs font-medium hover:bg-emerald-50 transition"
+              >
+                Kunjungi Toko
+              </Link>
             </div>
+
+            {/* Description Block */}
+            <div className="bg-white p-4 sm:p-6 mb-2 sm:mb-0 sm:border-t sm:border-gray-100 flex-grow">
+              <h3 className="text-sm font-bold text-gray-900 mb-3">Deskripsi Produk</h3>
+              <p className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">{product.description}</p>
+            </div>
+
           </div>
         </div>
 
         {/* Reviews Section */}
-        <div className="mt-8 bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-10">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Ulasan Pembeli</h2>
+        <div className="mt-2 sm:mt-6 bg-white sm:rounded-2xl sm:shadow-sm p-4 sm:p-6 mb-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-bold text-gray-900">Penilaian Produk</h2>
+            <div className="flex items-center gap-1 text-sm text-emerald-600">
+              <span>Lihat Semua</span>
+              <ChevronRight className="h-4 w-4" />
+            </div>
+          </div>
 
           {/* Review Form */}
           {userProfile ? (
-            <form onSubmit={handleSubmitReview} className="bg-gray-50 p-6 rounded-xl border border-gray-200 mb-8">
-              <h4 className="font-semibold text-gray-800 mb-4">Tulis Ulasan Anda</h4>
-              <div className="flex items-center mb-4">
-                <span className="text-sm font-medium text-gray-700 mr-3">Penilaian:</span>
+            <form onSubmit={handleSubmitReview} className="bg-gray-50 p-4 rounded-xl border border-gray-100 mb-6">
+              <h4 className="font-semibold text-sm text-gray-800 mb-3">Tulis Ulasan Anda</h4>
+              <div className="flex items-center mb-3">
                 <div className="flex items-center">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
@@ -302,7 +324,7 @@ const ProductDetail: React.FC = () => {
                       onClick={() => setNewRating(star)}
                       className={`p-1 focus:outline-none transition-colors ${newRating >= star ? 'text-yellow-400' : 'text-gray-300 hover:text-yellow-200'}`}
                     >
-                      <Star className="h-8 w-8 fill-current" />
+                      <Star className="h-6 w-6 fill-current" />
                     </button>
                   ))}
                 </div>
@@ -310,56 +332,91 @@ const ProductDetail: React.FC = () => {
               <textarea
                 value={newReviewText}
                 onChange={(e) => setNewReviewText(e.target.value)}
-                placeholder="Ceritakan pengalaman Anda dengan produk ini..."
-                className="w-full border border-gray-300 rounded-xl p-4 text-sm focus:ring-emerald-500 focus:border-emerald-500 mb-4 outline-none resize-none"
-                rows={4}
+                placeholder="Ceritakan pengalaman Anda..."
+                className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-emerald-500 focus:border-emerald-500 mb-3 outline-none resize-none"
+                rows={3}
                 required
               />
               <div className="flex justify-end">
                 <button
                   type="submit"
                   disabled={isSubmittingReview || !newReviewText.trim()}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmittingReview ? 'Mengirim...' : 'Kirim Ulasan'}
                 </button>
               </div>
             </form>
           ) : (
-            <div className="bg-blue-50 text-blue-800 p-4 rounded-xl mb-8 text-sm flex items-center justify-between">
+            <div className="bg-blue-50 text-blue-800 p-3 rounded-lg mb-6 text-xs flex items-center justify-between">
               <span>Silakan masuk (login) untuk memberikan ulasan.</span>
             </div>
           )}
 
           {/* Reviews List */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             {reviews.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500 italic">Belum ada ulasan untuk produk ini. Jadilah yang pertama!</p>
+              <div className="text-center py-6">
+                <p className="text-gray-500 text-sm italic">Belum ada ulasan untuk produk ini.</p>
               </div>
             ) : (
               reviews.map((review) => (
-                <div key={review.id} className="border-b border-gray-100 pb-6 last:border-0 last:pb-0">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-bold text-gray-900">{review.userName}</span>
-                    <span className="text-xs text-gray-500">
-                      {review.createdAt?.toDate ? review.createdAt.toDate().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Baru saja'}
-                    </span>
+                <div key={review.id} className="border-b border-gray-100 pb-4 last:border-0 last:pb-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-500">
+                      {review.userName.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="font-medium text-sm text-gray-900">{review.userName}</span>
                   </div>
-                  <div className="flex items-center mb-3">
+                  <div className="flex items-center mb-2">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <Star
                         key={star}
-                        className={`h-4 w-4 ${review.rating >= star ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                        className={`h-3 w-3 ${review.rating >= star ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
                       />
                     ))}
+                    <span className="text-[10px] text-gray-400 ml-2">
+                      {review.createdAt?.toDate ? review.createdAt.toDate().toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' }) : 'Baru saja'}
+                    </span>
                   </div>
-                  <p className="text-gray-700 leading-relaxed">{review.text}</p>
+                  <p className="text-sm text-gray-700 leading-relaxed">{review.text}</p>
                 </div>
               ))
             )}
           </div>
         </div>
+      </div>
+
+      {/* Sticky Bottom Action Bar */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 flex h-14 sm:h-16">
+        <button 
+          onClick={handleWhatsApp} 
+          className="flex flex-col items-center justify-center w-16 sm:w-20 border-r border-gray-200 text-emerald-600 hover:bg-emerald-50 transition"
+        >
+          <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" />
+          <span className="text-[10px] sm:text-xs mt-0.5">Chat</span>
+        </button>
+        
+        <button 
+          onClick={() => {
+            addToCart(product);
+            alert('Produk ditambahkan ke keranjang!');
+          }} 
+          className="flex flex-col items-center justify-center w-16 sm:w-20 border-r border-gray-200 text-emerald-600 hover:bg-emerald-50 transition"
+        >
+          <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6" />
+          <span className="text-[10px] sm:text-xs mt-0.5">Keranjang</span>
+        </button>
+        
+        <button 
+          onClick={() => {
+            addToCart(product);
+            navigate('/cart');
+          }} 
+          className="flex-1 bg-emerald-600 text-white font-bold text-sm sm:text-base hover:bg-emerald-700 transition"
+        >
+          Beli Sekarang
+        </button>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { ShoppingBag, LogOut, User, Store, Shield, ShoppingCart, Search, Bell, HelpCircle, Globe, Facebook, Instagram } from 'lucide-react';
@@ -8,9 +8,13 @@ const Navbar: React.FC = () => {
   const { currentUser, userProfile, logoutUser } = useAuth();
   const { totalItems } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const [searchInput, setSearchInput] = useState(searchParams.get('q') || '');
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  const isProductDetail = location.pathname.startsWith('/products/');
+  const isSellerProfile = location.pathname.startsWith('/seller/') && location.pathname !== '/seller';
 
   useEffect(() => {
     setSearchInput(searchParams.get('q') || '');
@@ -55,7 +59,7 @@ const Navbar: React.FC = () => {
   };
 
   return (
-    <nav className="bg-emerald-600 text-white shadow-md sticky top-0 z-50">
+    <nav className={`bg-emerald-600 text-white shadow-md sticky top-0 z-50 ${isProductDetail || isSellerProfile ? 'hidden sm:block' : ''}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Top Bar (Hidden on very small screens) */}
         <div className="hidden md:flex justify-between items-center py-2 text-[13px] font-medium border-b border-emerald-500/50">
