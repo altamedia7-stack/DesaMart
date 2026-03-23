@@ -26,7 +26,8 @@ const SellerDashboard: React.FC = () => {
     price: '',
     stock: '',
     category: 'Sayur',
-    imageUrl: ''
+    imageUrl: '',
+    discountPercentage: ''
   });
 
   // Edit product state
@@ -37,7 +38,8 @@ const SellerDashboard: React.FC = () => {
     price: '',
     stock: '',
     category: 'Sayur',
-    imageUrl: ''
+    imageUrl: '',
+    discountPercentage: ''
   });
 
   const categories = ['Sayur', 'Sembako', 'Minuman', 'Snack', 'Lainnya'];
@@ -107,6 +109,7 @@ const SellerDashboard: React.FC = () => {
         price: Number(newProduct.price),
         stock: Number(newProduct.stock),
         category: newProduct.category,
+        discountPercentage: newProduct.discountPercentage ? Number(newProduct.discountPercentage) : 0,
         imageUrl: newProduct.imageUrl || `https://picsum.photos/seed/${newProduct.name}/400/300`,
         createdAt: serverTimestamp()
       });
@@ -127,7 +130,7 @@ const SellerDashboard: React.FC = () => {
       }
       
       setIsAddingProduct(false);
-      setNewProduct({ name: '', description: '', price: '', stock: '', category: 'Sayur', imageUrl: '' });
+      setNewProduct({ name: '', description: '', price: '', stock: '', category: 'Sayur', imageUrl: '', discountPercentage: '' });
       alert('Produk berhasil ditambahkan!');
     } catch (error) {
       console.error("Error adding product", error);
@@ -154,7 +157,8 @@ const SellerDashboard: React.FC = () => {
       price: product.price.toString(),
       stock: product.stock?.toString() || '0',
       category: product.category,
-      imageUrl: product.imageUrl || ''
+      imageUrl: product.imageUrl || '',
+      discountPercentage: product.discountPercentage?.toString() || ''
     });
   };
 
@@ -169,6 +173,7 @@ const SellerDashboard: React.FC = () => {
         price: Number(editProduct.price),
         stock: Number(editProduct.stock),
         category: editProduct.category,
+        discountPercentage: editProduct.discountPercentage ? Number(editProduct.discountPercentage) : 0,
         imageUrl: editProduct.imageUrl || `https://picsum.photos/seed/${editProduct.name}/400/300`
       });
       
@@ -438,6 +443,10 @@ const SellerDashboard: React.FC = () => {
                       {categories.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Diskon (%)</label>
+                    <input type="number" min="0" max="100" value={newProduct.discountPercentage} onChange={e => setNewProduct({...newProduct, discountPercentage: e.target.value})} className="w-full border border-gray-300 rounded-md p-2" placeholder="0" />
+                  </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-1">URL Gambar (Opsional)</label>
                     <input type="text" placeholder="https://..." value={newProduct.imageUrl} onChange={e => setNewProduct({...newProduct, imageUrl: e.target.value})} className="w-full border border-gray-300 rounded-md p-2" />
@@ -498,6 +507,10 @@ const SellerDashboard: React.FC = () => {
                                       {categories.map(c => <option key={c} value={c}>{c}</option>)}
                                     </select>
                                   </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">Diskon (%)</label>
+                                    <input type="number" min="0" max="100" value={editProduct.discountPercentage} onChange={e => setEditProduct({...editProduct, discountPercentage: e.target.value})} className="w-full border border-gray-300 rounded p-1.5 text-sm" placeholder="0" />
+                                  </div>
                                   <div className="md:col-span-2">
                                     <label className="block text-xs font-medium text-gray-700 mb-1">URL Gambar (Opsional)</label>
                                     <input type="text" value={editProduct.imageUrl} onChange={e => setEditProduct({...editProduct, imageUrl: e.target.value})} className="w-full border border-gray-300 rounded p-1.5 text-sm" />
@@ -532,7 +545,19 @@ const SellerDashboard: React.FC = () => {
                               </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              Rp {product.price.toLocaleString('id-ID')}
+                              {product.discountPercentage && product.discountPercentage > 0 ? (
+                                <div className="flex flex-col">
+                                  <span className="text-xs text-gray-400 line-through">Rp {product.price.toLocaleString('id-ID')}</span>
+                                  <div className="flex items-center gap-1">
+                                    <span className="font-bold text-emerald-600">
+                                      Rp {(product.price * (1 - product.discountPercentage / 100)).toLocaleString('id-ID')}
+                                    </span>
+                                    <span className="text-[10px] bg-red-100 text-red-600 px-1 rounded font-bold">-{product.discountPercentage}%</span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <span>Rp {product.price.toLocaleString('id-ID')}</span>
+                              )}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {product.stock !== undefined ? product.stock : '-'}
@@ -606,7 +631,13 @@ const SellerDashboard: React.FC = () => {
                           />
                           <div className="flex-grow">
                             <h4 className="text-sm font-bold text-gray-900">{item.product.name}</h4>
-                            <p className="text-xs text-gray-500">{item.quantity} x Rp {item.product.price.toLocaleString('id-ID')}</p>
+                            <p className="text-xs text-gray-500">
+                              {item.quantity} x Rp {
+                                (item.product.discountPercentage && item.product.discountPercentage > 0)
+                                  ? (item.product.price * (1 - item.product.discountPercentage / 100)).toLocaleString('id-ID')
+                                  : item.product.price.toLocaleString('id-ID')
+                              }
+                            </p>
                           </div>
                         </div>
                       ))}

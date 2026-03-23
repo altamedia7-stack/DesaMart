@@ -160,7 +160,13 @@ const MyOrders: React.FC = () => {
                       </div>
                       <div className="flex-grow min-w-0">
                         <h4 className="text-sm font-bold text-gray-900 truncate">{item.product.name}</h4>
-                        <p className="text-xs text-gray-500">Rp {item.product.price.toLocaleString('id-ID')}</p>
+                        <p className="text-xs text-gray-500">
+                          Rp {
+                            (item.product.discountPercentage && item.product.discountPercentage > 0)
+                              ? (item.product.price * (1 - item.product.discountPercentage / 100)).toLocaleString('id-ID')
+                              : item.product.price.toLocaleString('id-ID')
+                          }
+                        </p>
                       </div>
                     </div>
                   ))}
