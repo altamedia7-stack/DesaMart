@@ -66,14 +66,10 @@ const Navbar: React.FC = () => {
         {/* Top Bar (Hidden on very small screens) */}
         <div className="hidden md:flex justify-between items-center py-2 text-[13px] font-medium border-b border-emerald-500/50">
           <div className="flex items-center gap-3">
-            {(userProfile?.role === 'seller' || userProfile?.role === 'admin') ? (
-              <Link to="/seller" className="hover:text-emerald-200 transition">Toko Saya</Link>
+            {currentUser ? (
+              <Link to="/seller" className="hover:text-emerald-200 transition">Seller Centre</Link>
             ) : (
-              <>
-                <Link to="/seller" className="hover:text-emerald-200 transition">Seller Centre</Link>
-                <span className="text-emerald-400/50">|</span>
-                <Link to={currentUser ? "/seller" : "/register"} className="hover:text-emerald-200 transition">Mulai Berjualan</Link>
-              </>
+              <Link to="/register" className="hover:text-emerald-200 transition">Mulai Berjualan</Link>
             )}
             <span className="text-emerald-400/50">|</span>
             <span onClick={handleInstallClick} className="hover:text-emerald-200 transition cursor-pointer">Download</span>
@@ -97,12 +93,6 @@ const Navbar: React.FC = () => {
             <Link to="/orders" className="flex items-center gap-1.5 hover:text-emerald-200 transition cursor-pointer">
               <ShoppingBag className="h-4 w-4" /> Pesanan Saya
             </Link>
-            <div className="flex items-center gap-1.5 hover:text-emerald-200 transition cursor-pointer">
-              <HelpCircle className="h-4 w-4" /> Bantuan
-            </div>
-            <div className="flex items-center gap-1.5 hover:text-emerald-200 transition cursor-pointer">
-              <Globe className="h-4 w-4" /> Bahasa Indonesia
-            </div>
             
             {!currentUser ? (
               <div className="flex items-center gap-2 ml-2">

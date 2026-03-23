@@ -129,7 +129,7 @@ const Home: React.FC = () => {
         ) : filteredProducts.length > 0 ? (
           <div className="px-2 sm:px-0 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-4">
             {filteredProducts.map(product => (
-              <ProductCard key={product.id} product={product} />
+              <ProductCard key={product.id} product={product} showStock={false} />
             ))}
           </div>
         ) : (

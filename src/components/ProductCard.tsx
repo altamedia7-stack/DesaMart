@@ -8,9 +8,10 @@ import { useCart } from '../contexts/CartContext';
 
 interface ProductCardProps {
   product: Product;
+  showStock?: boolean;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+const ProductCard: React.FC<ProductCardProps> = ({ product, showStock = true }) => {
   const { addToCart } = useCart();
   const [showShipping, setShowShipping] = useState(false);
   const [couriers, setCouriers] = useState<Courier[]>([]);
@@ -131,16 +132,18 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               <p className="text-emerald-600 font-bold text-sm sm:text-xl leading-none">Rp {product.price.toLocaleString('id-ID')}</p>
             )}
           </div>
-          <div className="flex flex-col items-end gap-1">
-            <span className="text-[9px] sm:text-xs font-medium bg-gray-100 text-gray-600 px-1 py-0.5 sm:px-2 sm:py-1 rounded w-fit">
-              Stok: {totalStock} {hasVariants && '(Total)'}
-            </span>
-            {hasVariants && (
-              <span className="text-[9px] sm:text-[10px] text-emerald-600 font-bold flex items-center gap-0.5">
-                <Layers className="h-2 w-2 sm:h-3 sm:w-3" /> {product.variants!.length} Varian
+          {showStock && (
+            <div className="flex flex-col items-end gap-1">
+              <span className="text-[9px] sm:text-xs font-medium bg-gray-100 text-gray-600 px-1 py-0.5 sm:px-2 sm:py-1 rounded w-fit">
+                Stok: {totalStock} {hasVariants && '(Total)'}
               </span>
-            )}
-          </div>
+              {hasVariants && (
+                <span className="text-[9px] sm:text-[10px] text-emerald-600 font-bold flex items-center gap-0.5">
+                  <Layers className="h-2 w-2 sm:h-3 sm:w-3" /> {product.variants!.length} Varian
+                </span>
+              )}
+            </div>
+          )}
         </div>
         
         <div className="hidden sm:block text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4 flex-grow line-clamp-2 leading-relaxed">
