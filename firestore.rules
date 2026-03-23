@@ -101,7 +101,7 @@ service cloud.firestore {
     }
 
     function isValidUrl(url) {
-      return url is string && (url.matches("^https://.*") || url.matches("^http://.*"));
+      return url is string && (url.upper().hasPrefix("HTTPS://") || url.upper().hasPrefix("HTTP://"));
     }
 
     // Domain Validators

@@ -87,8 +87,7 @@ const SellerDashboard: React.FC = () => {
       setIsEditingProfile(false);
       alert('Profil berhasil diperbarui!');
     } catch (error) {
-      console.error("Error updating profile", error);
-      alert('Gagal memperbarui profil.');
+      handleFirestoreError(error, OperationType.UPDATE, `users/${userProfile.uid}`);
     }
   };
 
@@ -136,8 +135,7 @@ const SellerDashboard: React.FC = () => {
       setNewProduct({ name: '', description: '', price: '', stock: '', category: 'Sayur', imageUrl: '', discountPercentage: '', variants: [] });
       alert('Produk berhasil ditambahkan!');
     } catch (error) {
-      console.error("Error adding product", error);
-      alert('Gagal menambahkan produk.');
+      handleFirestoreError(error, OperationType.WRITE, 'products');
     }
   };
 
@@ -146,8 +144,7 @@ const SellerDashboard: React.FC = () => {
       try {
         await deleteDoc(doc(db, 'products', productId));
       } catch (error) {
-        console.error("Error deleting product", error);
-        alert('Gagal menghapus produk.');
+        handleFirestoreError(error, OperationType.DELETE, `products/${productId}`);
       }
     }
   };
@@ -185,8 +182,7 @@ const SellerDashboard: React.FC = () => {
       setEditingProductId(null);
       alert('Produk berhasil diperbarui!');
     } catch (error) {
-      console.error("Error updating product", error);
-      alert('Gagal memperbarui produk.');
+      handleFirestoreError(error, OperationType.UPDATE, `products/${editingProductId}`);
     }
   };
 
@@ -214,8 +210,7 @@ const SellerDashboard: React.FC = () => {
       
       alert('Selamat! Anda sekarang adalah penjual. Silakan lengkapi profil toko Anda.');
     } catch (error) {
-      console.error("Error upgrading to seller", error);
-      alert('Gagal membuka toko.');
+      handleFirestoreError(error, OperationType.UPDATE, `users/${userProfile.uid}`);
     }
   };
 
