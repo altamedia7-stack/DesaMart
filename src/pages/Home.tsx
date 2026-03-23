@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { useSearchParams } from 'react-router-dom';
 import { db } from '../lib/firebase';
 import { Product } from '../types';
 import ProductCard from '../components/ProductCard';
-import BannerSlider from '../components/BannerSlider';
-import { Search, Filter, ArrowUpDown } from 'lucide-react';
+import { Filter, ArrowUpDown } from 'lucide-react';
 
 const Home: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchParams] = useSearchParams();
+  const searchTerm = searchParams.get('q') || '';
   const [selectedCategory, setSelectedCategory] = useState('Semua');
   const [sortOrder, setSortOrder] = useState('newest');
 
@@ -47,34 +48,8 @@ const Home: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-12">
-      {/* Hero Section */}
-      <div className="bg-emerald-600 text-white py-16 px-4 sm:px-6 lg:px-8 text-center">
-        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
-          Pasar Desa Digital
-        </h1>
-        <p className="text-lg md:text-xl text-emerald-100 max-w-2xl mx-auto mb-8">
-          Belanja kebutuhan sehari-hari langsung dari tetangga dan petani lokal di desa Anda.
-        </p>
-        
-        {/* Search Bar */}
-        <div className="max-w-xl mx-auto relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-gray-400" />
-          </div>
-          <input
-            type="text"
-            className="block w-full pl-10 pr-3 py-4 border border-transparent rounded-full leading-5 bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm shadow-lg"
-            placeholder="Cari sayur, sembako, atau snack..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-        <BannerSlider />
-        
+    <div className="min-h-screen bg-gray-50 pb-12 pt-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Categories and Sort */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           {/* Categories */}

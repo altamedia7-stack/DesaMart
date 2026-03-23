@@ -60,23 +60,23 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             referrerPolicy="no-referrer"
           />
         </Link>
-        <div className="absolute top-2 right-2 bg-emerald-500 text-white text-xs font-bold px-2 py-1 rounded-full pointer-events-none">
+        <div className="absolute top-2 right-2 bg-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-full pointer-events-none shadow-sm">
           {product.category}
         </div>
       </div>
       
       <div className="p-4 flex flex-col flex-grow">
         <Link to={`/products/${product.id}`} className="hover:text-emerald-600 transition">
-          <h3 className="text-lg font-semibold text-gray-800 line-clamp-2 mb-1">{product.name}</h3>
+          <h3 className="text-lg font-bold text-gray-800 line-clamp-2 mb-2">{product.name}</h3>
         </Link>
-        <div className="flex justify-between items-center mb-2">
+        <div className="flex justify-between items-center mb-3">
           <p className="text-emerald-600 font-bold text-xl">Rp {product.price.toLocaleString('id-ID')}</p>
           <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2 py-1 rounded-md">
             Stok: {product.stock !== undefined ? product.stock : '-'}
           </span>
         </div>
         
-        <div className="text-sm text-gray-500 mb-4 flex-grow line-clamp-3">
+        <div className="text-sm text-gray-500 mb-4 flex-grow line-clamp-2">
           {product.description}
         </div>
         
@@ -124,7 +124,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </div>
         )}
         
-        <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100">
+        <div className="flex items-center justify-between mt-auto pt-4">
           <div className="text-xs text-gray-500 truncate max-w-[40%]">
             Penjual: <Link to={`/seller/${product.sellerId}`} className="font-medium text-emerald-600 hover:text-emerald-700 hover:underline">{product.sellerName}</Link>
           </div>
@@ -135,14 +135,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 addToCart(product);
                 alert('Produk ditambahkan ke keranjang!');
               }}
-              className="flex items-center justify-center bg-emerald-100 hover:bg-emerald-200 text-emerald-700 p-2 rounded-lg transition-colors"
+              className="flex items-center justify-center border border-emerald-500 text-emerald-600 hover:bg-emerald-50 p-1.5 rounded transition-colors"
               title="Tambah ke Keranjang"
             >
               <ShoppingCart className="h-4 w-4" />
             </button>
             <button 
               onClick={handleWhatsApp}
-              className="flex items-center gap-1.5 bg-[#25D366] hover:bg-[#1DA851] text-white px-3 py-1.5 rounded-lg text-sm font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+              className="flex items-center gap-1.5 bg-[#25D366] hover:bg-[#1DA851] text-white px-3 py-1.5 rounded text-sm font-medium transition-colors"
             >
               <MessageCircle className="h-4 w-4" />
               <span className="hidden sm:inline">Pesan WA</span>

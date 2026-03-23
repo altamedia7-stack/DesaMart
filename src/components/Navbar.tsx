@@ -1,69 +1,151 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
-import { ShoppingBag, LogOut, User, Store, Shield, ShoppingCart } from 'lucide-react';
+import { ShoppingBag, LogOut, User, Store, Shield, ShoppingCart, Search, Bell, HelpCircle, Globe, Facebook, Instagram } from 'lucide-react';
 
 const Navbar: React.FC = () => {
   const { currentUser, userProfile, logoutUser } = useAuth();
   const { totalItems } = useCart();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [searchInput, setSearchInput] = useState(searchParams.get('q') || '');
+
+  useEffect(() => {
+    setSearchInput(searchParams.get('q') || '');
+  }, [searchParams]);
 
   const handleLogout = async () => {
     await logoutUser();
     navigate('/');
   };
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchInput.trim()) {
+      navigate(`/?q=${encodeURIComponent(searchInput.trim())}`);
+    } else {
+      navigate('/');
+    }
+  };
+
   return (
     <nav className="bg-emerald-600 text-white shadow-md sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center">
-            <Link to="/" className="flex items-center gap-2 text-xl font-bold">
-              <ShoppingBag className="h-6 w-6" />
-              <span>DesaMart</span>
-            </Link>
+        {/* Top Bar (Hidden on very small screens) */}
+        <div className="hidden md:flex justify-between items-center py-2 text-[13px] font-medium border-b border-emerald-500/50">
+          <div className="flex items-center gap-3">
+            {(userProfile?.role === 'seller' || userProfile?.role === 'admin') ? (
+              <Link to="/seller" className="hover:text-emerald-200 transition">Toko Saya</Link>
+            ) : (
+              <>
+                <Link to="/seller" className="hover:text-emerald-200 transition">Seller Centre</Link>
+                <span className="text-emerald-400/50">|</span>
+                <Link to="/register" className="hover:text-emerald-200 transition">Mulai Berjualan</Link>
+              </>
+            )}
+            <span className="text-emerald-400/50">|</span>
+            <span className="hover:text-emerald-200 transition cursor-pointer">Download</span>
+            <span className="text-emerald-400/50">|</span>
+            <div className="flex items-center gap-1.5">
+              <span>Ikuti kami di</span>
+              <Facebook className="h-3.5 w-3.5 cursor-pointer hover:text-emerald-200 transition" />
+              <Instagram className="h-3.5 w-3.5 cursor-pointer hover:text-emerald-200 transition" />
+            </div>
           </div>
           
           <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5 hover:text-emerald-200 transition cursor-pointer">
+              <Bell className="h-4 w-4" /> Notifikasi
+            </div>
+            <div className="flex items-center gap-1.5 hover:text-emerald-200 transition cursor-pointer">
+              <HelpCircle className="h-4 w-4" /> Bantuan
+            </div>
+            <div className="flex items-center gap-1.5 hover:text-emerald-200 transition cursor-pointer">
+              <Globe className="h-4 w-4" /> Bahasa Indonesia
+            </div>
+            
+            {!currentUser ? (
+              <div className="flex items-center gap-2 ml-2">
+                <Link to="/register" className="hover:text-emerald-200 transition">Daftar</Link>
+                <span className="text-emerald-400/50">|</span>
+                <Link to="/login" className="hover:text-emerald-200 transition">Log In</Link>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 ml-2">
+                {userProfile?.role === 'admin' && (
+                  <Link to="/admin" className="flex items-center gap-1 hover:text-emerald-200 transition">
+                    <Shield className="h-3.5 w-3.5" /> Admin
+                  </Link>
+                )}
+                <div className="flex items-center gap-1.5 hover:text-emerald-200 transition cursor-pointer">
+                  <User className="h-4 w-4" />
+                  <span>{userProfile?.name}</span>
+                </div>
+                <button onClick={handleLogout} className="hover:text-emerald-200 transition">Logout</button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Main Bar */}
+        <div className="flex items-center justify-between py-4 gap-4 sm:gap-8">
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-2 text-2xl sm:text-3xl font-bold flex-shrink-0">
+            <ShoppingBag className="h-8 w-8 sm:h-10 sm:w-10" />
+            <span>DesaMart</span>
+          </Link>
+
+          {/* Search Bar (Desktop) */}
+          <div className="hidden sm:block flex-grow max-w-4xl">
+            <form onSubmit={handleSearch} className="flex w-full bg-white rounded-sm overflow-hidden p-1 shadow-inner">
+              <input 
+                type="text" 
+                placeholder="Daftar & Dapat Voucher Gratis" 
+                className="w-full px-4 py-2 text-gray-700 outline-none text-sm"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+              />
+              <button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-sm transition flex items-center justify-center">
+                <Search className="h-5 w-5" />
+              </button>
+            </form>
+            <div className="flex gap-4 mt-2 text-[11px] sm:text-xs text-white/90">
+              <span className="hover:text-white cursor-pointer">Beras Organik</span>
+              <span className="hover:text-white cursor-pointer">Sayur Segar</span>
+              <span className="hover:text-white cursor-pointer">Kerajinan Bambu</span>
+              <span className="hover:text-white cursor-pointer">Pupuk Kompos</span>
+              <span className="hover:text-white cursor-pointer hidden md:inline">Madu Hutan</span>
+            </div>
+          </div>
+
+          {/* Cart */}
+          <div className="flex items-center flex-shrink-0 sm:pr-4">
             <Link to="/cart" className="relative p-2 hover:bg-emerald-700 rounded-full transition">
-              <ShoppingCart className="h-6 w-6" />
+              <ShoppingCart className="h-7 w-7 sm:h-8 sm:w-8" />
               {totalItems > 0 && (
-                <span className="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center transform translate-x-1 -translate-y-1">
+                <span className="absolute top-0 right-0 bg-white text-emerald-600 border-2 border-emerald-600 text-xs font-bold rounded-full h-5 w-5 sm:h-6 sm:w-6 flex items-center justify-center transform translate-x-1 -translate-y-1">
                   {totalItems}
                 </span>
               )}
             </Link>
-            
-            {!currentUser ? (
-              <>
-                <Link to="/login" className="hover:text-emerald-200 transition">Masuk</Link>
-                <Link to="/register" className="bg-white text-emerald-600 px-4 py-2 rounded-md font-medium hover:bg-emerald-50 transition">Daftar</Link>
-              </>
-            ) : (
-              <div className="flex items-center gap-4">
-                {userProfile?.role === 'admin' && (
-                  <Link to="/admin" className="flex items-center gap-1 hover:text-emerald-200 transition">
-                    <Shield className="h-5 w-5" />
-                    <span className="hidden sm:inline">Admin</span>
-                  </Link>
-                )}
-                {(userProfile?.role === 'seller' || userProfile?.role === 'admin') && (
-                  <Link to="/seller" className="flex items-center gap-1 hover:text-emerald-200 transition">
-                    <Store className="h-5 w-5" />
-                    <span className="hidden sm:inline">Toko Saya</span>
-                  </Link>
-                )}
-                <div className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  <span className="hidden sm:inline">{userProfile?.name}</span>
-                </div>
-                <button onClick={handleLogout} className="flex items-center gap-1 hover:text-emerald-200 transition">
-                  <LogOut className="h-5 w-5" />
-                </button>
-              </div>
-            )}
           </div>
+        </div>
+
+        {/* Mobile Search Bar */}
+        <div className="sm:hidden pb-4">
+          <form onSubmit={handleSearch} className="flex w-full bg-white rounded-sm overflow-hidden p-1 shadow-inner">
+            <input 
+              type="text" 
+              placeholder="Cari di DesaMart..." 
+              className="w-full px-3 py-2 text-gray-700 outline-none text-sm"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+            <button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-sm transition flex items-center justify-center">
+              <Search className="h-4 w-4" />
+            </button>
+          </form>
         </div>
       </div>
     </nav>
