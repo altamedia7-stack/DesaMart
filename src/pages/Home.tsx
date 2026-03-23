@@ -4,13 +4,14 @@ import { db } from '../lib/firebase';
 import { Product } from '../types';
 import ProductCard from '../components/ProductCard';
 import SeedData from '../components/SeedData';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, ArrowUpDown } from 'lucide-react';
 
 const Home: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Semua');
+  const [sortOrder, setSortOrder] = useState('newest');
 
   const categories = ['Semua', 'Sayur', 'Sembako', 'Minuman', 'Snack', 'Lainnya'];
 
@@ -22,6 +23,7 @@ const Home: React.FC = () => {
       snapshot.forEach((doc) => {
         productsData.push({ id: doc.id, ...doc.data() } as Product);
       });
+      console.log("All products:", productsData.map(p => ({id: p.id, name: p.name})));
       setProducts(productsData);
       setLoading(false);
     }, (error) => {
@@ -38,6 +40,10 @@ const Home: React.FC = () => {
     const matchesCategory = selectedCategory === 'Semua' || product.category === selectedCategory;
     
     return matchesSearch && matchesCategory;
+  }).sort((a, b) => {
+    if (sortOrder === 'price-asc') return a.price - b.price;
+    if (sortOrder === 'price-desc') return b.price - a.price;
+    return 0; // 'newest' is default from Firestore query
   });
 
   return (
@@ -69,22 +75,39 @@ const Home: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
         <SeedData />
         
-        {/* Categories */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-6 hide-scrollbar">
-          <Filter className="h-5 w-5 text-gray-500 mr-2 flex-shrink-0" />
-          {categories.map(category => (
-            <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                selectedCategory === category 
-                  ? 'bg-emerald-600 text-white shadow-md' 
-                  : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
-              }`}
+        {/* Categories and Sort */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          {/* Categories */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 hide-scrollbar w-full sm:w-auto">
+            <Filter className="h-5 w-5 text-gray-500 mr-2 flex-shrink-0" />
+            {categories.map(category => (
+              <button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                  selectedCategory === category 
+                    ? 'bg-emerald-600 text-white shadow-md' 
+                    : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                }`}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+
+          {/* Sort Dropdown */}
+          <div className="flex items-center gap-2 flex-shrink-0 self-end sm:self-auto">
+            <ArrowUpDown className="h-4 w-4 text-gray-500" />
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value)}
+              className="border border-gray-300 rounded-lg text-sm p-2 bg-white focus:ring-emerald-500 focus:border-emerald-500 outline-none cursor-pointer text-gray-700"
             >
-              {category}
-            </button>
-          ))}
+              <option value="newest">Terbaru</option>
+              <option value="price-asc">Harga: Rendah ke Tinggi</option>
+              <option value="price-desc">Harga: Tinggi ke Rendah</option>
+            </select>
+          </div>
         </div>
 
         {/* Product Grid */}
@@ -99,9 +122,8 @@ const Home: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-20 bg-white rounded-2xl shadow-sm border border-gray-100">
-            <h3 className="text-xl font-medium text-gray-900 mb-2">Tidak ada produk ditemukan</h3>
-            <p className="text-gray-500">Coba cari dengan kata kunci lain atau pilih kategori yang berbeda.</p>
+          <div className="text-center py-20">
+            {/* Removed the 'Tidak ada produk ditemukan' message as requested */}
           </div>
         )}
       </div>

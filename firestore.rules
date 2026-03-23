@@ -37,6 +37,16 @@ service cloud.firestore {
     //   - perKmRate: number (required)
     //   - createdAt: timestamp (required)
     //
+    // Collection: reviews
+    // Document ID: auto-generated
+    // Fields:
+    //   - productId: string (required)
+    //   - userId: string (required)
+    //   - userName: string (required)
+    //   - rating: number (required)
+    //   - text: string (required)
+    //   - createdAt: timestamp (required)
+    //
     // ===============================================================
 
     // Helper Functions
@@ -105,6 +115,16 @@ service cloud.firestore {
              data.createdAt is timestamp;
     }
 
+    function isValidReview(data) {
+      return hasOnlyAllowedFields(['productId', 'userId', 'userName', 'rating', 'text', 'createdAt']) &&
+             data.productId is string && data.productId.size() > 0 && data.productId.size() < 128 &&
+             data.userId is string && data.userId.size() > 0 && data.userId.size() < 128 &&
+             data.userName is string && data.userName.size() > 0 && data.userName.size() < 100 &&
+             data.rating is number && data.rating >= 1 && data.rating <= 5 &&
+             data.text is string && data.text.size() > 0 && data.text.size() < 2000 &&
+             data.createdAt is timestamp;
+    }
+
     // Rules
 
     match /users/{userId} {
@@ -147,6 +167,22 @@ service cloud.firestore {
       allow create: if isAdmin() && isValidCourier(request.resource.data);
       allow update: if isAdmin() && isValidCourier(request.resource.data) && request.resource.data.createdAt == resource.data.createdAt;
       allow delete: if isAdmin();
+    }
+
+    match /reviews/{reviewId} {
+      // Anyone can read reviews
+      allow read: if true;
+
+      // Authenticated users can create reviews
+      allow create: if isAuthenticated() && isValidReview(request.resource.data) &&
+                    request.resource.data.userId == request.auth.uid;
+
+      // Users can update their own reviews, Admins can update any
+      allow update: if isAuthenticated() && isValidReview(request.resource.data) &&
+                    ((request.resource.data.userId == resource.data.userId && resource.data.userId == request.auth.uid && request.resource.data.createdAt == resource.data.createdAt && request.resource.data.productId == resource.data.productId) || isAdmin());
+
+      // Users can delete their own reviews, Admins can delete any
+      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
     }
   }
 }

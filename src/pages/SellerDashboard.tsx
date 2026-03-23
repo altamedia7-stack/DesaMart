@@ -25,6 +25,16 @@ const SellerDashboard: React.FC = () => {
     imageUrl: ''
   });
 
+  // Edit product state
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [editProduct, setEditProduct] = useState({
+    name: '',
+    description: '',
+    price: '',
+    category: 'Sayur',
+    imageUrl: ''
+  });
+
   const categories = ['Sayur', 'Sembako', 'Minuman', 'Snack', 'Lainnya'];
 
   useEffect(() => {
@@ -100,8 +110,40 @@ const SellerDashboard: React.FC = () => {
     }
   };
 
-  if (!userProfile || userProfile.role !== 'seller') {
-    return <div className="p-8 text-center">Akses ditolak. Halaman ini hanya untuk penjual.</div>;
+  const handleEditClick = (product: Product) => {
+    setEditingProductId(product.id);
+    setEditProduct({
+      name: product.name,
+      description: product.description,
+      price: product.price.toString(),
+      category: product.category,
+      imageUrl: product.imageUrl || ''
+    });
+  };
+
+  const handleUpdateProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProductId) return;
+
+    try {
+      await updateDoc(doc(db, 'products', editingProductId), {
+        name: editProduct.name,
+        description: editProduct.description,
+        price: Number(editProduct.price),
+        category: editProduct.category,
+        imageUrl: editProduct.imageUrl || `https://picsum.photos/seed/${editProduct.name}/400/300`
+      });
+      
+      setEditingProductId(null);
+      alert('Produk berhasil diperbarui!');
+    } catch (error) {
+      console.error("Error updating product", error);
+      alert('Gagal memperbarui produk.');
+    }
+  };
+
+  if (!userProfile || (userProfile.role !== 'seller' && userProfile.role !== 'admin')) {
+    return <div className="p-8 text-center">Akses ditolak. Halaman ini hanya untuk penjual dan admin.</div>;
   }
 
   return (
@@ -174,6 +216,24 @@ const SellerDashboard: React.FC = () => {
         {isAddingProduct && (
           <form onSubmit={handleAddProduct} className="bg-gray-50 p-6 rounded-lg border border-gray-200 mb-8">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Tambah Produk Baru</h3>
+            
+            {!whatsapp && (
+              <div className="mb-6 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-md">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-yellow-700">
+                      <strong>Perhatian:</strong> Anda belum mengisi nomor WhatsApp di profil toko. Pembeli tidak akan bisa menghubungi Anda untuk memesan produk ini. Silakan lengkapi profil Anda terlebih dahulu.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nama Produk *</label>
@@ -223,31 +283,74 @@ const SellerDashboard: React.FC = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {products.map((product) => (
-                  <tr key={product.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="h-10 w-10 flex-shrink-0">
-                          <img className="h-10 w-10 rounded-md object-cover" src={product.imageUrl} alt="" referrerPolicy="no-referrer" />
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800">
-                        {product.category}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      Rp {product.price.toLocaleString('id-ID')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button onClick={() => handleDeleteProduct(product.id)} className="text-red-600 hover:text-red-900">
-                        <Trash2 className="h-5 w-5 inline" />
-                      </button>
-                    </td>
-                  </tr>
+                  <React.Fragment key={product.id}>
+                    {editingProductId === product.id ? (
+                      <tr>
+                        <td colSpan={4} className="px-6 py-4">
+                          <form onSubmit={handleUpdateProduct} className="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
+                            <h4 className="font-medium text-emerald-800 mb-3">Edit Produk</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Nama Produk *</label>
+                                <input required type="text" value={editProduct.name} onChange={e => setEditProduct({...editProduct, name: e.target.value})} className="w-full border border-gray-300 rounded p-1.5 text-sm" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Harga (Rp) *</label>
+                                <input required type="number" min="0" value={editProduct.price} onChange={e => setEditProduct({...editProduct, price: e.target.value})} className="w-full border border-gray-300 rounded p-1.5 text-sm" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Kategori *</label>
+                                <select value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value})} className="w-full border border-gray-300 rounded p-1.5 text-sm">
+                                  {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">URL Gambar (Opsional)</label>
+                                <input type="text" value={editProduct.imageUrl} onChange={e => setEditProduct({...editProduct, imageUrl: e.target.value})} className="w-full border border-gray-300 rounded p-1.5 text-sm" />
+                              </div>
+                              <div className="md:col-span-2">
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Deskripsi *</label>
+                                <textarea required rows={2} value={editProduct.description} onChange={e => setEditProduct({...editProduct, description: e.target.value})} className="w-full border border-gray-300 rounded p-1.5 text-sm"></textarea>
+                              </div>
+                            </div>
+                            <div className="mt-3 flex justify-end gap-2">
+                              <button type="button" onClick={() => setEditingProductId(null)} className="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded text-sm font-medium hover:bg-gray-50">Batal</button>
+                              <button type="submit" className="bg-emerald-600 text-white px-3 py-1.5 rounded text-sm font-medium hover:bg-emerald-700">Simpan Perubahan</button>
+                            </div>
+                          </form>
+                        </td>
+                      </tr>
+                    ) : (
+                      <tr>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="h-10 w-10 flex-shrink-0">
+                              <img className="h-10 w-10 rounded-md object-cover" src={product.imageUrl} alt="" referrerPolicy="no-referrer" />
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800">
+                            {product.category}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          Rp {product.price.toLocaleString('id-ID')}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button onClick={() => handleEditClick(product)} className="text-blue-600 hover:text-blue-900 mr-3">
+                            <Edit className="h-5 w-5 inline" />
+                          </button>
+                          <button onClick={() => handleDeleteProduct(product.id)} className="text-red-600 hover:text-red-900">
+                            <Trash2 className="h-5 w-5 inline" />
+                          </button>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>

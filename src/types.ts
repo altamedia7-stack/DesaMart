@@ -30,3 +30,13 @@ export interface Courier {
   perKmRate: number;
   createdAt: any; // Firestore Timestamp
 }
+
+export interface Review {
+  id: string;
+  productId: string;
+  userId: string;
+  userName: string;
+  rating: number;
+  text: string;
+  createdAt: any; // Firestore Timestamp
+}

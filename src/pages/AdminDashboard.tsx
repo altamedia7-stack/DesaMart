@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/firebase';
-import { collection, query, onSnapshot, addDoc, deleteDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, onSnapshot, addDoc, deleteDoc, doc, updateDoc, serverTimestamp, getDocs } from 'firebase/firestore';
 import { Courier, UserProfile } from '../types';
 import { Truck, Trash2, Plus, Users, X } from 'lucide-react';
 
@@ -89,6 +89,26 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const handleDeleteEmptyProducts = async () => {
+    if (window.confirm('Hapus semua produk yang bernama "tidak ada" atau kosong?')) {
+      try {
+        const snapshot = await getDocs(collection(db, 'products'));
+        let deletedCount = 0;
+        for (const document of snapshot.docs) {
+          const data = document.data();
+          if (!data.name || data.name.toLowerCase().includes('tidak ada') || data.name.trim() === '') {
+            await deleteDoc(doc(db, 'products', document.id));
+            deletedCount++;
+          }
+        }
+        alert(`Berhasil menghapus ${deletedCount} produk.`);
+      } catch (error) {
+        console.error("Error deleting empty products", error);
+        alert('Gagal menghapus produk.');
+      }
+    }
+  };
+
   if (!userProfile || userProfile.role !== 'admin') {
     return <div className="p-8 text-center text-red-600 font-bold">Akses ditolak. Halaman ini hanya untuk Admin.</div>;
   }
@@ -96,6 +116,16 @@ const AdminDashboard: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Dashboard Admin</h1>
+
+      <div className="mb-6">
+        <button 
+          onClick={handleDeleteEmptyProducts}
+          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition"
+        >
+          <Trash2 className="h-4 w-4" />
+          Hapus Produk "Tidak Ada"
+        </button>
+      </div>
 
       <div className="flex border-b border-gray-200 mb-6">
         <button
@@ -221,9 +251,13 @@ const AdminDashboard: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <select 
                         value={user.role}
-                        onChange={(e) => handleUpdateUserRole(user.uid, e.target.value)}
+                        onChange={(e) => {
+                          if (window.confirm(`Apakah Anda yakin ingin mengubah peran ${user.name} menjadi ${e.target.value}?`)) {
+                            handleUpdateUserRole(user.uid, e.target.value);
+                          }
+                        }}
                         disabled={user.uid === userProfile.uid} // Can't change own role
-                        className="border border-gray-300 rounded-md text-sm p-1"
+                        className="border border-gray-300 rounded-lg text-sm p-2 bg-gray-50 focus:ring-emerald-500 focus:border-emerald-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed outline-none"
                       >
                         <option value="buyer">Pembeli</option>
                         <option value="seller">Penjual</option>

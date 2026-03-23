@@ -37,7 +37,7 @@ const Navbar: React.FC = () => {
                     <span className="hidden sm:inline">Admin</span>
                   </Link>
                 )}
-                {userProfile?.role === 'seller' && (
+                {(userProfile?.role === 'seller' || userProfile?.role === 'admin') && (
                   <Link to="/seller" className="flex items-center gap-1 hover:text-emerald-200 transition">
                     <Store className="h-5 w-5" />
                     <span className="hidden sm:inline">Toko Saya</span>

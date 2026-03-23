@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Product, Courier } from '../types';
 import { MessageCircle, Truck, X } from 'lucide-react';
 import { collection, getDocs } from 'firebase/firestore';
@@ -48,20 +49,24 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition duration-300 flex flex-col h-full">
-      <div className="relative h-48 w-full bg-gray-100">
-        <img 
-          src={product.imageUrl || 'https://picsum.photos/seed/product/400/300'} 
-          alt={product.name} 
-          className="w-full h-full object-cover"
-          referrerPolicy="no-referrer"
-        />
-        <div className="absolute top-2 right-2 bg-emerald-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+      <div className="relative h-48 w-full bg-gray-100 group">
+        <Link to={`/products/${product.id}`}>
+          <img 
+            src={product.imageUrl || 'https://picsum.photos/seed/product/400/300'} 
+            alt={product.name} 
+            className="w-full h-full object-cover group-hover:opacity-90 transition"
+            referrerPolicy="no-referrer"
+          />
+        </Link>
+        <div className="absolute top-2 right-2 bg-emerald-500 text-white text-xs font-bold px-2 py-1 rounded-full pointer-events-none">
           {product.category}
         </div>
       </div>
       
       <div className="p-4 flex flex-col flex-grow">
-        <h3 className="text-lg font-semibold text-gray-800 line-clamp-2 mb-1">{product.name}</h3>
+        <Link to={`/products/${product.id}`} className="hover:text-emerald-600 transition">
+          <h3 className="text-lg font-semibold text-gray-800 line-clamp-2 mb-1">{product.name}</h3>
+        </Link>
         <p className="text-emerald-600 font-bold text-xl mb-2">Rp {product.price.toLocaleString('id-ID')}</p>
         
         <div className="text-sm text-gray-500 mb-4 flex-grow line-clamp-3">
@@ -114,7 +119,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         
         <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100">
           <div className="text-xs text-gray-500 truncate max-w-[40%]">
-            Penjual: <span className="font-medium text-gray-700">{product.sellerName}</span>
+            Penjual: <Link to={`/seller/${product.sellerId}`} className="font-medium text-emerald-600 hover:text-emerald-700 hover:underline">{product.sellerName}</Link>
           </div>
           
           <div className="flex gap-2">
