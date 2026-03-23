@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { db } from '../lib/firebase';
+import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc, updateDoc, serverTimestamp, setDoc, orderBy } from 'firebase/firestore';
 import { Product, Order, OrderStatus } from '../types';
 import { Plus, Trash2, Edit, Save, X, Store, Package, Truck, CheckCircle, Clock, AlertCircle } from 'lucide-react';
@@ -55,13 +55,16 @@ const SellerDashboard: React.FC = () => {
       setLoading(false);
     });
 
-    const qOrders = query(collection(db, 'orders'), where('sellerId', '==', userProfile.uid), orderBy('createdAt', 'desc'));
+    const path = 'orders';
+    const qOrders = query(collection(db, path), where('sellerId', '==', userProfile.uid), orderBy('createdAt', 'desc'));
     const unsubscribeOrders = onSnapshot(qOrders, (snapshot) => {
       const ordersData: Order[] = [];
       snapshot.forEach((doc) => {
         ordersData.push({ id: doc.id, ...doc.data() } as Order);
       });
       setOrders(ordersData);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, path);
     });
 
     return () => {
@@ -207,6 +210,7 @@ const SellerDashboard: React.FC = () => {
   };
 
   const handleUpdateOrderStatus = async (orderId: string, buyerId: string, productName: string, newStatus: OrderStatus) => {
+    const path = `orders/${orderId}`;
     try {
       await updateDoc(doc(db, 'orders', orderId), {
         status: newStatus,
@@ -238,8 +242,7 @@ const SellerDashboard: React.FC = () => {
 
       alert('Status pesanan berhasil diperbarui!');
     } catch (error) {
-      console.error("Error updating order status", error);
-      alert('Gagal memperbarui status pesanan.');
+      handleFirestoreError(error, OperationType.UPDATE, path);
     }
   };
 

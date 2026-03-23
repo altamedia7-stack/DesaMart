@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { db } from '../lib/firebase';
+import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { Order, OrderStatus } from '../types';
 import { Package, Truck, CheckCircle, Clock, AlertCircle, ChevronRight, ShoppingBag } from 'lucide-react';
@@ -14,8 +14,9 @@ const MyOrders: React.FC = () => {
   useEffect(() => {
     if (!currentUser?.uid) return;
 
+    const path = 'orders';
     const q = query(
-      collection(db, 'orders'),
+      collection(db, path),
       where('buyerId', '==', currentUser.uid),
       orderBy('createdAt', 'desc')
     );
@@ -28,7 +29,7 @@ const MyOrders: React.FC = () => {
       setOrders(ordersData);
       setLoading(false);
     }, (error) => {
-      console.error("Error fetching orders:", error);
+      handleFirestoreError(error, OperationType.LIST, path);
       setLoading(false);
     });
 

@@ -57,6 +57,23 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "userId", "title", "message", "isRead", "createdAt"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "An order placed by a buyer to a seller",
+      "type": "object",
+      "properties": {
+        "buyerId": { "type": "string" },
+        "buyerName": { "type": "string" },
+        "sellerId": { "type": "string" },
+        "sellerName": { "type": "string" },
+        "items": { "type": "array" },
+        "totalPrice": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "shipped", "in_transit", "delivered", "cancelled"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["buyerId", "buyerName", "sellerId", "sellerName", "items", "totalPrice", "status", "createdAt", "updatedAt"]
     }
   },
   "firestore": {
@@ -75,6 +92,10 @@
     "/notifications/{notificationId}": {
       "schema": { "$ref": "#/entities/Notification" },
       "description": "Stores user notifications"
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Stores orders placed by buyers"
     }
   }
 }

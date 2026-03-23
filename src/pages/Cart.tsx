@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
-import { db } from '../lib/firebase';
+import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { Trash2, Plus, Minus, ArrowLeft, MessageCircle, ShoppingBag } from 'lucide-react';
 
@@ -42,17 +42,22 @@ const Cart: React.FC = () => {
         sellerTotal += item.product.price * item.quantity;
       });
 
-      await addDoc(collection(db, 'orders'), {
-        buyerId: currentUser.uid,
-        buyerName: userProfile?.name || currentUser.email,
-        sellerId: sellerId,
-        sellerName: sellerGroup.sellerName,
-        items: sellerGroup.items,
-        totalPrice: sellerTotal,
-        status: 'pending',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
+      const path = 'orders';
+      try {
+        await addDoc(collection(db, path), {
+          buyerId: currentUser.uid,
+          buyerName: userProfile?.name || currentUser.email,
+          sellerId: sellerId,
+          sellerName: sellerGroup.sellerName,
+          items: sellerGroup.items,
+          totalPrice: sellerTotal,
+          status: 'pending',
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+      } catch (error) {
+        handleFirestoreError(error, OperationType.WRITE, path);
+      }
 
       // WhatsApp logic
       let phone = sellerGroup.sellerWhatsapp;

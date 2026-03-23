@@ -57,6 +57,19 @@ service cloud.firestore {
     //   - isRead: boolean (required)
     //   - createdAt: timestamp (required)
     //
+    // Collection: orders
+    // Document ID: auto-generated
+    // Fields:
+    //   - buyerId: string (required)
+    //   - buyerName: string (required)
+    //   - sellerId: string (required)
+    //   - sellerName: string (required)
+    //   - items: list (required)
+    //   - totalPrice: number (required)
+    //   - status: string (required, enum: ['pending', 'shipped', 'in_transit', 'delivered', 'cancelled'])
+    //   - createdAt: timestamp (required)
+    //   - updatedAt: timestamp (required)
+    //
     // ===============================================================
 
     // Helper Functions
@@ -145,6 +158,19 @@ service cloud.firestore {
              data.createdAt is timestamp;
     }
 
+    function isValidOrder(data) {
+      return hasOnlyAllowedFields(['buyerId', 'buyerName', 'sellerId', 'sellerName', 'items', 'totalPrice', 'status', 'createdAt', 'updatedAt']) &&
+             data.buyerId is string && data.buyerId.size() > 0 && data.buyerId.size() < 128 &&
+             data.buyerName is string && data.buyerName.size() > 0 && data.buyerName.size() < 100 &&
+             data.sellerId is string && data.sellerId.size() > 0 && data.sellerId.size() < 128 &&
+             data.sellerName is string && data.sellerName.size() > 0 && data.sellerName.size() < 100 &&
+             data.items is list && data.items.size() > 0 &&
+             data.totalPrice is number && data.totalPrice >= 0 &&
+             data.status in ['pending', 'shipped', 'in_transit', 'delivered', 'cancelled'] &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp;
+    }
+
     // Rules
 
     match /users/{userId} {
@@ -230,6 +256,26 @@ service cloud.firestore {
 
       // Users can delete their own notifications
       allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    match /orders/{orderId} {
+      // Buyers, Sellers, and Admins can read their own orders
+      allow read: if isAuthenticated() && (resource.data.buyerId == request.auth.uid || resource.data.sellerId == request.auth.uid || isAdmin());
+
+      // Any authenticated user can create an order where they are the buyer
+      allow create: if isAuthenticated() && isValidOrder(request.resource.data) &&
+                    request.resource.data.buyerId == request.auth.uid;
+
+      // Sellers can update the status of their orders, Admins can update any
+      allow update: if isAuthenticated() && isValidOrder(request.resource.data) &&
+                    ((resource.data.sellerId == request.auth.uid && 
+                      request.resource.data.buyerId == resource.data.buyerId &&
+                      request.resource.data.sellerId == resource.data.sellerId &&
+                      request.resource.data.items == resource.data.items &&
+                      request.resource.data.totalPrice == resource.data.totalPrice &&
+                      request.resource.data.createdAt == resource.data.createdAt) || isAdmin());
+
+      allow delete: if isAdmin();
     }
   }
 }
