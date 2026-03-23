@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Product, Courier } from '../types';
-import { MessageCircle, Truck, X } from 'lucide-react';
+import { MessageCircle, Truck, X, ShoppingCart } from 'lucide-react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { useCart } from '../contexts/CartContext';
 
 interface ProductCardProps {
   product: Product;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+  const { addToCart } = useCart();
   const [showShipping, setShowShipping] = useState(false);
   const [couriers, setCouriers] = useState<Courier[]>([]);
   const [distance, setDistance] = useState<number>(1);
@@ -128,21 +130,22 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </div>
           
           <div className="flex gap-2">
-            {!showShipping && (
-              <button 
-                onClick={() => setShowShipping(true)}
-                className="flex items-center gap-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1.5 rounded-lg text-xs font-medium transition"
-              >
-                <Truck className="h-3 w-3" />
-                <span>Ongkir</span>
-              </button>
-            )}
+            <button 
+              onClick={() => {
+                addToCart(product);
+                alert('Produk ditambahkan ke keranjang!');
+              }}
+              className="flex items-center justify-center bg-emerald-100 hover:bg-emerald-200 text-emerald-700 p-2 rounded-lg transition-colors"
+              title="Tambah ke Keranjang"
+            >
+              <ShoppingCart className="h-4 w-4" />
+            </button>
             <button 
               onClick={handleWhatsApp}
-              className="flex items-center gap-1 bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition"
+              className="flex items-center gap-1.5 bg-[#25D366] hover:bg-[#1DA851] text-white px-3 py-1.5 rounded-lg text-sm font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
             >
               <MessageCircle className="h-4 w-4" />
-              <span>Pesan WA</span>
+              <span className="hidden sm:inline">Pesan WA</span>
             </button>
           </div>
         </div>

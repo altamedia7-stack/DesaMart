@@ -1,10 +1,12 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { ShoppingBag, LogOut, User, Store, Shield } from 'lucide-react';
+import { useCart } from '../contexts/CartContext';
+import { ShoppingBag, LogOut, User, Store, Shield, ShoppingCart } from 'lucide-react';
 
 const Navbar: React.FC = () => {
   const { currentUser, userProfile, logoutUser } = useAuth();
+  const { totalItems } = useCart();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -24,6 +26,15 @@ const Navbar: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-4">
+            <Link to="/cart" className="relative p-2 hover:bg-emerald-700 rounded-full transition">
+              <ShoppingCart className="h-6 w-6" />
+              {totalItems > 0 && (
+                <span className="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center transform translate-x-1 -translate-y-1">
+                  {totalItems}
+                </span>
+              )}
+            </Link>
+            
             {!currentUser ? (
               <>
                 <Link to="/login" className="hover:text-emerald-200 transition">Masuk</Link>

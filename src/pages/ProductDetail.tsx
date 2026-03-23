@@ -3,13 +3,15 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { doc, getDoc, collection, getDocs, query, where, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Product, Courier, Review } from '../types';
-import { MessageCircle, Truck, ArrowLeft, Store, Star } from 'lucide-react';
+import { MessageCircle, Truck, ArrowLeft, Store, Star, ShoppingCart } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useCart } from '../contexts/CartContext';
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { userProfile } = useAuth();
+  const { addToCart } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   
@@ -259,13 +261,25 @@ const ProductDetail: React.FC = () => {
                 )}
               </div>
 
-              <button 
-                onClick={handleWhatsApp}
-                className="w-full bg-green-500 hover:bg-green-600 text-white py-4 px-6 rounded-xl font-bold text-lg shadow-sm hover:shadow-md transition flex items-center justify-center gap-2"
-              >
-                <MessageCircle className="h-6 w-6" />
-                Pesan ke WhatsApp
-              </button>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <button 
+                  onClick={() => {
+                    addToCart(product);
+                    alert('Produk ditambahkan ke keranjang!');
+                  }}
+                  className="flex-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 py-4 px-6 rounded-xl font-bold text-lg shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center gap-2"
+                >
+                  <ShoppingCart className="h-6 w-6" />
+                  Tambah ke Keranjang
+                </button>
+                <button 
+                  onClick={handleWhatsApp}
+                  className="flex-1 bg-[#25D366] hover:bg-[#1DA851] text-white py-4 px-6 rounded-xl font-bold text-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2"
+                >
+                  <MessageCircle className="h-6 w-6" />
+                  Pesan ke WhatsApp
+                </button>
+              </div>
             </div>
           </div>
         </div>

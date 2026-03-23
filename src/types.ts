@@ -41,3 +41,8 @@ export interface Review {
   text: string;
   createdAt: any; // Firestore Timestamp
 }
+
+export interface CartItem {
+  product: Product;
+  quantity: number;
+}

@@ -115,7 +115,7 @@ const SellerProfile: React.FC = () => {
             {seller.whatsapp && (
               <button 
                 onClick={handleWhatsApp}
-                className="w-full md:w-auto bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-xl font-bold shadow-sm hover:shadow-md transition flex items-center justify-center gap-2"
+                className="w-full md:w-auto bg-[#25D366] hover:bg-[#1DA851] text-white py-3 px-6 rounded-xl font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2"
               >
                 <MessageCircle className="h-5 w-5" />
                 Hubungi Penjual
