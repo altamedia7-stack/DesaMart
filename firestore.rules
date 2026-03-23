@@ -275,7 +275,7 @@ service cloud.firestore {
                       request.resource.data.totalPrice == resource.data.totalPrice &&
                       request.resource.data.createdAt == resource.data.createdAt) || isAdmin());
 
-      allow delete: if isAdmin();
+      allow delete: if isAuthenticated() && (resource.data.sellerId == request.auth.uid || isAdmin());
     }
   }
 }

@@ -246,6 +246,18 @@ const SellerDashboard: React.FC = () => {
     }
   };
 
+  const handleDeleteOrder = async (orderId: string) => {
+    if (window.confirm('Apakah Anda yakin ingin menghapus pesanan ini dari daftar Anda?')) {
+      const path = `orders/${orderId}`;
+      try {
+        await deleteDoc(doc(db, 'orders', orderId));
+        alert('Pesanan berhasil dihapus.');
+      } catch (error) {
+        handleFirestoreError(error, OperationType.DELETE, path);
+      }
+    }
+  };
+
   const getStatusIcon = (status: OrderStatus) => {
     switch (status) {
       case 'pending': return <Clock className="h-4 w-4 text-yellow-500" />;
@@ -567,9 +579,18 @@ const SellerDashboard: React.FC = () => {
                         Pembeli: <span className="font-bold text-gray-900">{order.buyerName}</span>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-xs text-gray-500 mb-1">Total Pesanan</div>
-                      <div className="text-lg font-bold text-emerald-600">Rp {order.totalPrice.toLocaleString('id-ID')}</div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <div className="text-xs text-gray-500 mb-1">Total Pesanan</div>
+                        <div className="text-lg font-bold text-emerald-600">Rp {order.totalPrice.toLocaleString('id-ID')}</div>
+                      </div>
+                      <button 
+                        onClick={() => handleDeleteOrder(order.id)}
+                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+                        title="Hapus Pesanan"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                      </button>
                     </div>
                   </div>
                   
