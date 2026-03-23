@@ -39,9 +39,9 @@ const Cart: React.FC = () => {
       // Create order in Firestore
       let sellerTotal = 0;
       sellerGroup.items.forEach(item => {
-        const price = item.product.discountPercentage && item.product.discountPercentage > 0
-          ? item.product.price * (1 - item.product.discountPercentage / 100)
-          : item.product.price;
+        const basePrice = item.selectedVariant ? item.selectedVariant.price : item.product.price;
+        const discount = item.selectedVariant ? (item.selectedVariant.discountPercentage || 0) : (item.product.discountPercentage || 0);
+        const price = discount > 0 ? basePrice * (1 - discount / 100) : basePrice;
         sellerTotal += price * item.quantity;
       });
 
@@ -71,11 +71,11 @@ const Cart: React.FC = () => {
       let message = `Halo ${sellerGroup.sellerName}, saya ingin memesan produk berikut dari DesaMart:\n\n`;
       
       sellerGroup.items.forEach((item, index) => {
-        const price = item.product.discountPercentage && item.product.discountPercentage > 0
-          ? item.product.price * (1 - item.product.discountPercentage / 100)
-          : item.product.price;
+        const basePrice = item.selectedVariant ? item.selectedVariant.price : item.product.price;
+        const discount = item.selectedVariant ? (item.selectedVariant.discountPercentage || 0) : (item.product.discountPercentage || 0);
+        const price = discount > 0 ? basePrice * (1 - discount / 100) : basePrice;
         const itemTotal = price * item.quantity;
-        message += `${index + 1}. ${item.product.name}\n`;
+        message += `${index + 1}. ${item.product.name}${item.selectedVariant ? ` (${item.selectedVariant.name})` : ''}\n`;
         message += `   Jumlah: ${item.quantity}\n`;
         message += `   Harga: Rp ${itemTotal.toLocaleString('id-ID')}\n\n`;
       });
@@ -87,7 +87,7 @@ const Cart: React.FC = () => {
       window.open(url, '_blank');
       
       // Optionally remove items from cart
-      sellerGroup.items.forEach(item => removeFromCart(item.product.id));
+      sellerGroup.items.forEach(item => removeFromCart(item.product.id, item.selectedVariant?.id));
     } catch (error) {
       console.error("Error creating order:", error);
       alert("Gagal membuat pesanan. Silakan coba lagi.");
@@ -157,7 +157,7 @@ const Cart: React.FC = () => {
                 
                 <div className="divide-y divide-gray-100">
                   {group.items.map((item) => (
-                    <div key={item.product.id} className="p-6 flex flex-col sm:flex-row gap-6 items-start sm:items-center">
+                    <div key={`${item.product.id}-${item.selectedVariant?.id || 'default'}`} className="p-6 flex flex-col sm:flex-row gap-6 items-start sm:items-center">
                       <div className="w-24 h-24 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
                         <img 
                           src={item.product.imageUrl || 'https://picsum.photos/seed/product/200/200'} 
@@ -171,8 +171,33 @@ const Cart: React.FC = () => {
                         <Link to={`/products/${item.product.id}`} className="font-bold text-lg text-gray-900 hover:text-emerald-600 transition line-clamp-2 mb-1">
                           {item.product.name}
                         </Link>
+                        {item.selectedVariant && (
+                          <div className="text-xs text-emerald-600 font-bold mb-2 flex items-center gap-1">
+                            <span className="bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
+                              Varian: {item.selectedVariant.name}
+                            </span>
+                          </div>
+                        )}
                         <div className="mb-4">
-                          {item.product.discountPercentage && item.product.discountPercentage > 0 ? (
+                          {item.selectedVariant ? (
+                            <div className="flex flex-col">
+                              {item.selectedVariant.discountPercentage && item.selectedVariant.discountPercentage > 0 ? (
+                                <>
+                                  <span className="text-xs text-gray-400 line-through">Rp {item.selectedVariant.price.toLocaleString('id-ID')}</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-emerald-600">
+                                      Rp {(item.selectedVariant.price * (1 - item.selectedVariant.discountPercentage / 100)).toLocaleString('id-ID')}
+                                    </span>
+                                    <span className="text-[10px] bg-red-100 text-red-600 px-1 rounded font-bold">-{item.selectedVariant.discountPercentage}%</span>
+                                  </div>
+                                </>
+                              ) : (
+                                <p className="font-bold text-emerald-600">
+                                  Rp {item.selectedVariant.price.toLocaleString('id-ID')}
+                                </p>
+                              )}
+                            </div>
+                          ) : item.product.discountPercentage && item.product.discountPercentage > 0 ? (
                             <div className="flex flex-col">
                               <span className="text-xs text-gray-400 line-through">Rp {item.product.price.toLocaleString('id-ID')}</span>
                               <div className="flex items-center gap-2">
@@ -192,7 +217,7 @@ const Cart: React.FC = () => {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center border border-gray-200 rounded-lg bg-white">
                             <button 
-                              onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                              onClick={() => updateQuantity(item.product.id, item.selectedVariant?.id, item.quantity - 1)}
                               className="p-2 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-l-lg transition"
                             >
                               <Minus className="h-4 w-4" />
@@ -201,7 +226,7 @@ const Cart: React.FC = () => {
                               {item.quantity}
                             </span>
                             <button 
-                              onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                              onClick={() => updateQuantity(item.product.id, item.selectedVariant?.id, item.quantity + 1)}
                               className="p-2 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-r-lg transition"
                             >
                               <Plus className="h-4 w-4" />
@@ -209,7 +234,7 @@ const Cart: React.FC = () => {
                           </div>
                           
                           <button 
-                            onClick={() => removeFromCart(item.product.id)}
+                            onClick={() => removeFromCart(item.product.id, item.selectedVariant?.id)}
                             className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
                             title="Hapus produk"
                           >

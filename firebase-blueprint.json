@@ -29,6 +29,20 @@
         "category": { "type": "string" },
         "imageUrl": { "type": "string" },
         "discountPercentage": { "type": "number" },
+        "variants": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "price": { "type": "number" },
+              "stock": { "type": "number" },
+              "discountPercentage": { "type": "number" }
+            },
+            "required": ["id", "name", "price", "stock"]
+          }
+        },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["sellerId", "sellerName", "sellerWhatsapp", "name", "description", "price", "category", "imageUrl", "createdAt"]

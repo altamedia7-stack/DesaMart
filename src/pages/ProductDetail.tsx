@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { doc, getDoc, collection, getDocs, query, where, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { Product, Courier, Review } from '../types';
-import { MessageCircle, Truck, ArrowLeft, Store, Star, ShoppingCart, ChevronRight } from 'lucide-react';
+import { Product, Courier, Review, ProductVariant } from '../types';
+import { MessageCircle, Truck, ArrowLeft, Store, Star, ShoppingCart, ChevronRight, Layers } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 
@@ -14,6 +14,7 @@ const ProductDetail: React.FC = () => {
   const { addToCart, totalItems } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   
   // Shipping state
   const [showShipping, setShowShipping] = useState(false);
@@ -34,7 +35,11 @@ const ProductDetail: React.FC = () => {
         const docRef = doc(db, 'products', id);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          setProduct({ id: docSnap.id, ...docSnap.data() } as Product);
+          const data = { id: docSnap.id, ...docSnap.data() } as Product;
+          setProduct(data);
+          if (data.variants && data.variants.length > 0) {
+            setSelectedVariant(data.variants[0]);
+          }
         } else {
           setProduct(null);
         }
@@ -112,11 +117,11 @@ const ProductDetail: React.FC = () => {
       phone = '62' + phone.substring(1);
     }
     
-    const discountedPrice = product.discountPercentage && product.discountPercentage > 0 
-      ? product.price * (1 - product.discountPercentage / 100) 
-      : product.price;
+    const currentPrice = selectedVariant 
+      ? (selectedVariant.discountPercentage ? selectedVariant.price * (1 - selectedVariant.discountPercentage / 100) : selectedVariant.price)
+      : (product.discountPercentage ? product.price * (1 - product.discountPercentage / 100) : product.price);
 
-    let message = `Halo, saya tertarik dengan produk ${product.name} yang dijual dengan harga Rp${discountedPrice.toLocaleString('id-ID')}. Apakah masih tersedia?`;
+    let message = `Halo, saya tertarik dengan produk ${product.name}${selectedVariant ? ` (Varian: ${selectedVariant.name})` : ''} yang dijual dengan harga Rp${currentPrice.toLocaleString('id-ID')}. Apakah masih tersedia?`;
     
     if (selectedCourier && showShipping) {
       const shippingCost = selectedCourier.baseRate + (selectedCourier.perKmRate * distance);
@@ -199,7 +204,25 @@ const ProductDetail: React.FC = () => {
             {/* Price & Title Block */}
             <div className="bg-white p-4 sm:p-6 mb-2 sm:mb-0">
               <div className="flex flex-col mb-2">
-                {product.discountPercentage && product.discountPercentage > 0 ? (
+                {selectedVariant ? (
+                  <>
+                    {selectedVariant.discountPercentage && selectedVariant.discountPercentage > 0 ? (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm sm:text-base text-gray-400 line-through">Rp {selectedVariant.price.toLocaleString('id-ID')}</span>
+                          <span className="bg-red-100 text-red-600 text-[10px] sm:text-xs font-bold px-1.5 py-0.5 rounded">-{selectedVariant.discountPercentage}%</span>
+                        </div>
+                        <p className="text-2xl sm:text-4xl font-black text-emerald-600">
+                          Rp {(selectedVariant.price * (1 - selectedVariant.discountPercentage / 100)).toLocaleString('id-ID')}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-2xl sm:text-4xl font-black text-emerald-600">
+                        Rp {selectedVariant.price.toLocaleString('id-ID')}
+                      </p>
+                    )}
+                  </>
+                ) : product.discountPercentage && product.discountPercentage > 0 ? (
                   <>
                     <div className="flex items-center gap-2">
                       <span className="text-sm sm:text-base text-gray-400 line-through">Rp {product.price.toLocaleString('id-ID')}</span>
@@ -225,9 +248,33 @@ const ProductDetail: React.FC = () => {
                   <span className="mx-1">•</span>
                   <span>100+ Terjual</span>
                 </div>
-                <span>Stok: {product.stock !== undefined ? product.stock : '-'}</span>
+                <span>Stok: {selectedVariant ? selectedVariant.stock : (product.stock !== undefined ? product.stock : '-')}</span>
               </div>
             </div>
+
+            {/* Variant Selection */}
+            {product.variants && product.variants.length > 0 && (
+              <div className="bg-white p-4 sm:p-6 mb-2 sm:mb-0 sm:border-t sm:border-gray-100">
+                <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-emerald-600" /> Pilih Varian
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {product.variants.map((variant) => (
+                    <button
+                      key={variant.id}
+                      onClick={() => setSelectedVariant(variant)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
+                        selectedVariant?.id === variant.id
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                          : 'bg-white text-gray-700 border-gray-200 hover:border-emerald-500'
+                      }`}
+                    >
+                      {variant.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Shipping Block */}
             <div className="bg-white p-4 sm:p-6 mb-2 sm:mb-0 sm:border-t sm:border-gray-100">
@@ -422,7 +469,7 @@ const ProductDetail: React.FC = () => {
         
         <button 
           onClick={() => {
-            addToCart(product);
+            addToCart(product, selectedVariant || undefined);
             alert('Produk ditambahkan ke keranjang!');
           }} 
           className="flex flex-col items-center justify-center w-16 sm:w-20 border-r border-gray-200 text-emerald-600 hover:bg-emerald-50 transition"
@@ -433,7 +480,7 @@ const ProductDetail: React.FC = () => {
         
         <button 
           onClick={() => {
-            addToCart(product);
+            addToCart(product, selectedVariant || undefined);
             navigate('/cart');
           }} 
           className="flex-1 bg-emerald-600 text-white font-bold text-sm sm:text-base hover:bg-emerald-700 transition"

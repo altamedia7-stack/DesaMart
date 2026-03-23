@@ -3,8 +3,8 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc, updateDoc, serverTimestamp, setDoc, orderBy } from 'firebase/firestore';
-import { Product, Order, OrderStatus } from '../types';
-import { Plus, Trash2, Edit, Save, X, Store, Package, Truck, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Product, Order, OrderStatus, ProductVariant } from '../types';
+import { Plus, Trash2, Edit, Save, X, Store, Package, Truck, CheckCircle, Clock, AlertCircle, Layers } from 'lucide-react';
 
 const SellerDashboard: React.FC = () => {
   const { userProfile } = useAuth();
@@ -27,7 +27,8 @@ const SellerDashboard: React.FC = () => {
     stock: '',
     category: 'Sayur',
     imageUrl: '',
-    discountPercentage: ''
+    discountPercentage: '',
+    variants: [] as ProductVariant[]
   });
 
   // Edit product state
@@ -39,7 +40,8 @@ const SellerDashboard: React.FC = () => {
     stock: '',
     category: 'Sayur',
     imageUrl: '',
-    discountPercentage: ''
+    discountPercentage: '',
+    variants: [] as ProductVariant[]
   });
 
   const categories = ['Sayur', 'Sembako', 'Minuman', 'Snack', 'Lainnya'];
@@ -110,6 +112,7 @@ const SellerDashboard: React.FC = () => {
         stock: Number(newProduct.stock),
         category: newProduct.category,
         discountPercentage: newProduct.discountPercentage ? Number(newProduct.discountPercentage) : 0,
+        variants: newProduct.variants,
         imageUrl: newProduct.imageUrl || `https://picsum.photos/seed/${newProduct.name}/400/300`,
         createdAt: serverTimestamp()
       });
@@ -130,7 +133,7 @@ const SellerDashboard: React.FC = () => {
       }
       
       setIsAddingProduct(false);
-      setNewProduct({ name: '', description: '', price: '', stock: '', category: 'Sayur', imageUrl: '', discountPercentage: '' });
+      setNewProduct({ name: '', description: '', price: '', stock: '', category: 'Sayur', imageUrl: '', discountPercentage: '', variants: [] });
       alert('Produk berhasil ditambahkan!');
     } catch (error) {
       console.error("Error adding product", error);
@@ -158,7 +161,8 @@ const SellerDashboard: React.FC = () => {
       stock: product.stock?.toString() || '0',
       category: product.category,
       imageUrl: product.imageUrl || '',
-      discountPercentage: product.discountPercentage?.toString() || ''
+      discountPercentage: product.discountPercentage?.toString() || '',
+      variants: product.variants || []
     });
   };
 
@@ -174,6 +178,7 @@ const SellerDashboard: React.FC = () => {
         stock: Number(editProduct.stock),
         category: editProduct.category,
         discountPercentage: editProduct.discountPercentage ? Number(editProduct.discountPercentage) : 0,
+        variants: editProduct.variants,
         imageUrl: editProduct.imageUrl || `https://picsum.photos/seed/${editProduct.name}/400/300`
       });
       
@@ -455,6 +460,107 @@ const SellerDashboard: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Deskripsi *</label>
                     <textarea required rows={3} value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} className="w-full border border-gray-300 rounded-md p-2"></textarea>
                   </div>
+
+                  {/* Variant Management */}
+                  <div className="md:col-span-2 border-t border-gray-200 pt-4 mt-2">
+                    <div className="flex justify-between items-center mb-4">
+                      <h4 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                        <Layers className="h-4 w-4" /> Varian Produk (Opsional)
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const id = Math.random().toString(36).substring(2, 9);
+                          setNewProduct({
+                            ...newProduct,
+                            variants: [...newProduct.variants, { id, name: '', price: Number(newProduct.price) || 0, stock: Number(newProduct.stock) || 0 }]
+                          });
+                        }}
+                        className="text-xs bg-emerald-50 text-emerald-600 px-2 py-1 rounded border border-emerald-200 hover:bg-emerald-100"
+                      >
+                        + Tambah Varian
+                      </button>
+                    </div>
+                    
+                    {newProduct.variants.length > 0 ? (
+                      <div className="space-y-3">
+                        {newProduct.variants.map((variant, index) => (
+                          <div key={variant.id} className="grid grid-cols-1 sm:grid-cols-4 gap-2 p-3 bg-white border border-gray-200 rounded-lg relative">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updatedVariants = [...newProduct.variants];
+                                updatedVariants.splice(index, 1);
+                                setNewProduct({ ...newProduct, variants: updatedVariants });
+                              }}
+                              className="absolute -top-2 -right-2 bg-red-100 text-red-600 p-1 rounded-full hover:bg-red-200"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                            <div className="sm:col-span-1">
+                              <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Nama Varian</label>
+                              <input
+                                type="text"
+                                placeholder="Contoh: Merah, XL"
+                                value={variant.name}
+                                onChange={(e) => {
+                                  const updatedVariants = [...newProduct.variants];
+                                  updatedVariants[index].name = e.target.value;
+                                  setNewProduct({ ...newProduct, variants: updatedVariants });
+                                }}
+                                className="w-full border border-gray-300 rounded p-1.5 text-xs"
+                                required
+                              />
+                            </div>
+                            <div className="sm:col-span-1">
+                              <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Harga (Rp)</label>
+                              <input
+                                type="number"
+                                value={variant.price}
+                                onChange={(e) => {
+                                  const updatedVariants = [...newProduct.variants];
+                                  updatedVariants[index].price = Number(e.target.value);
+                                  setNewProduct({ ...newProduct, variants: updatedVariants });
+                                }}
+                                className="w-full border border-gray-300 rounded p-1.5 text-xs"
+                                required
+                              />
+                            </div>
+                            <div className="sm:col-span-1">
+                              <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Stok</label>
+                              <input
+                                type="number"
+                                value={variant.stock}
+                                onChange={(e) => {
+                                  const updatedVariants = [...newProduct.variants];
+                                  updatedVariants[index].stock = Number(e.target.value);
+                                  setNewProduct({ ...newProduct, variants: updatedVariants });
+                                }}
+                                className="w-full border border-gray-300 rounded p-1.5 text-xs"
+                                required
+                              />
+                            </div>
+                            <div className="sm:col-span-1">
+                              <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Diskon (%)</label>
+                              <input
+                                type="number"
+                                value={variant.discountPercentage || ''}
+                                onChange={(e) => {
+                                  const updatedVariants = [...newProduct.variants];
+                                  updatedVariants[index].discountPercentage = e.target.value ? Number(e.target.value) : undefined;
+                                  setNewProduct({ ...newProduct, variants: updatedVariants });
+                                }}
+                                className="w-full border border-gray-300 rounded p-1.5 text-xs"
+                                placeholder="0"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-400 italic">Belum ada varian. Gunakan varian jika produk memiliki pilihan seperti ukuran atau warna.</p>
+                    )}
+                  </div>
                 </div>
                 <div className="mt-4 flex justify-end">
                   <button type="submit" className="bg-emerald-600 text-white px-6 py-2 rounded-md font-medium hover:bg-emerald-700">Simpan Produk</button>
@@ -519,6 +625,102 @@ const SellerDashboard: React.FC = () => {
                                     <label className="block text-xs font-medium text-gray-700 mb-1">Deskripsi *</label>
                                     <textarea required rows={2} value={editProduct.description} onChange={e => setEditProduct({...editProduct, description: e.target.value})} className="w-full border border-gray-300 rounded p-1.5 text-sm"></textarea>
                                   </div>
+
+                                  {/* Variant Management (Edit) */}
+                                  <div className="md:col-span-2 border-t border-gray-200 pt-4 mt-2">
+                                    <div className="flex justify-between items-center mb-4">
+                                      <h4 className="text-xs font-bold text-gray-900 flex items-center gap-2">
+                                        <Layers className="h-3 w-3" /> Varian Produk
+                                      </h4>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const id = Math.random().toString(36).substring(2, 9);
+                                          setEditProduct({
+                                            ...editProduct,
+                                            variants: [...editProduct.variants, { id, name: '', price: Number(editProduct.price) || 0, stock: Number(editProduct.stock) || 0 }]
+                                          });
+                                        }}
+                                        className="text-[10px] bg-emerald-50 text-emerald-600 px-2 py-1 rounded border border-emerald-200 hover:bg-emerald-100"
+                                      >
+                                        + Tambah Varian
+                                      </button>
+                                    </div>
+                                    
+                                    <div className="space-y-3">
+                                      {editProduct.variants.map((variant, index) => (
+                                        <div key={variant.id} className="grid grid-cols-1 sm:grid-cols-4 gap-2 p-3 bg-white border border-gray-200 rounded-lg relative">
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              const updatedVariants = [...editProduct.variants];
+                                              updatedVariants.splice(index, 1);
+                                              setEditProduct({ ...editProduct, variants: updatedVariants });
+                                            }}
+                                            className="absolute -top-2 -right-2 bg-red-100 text-red-600 p-1 rounded-full hover:bg-red-200"
+                                          >
+                                            <X className="h-3 w-3" />
+                                          </button>
+                                          <div className="sm:col-span-1">
+                                            <label className="block text-[9px] uppercase font-bold text-gray-400 mb-1">Nama Varian</label>
+                                            <input
+                                              type="text"
+                                              value={variant.name}
+                                              onChange={(e) => {
+                                                const updatedVariants = [...editProduct.variants];
+                                                updatedVariants[index].name = e.target.value;
+                                                setEditProduct({ ...editProduct, variants: updatedVariants });
+                                              }}
+                                              className="w-full border border-gray-300 rounded p-1.5 text-xs"
+                                              required
+                                            />
+                                          </div>
+                                          <div className="sm:col-span-1">
+                                            <label className="block text-[9px] uppercase font-bold text-gray-400 mb-1">Harga (Rp)</label>
+                                            <input
+                                              type="number"
+                                              value={variant.price}
+                                              onChange={(e) => {
+                                                const updatedVariants = [...editProduct.variants];
+                                                updatedVariants[index].price = Number(e.target.value);
+                                                setEditProduct({ ...editProduct, variants: updatedVariants });
+                                              }}
+                                              className="w-full border border-gray-300 rounded p-1.5 text-xs"
+                                              required
+                                            />
+                                          </div>
+                                          <div className="sm:col-span-1">
+                                            <label className="block text-[9px] uppercase font-bold text-gray-400 mb-1">Stok</label>
+                                            <input
+                                              type="number"
+                                              value={variant.stock}
+                                              onChange={(e) => {
+                                                const updatedVariants = [...editProduct.variants];
+                                                updatedVariants[index].stock = Number(e.target.value);
+                                                setEditProduct({ ...editProduct, variants: updatedVariants });
+                                              }}
+                                              className="w-full border border-gray-300 rounded p-1.5 text-xs"
+                                              required
+                                            />
+                                          </div>
+                                          <div className="sm:col-span-1">
+                                            <label className="block text-[9px] uppercase font-bold text-gray-400 mb-1">Diskon (%)</label>
+                                            <input
+                                              type="number"
+                                              value={variant.discountPercentage || ''}
+                                              onChange={(e) => {
+                                                const updatedVariants = [...editProduct.variants];
+                                                updatedVariants[index].discountPercentage = e.target.value ? Number(e.target.value) : undefined;
+                                                setEditProduct({ ...editProduct, variants: updatedVariants });
+                                              }}
+                                              className="w-full border border-gray-300 rounded p-1.5 text-xs"
+                                              placeholder="0"
+                                            />
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
                                 </div>
                                 <div className="mt-3 flex justify-end gap-2">
                                   <button type="button" onClick={() => setEditingProductId(null)} className="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded text-sm font-medium hover:bg-gray-50">Batal</button>
@@ -536,6 +738,11 @@ const SellerDashboard: React.FC = () => {
                                 </div>
                                 <div className="ml-4">
                                   <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                                  {product.variants && product.variants.length > 0 && (
+                                    <div className="text-[10px] text-gray-400 flex items-center gap-1">
+                                      <Layers className="h-3 w-3" /> {product.variants.length} Varian
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </td>
@@ -545,7 +752,16 @@ const SellerDashboard: React.FC = () => {
                               </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {product.discountPercentage && product.discountPercentage > 0 ? (
+                              {product.variants && product.variants.length > 0 ? (
+                                <div className="flex flex-col">
+                                  <span className="text-[10px] text-gray-400">Mulai dari</span>
+                                  <span className="font-bold text-emerald-600">
+                                    Rp {Math.min(...product.variants.map(v => 
+                                      v.discountPercentage ? v.price * (1 - v.discountPercentage / 100) : v.price
+                                    )).toLocaleString('id-ID')}
+                                  </span>
+                                </div>
+                              ) : product.discountPercentage && product.discountPercentage > 0 ? (
                                 <div className="flex flex-col">
                                   <span className="text-xs text-gray-400 line-through">Rp {product.price.toLocaleString('id-ID')}</span>
                                   <div className="flex items-center gap-1">
@@ -560,7 +776,11 @@ const SellerDashboard: React.FC = () => {
                               )}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {product.stock !== undefined ? product.stock : '-'}
+                              {product.variants && product.variants.length > 0 ? (
+                                <span>{product.variants.reduce((sum, v) => sum + v.stock, 0)} (Total)</span>
+                              ) : (
+                                <span>{product.stock !== undefined ? product.stock : '-'}</span>
+                              )}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                               <button onClick={() => handleEditClick(product)} className="text-blue-600 hover:text-blue-900 mr-3">
@@ -630,12 +850,23 @@ const SellerDashboard: React.FC = () => {
                             referrerPolicy="no-referrer"
                           />
                           <div className="flex-grow">
-                            <h4 className="text-sm font-bold text-gray-900">{item.product.name}</h4>
+                            <h4 className="text-sm font-bold text-gray-900">
+                              {item.product.name}
+                              {item.selectedVariant && (
+                                <span className="ml-2 text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                                  {item.selectedVariant.name}
+                                </span>
+                              )}
+                            </h4>
                             <p className="text-xs text-gray-500">
                               {item.quantity} x Rp {
-                                (item.product.discountPercentage && item.product.discountPercentage > 0)
-                                  ? (item.product.price * (1 - item.product.discountPercentage / 100)).toLocaleString('id-ID')
-                                  : item.product.price.toLocaleString('id-ID')
+                                item.selectedVariant 
+                                  ? (item.selectedVariant.discountPercentage 
+                                      ? (item.selectedVariant.price * (1 - item.selectedVariant.discountPercentage / 100)).toLocaleString('id-ID')
+                                      : item.selectedVariant.price.toLocaleString('id-ID'))
+                                  : (item.product.discountPercentage && item.product.discountPercentage > 0)
+                                    ? (item.product.price * (1 - item.product.discountPercentage / 100)).toLocaleString('id-ID')
+                                    : item.product.price.toLocaleString('id-ID')
                               }
                             </p>
                           </div>

@@ -11,6 +11,14 @@ export interface UserProfile {
   createdAt: any; // Firestore Timestamp
 }
 
+export interface ProductVariant {
+  id: string;
+  name: string; // e.g., "Size: L", "Color: Red"
+  price: number;
+  stock: number;
+  discountPercentage?: number;
+}
+
 export interface Product {
   id: string;
   sellerId: string;
@@ -23,6 +31,7 @@ export interface Product {
   category: string;
   imageUrl: string;
   discountPercentage?: number;
+  variants?: ProductVariant[];
   createdAt: any; // Firestore Timestamp
 }
 
@@ -47,6 +56,7 @@ export interface Review {
 export interface CartItem {
   product: Product;
   quantity: number;
+  selectedVariant?: ProductVariant;
 }
 
 export interface Notification {

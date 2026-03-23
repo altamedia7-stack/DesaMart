@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { Product, CartItem } from '../types';
+import { Product, CartItem, ProductVariant } from '../types';
 import { useNotification } from './NotificationContext';
 import { useAuth } from './AuthContext';
 import { doc, getDoc } from 'firebase/firestore';
@@ -7,9 +7,9 @@ import { db } from '../lib/firebase';
 
 interface CartContextType {
   cartItems: CartItem[];
-  addToCart: (product: Product, quantity?: number) => void;
-  removeFromCart: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  addToCart: (product: Product, variant?: ProductVariant, quantity?: number) => void;
+  removeFromCart: (productId: string, variantId?: string) => void;
+  updateQuantity: (productId: string, variantId: string | undefined, quantity: number) => void;
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
@@ -67,32 +67,40 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [cartItems, addNotification, currentUser]);
 
-  const addToCart = (product: Product, quantity: number = 1) => {
+  const addToCart = (product: Product, variant?: ProductVariant, quantity: number = 1) => {
     setCartItems(prev => {
-      const existingItem = prev.find(item => item.product.id === product.id);
+      const existingItem = prev.find(item => 
+        item.product.id === product.id && 
+        (variant ? item.selectedVariant?.id === variant.id : !item.selectedVariant)
+      );
+      
       if (existingItem) {
         return prev.map(item =>
-          item.product.id === product.id
+          (item.product.id === product.id && (variant ? item.selectedVariant?.id === variant.id : !item.selectedVariant))
             ? { ...item, quantity: item.quantity + quantity }
             : item
         );
       }
-      return [...prev, { product, quantity }];
+      return [...prev, { product, quantity, selectedVariant: variant }];
     });
   };
 
-  const removeFromCart = (productId: string) => {
-    setCartItems(prev => prev.filter(item => item.product.id !== productId));
+  const removeFromCart = (productId: string, variantId?: string) => {
+    setCartItems(prev => prev.filter(item => 
+      !(item.product.id === productId && (variantId ? item.selectedVariant?.id === variantId : !item.selectedVariant))
+    ));
   };
 
-  const updateQuantity = (productId: string, quantity: number) => {
+  const updateQuantity = (productId: string, variantId: string | undefined, quantity: number) => {
     if (quantity <= 0) {
-      removeFromCart(productId);
+      removeFromCart(productId, variantId);
       return;
     }
     setCartItems(prev =>
       prev.map(item =>
-        item.product.id === productId ? { ...item, quantity } : item
+        (item.product.id === productId && (variantId ? item.selectedVariant?.id === variantId : !item.selectedVariant)) 
+          ? { ...item, quantity } 
+          : item
       )
     );
   };
@@ -103,9 +111,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = cartItems.reduce((sum, item) => {
-    const price = item.product.discountPercentage && item.product.discountPercentage > 0
-      ? item.product.price * (1 - item.product.discountPercentage / 100)
-      : item.product.price;
+    const basePrice = item.selectedVariant ? item.selectedVariant.price : item.product.price;
+    const discount = item.selectedVariant ? (item.selectedVariant.discountPercentage || 0) : (item.product.discountPercentage || 0);
+    const price = discount > 0 ? basePrice * (1 - discount / 100) : basePrice;
     return sum + (price * item.quantity);
   }, 0);
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Product, Courier } from '../types';
-import { MessageCircle, Truck, X, ShoppingCart, Store, Share2 } from 'lucide-react';
+import { Product, Courier, ProductVariant } from '../types';
+import { MessageCircle, Truck, X, ShoppingCart, Store, Share2, Layers } from 'lucide-react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useCart } from '../contexts/CartContext';
@@ -32,17 +32,22 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     }
   }, [showShipping, couriers.length]);
 
+  const hasVariants = product.variants && product.variants.length > 0;
+  const minPrice = hasVariants 
+    ? Math.min(...product.variants!.map(v => v.discountPercentage ? v.price * (1 - v.discountPercentage / 100) : v.price))
+    : (product.discountPercentage ? product.price * (1 - product.discountPercentage / 100) : product.price);
+  
+  const totalStock = hasVariants
+    ? product.variants!.reduce((sum, v) => sum + v.stock, 0)
+    : (product.stock || 0);
+
   const handleWhatsApp = () => {
     let phone = product.sellerWhatsapp;
     if (phone.startsWith('0')) {
       phone = '62' + phone.substring(1);
     }
     
-    const discountedPrice = product.discountPercentage && product.discountPercentage > 0 
-      ? product.price * (1 - product.discountPercentage / 100) 
-      : product.price;
-
-    let message = `Halo, saya tertarik dengan produk ${product.name} yang dijual dengan harga Rp${discountedPrice.toLocaleString('id-ID')}. Apakah masih tersedia?`;
+    let message = `Halo, saya tertarik dengan produk ${product.name} yang dijual dengan harga Rp${minPrice.toLocaleString('id-ID')}${hasVariants ? ' (Harga mulai dari)' : ''}. Apakah masih tersedia?`;
     
     if (selectedCourier && showShipping) {
       const shippingCost = selectedCourier.baseRate + (selectedCourier.perKmRate * distance);
@@ -108,20 +113,34 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         </Link>
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-1 sm:mb-3 gap-1 sm:gap-0">
           <div className="flex flex-col">
-            {product.discountPercentage && product.discountPercentage > 0 ? (
+            {hasVariants ? (
+              <div className="flex flex-col">
+                <span className="text-[9px] sm:text-xs text-gray-400">Mulai dari</span>
+                <p className="text-emerald-600 font-bold text-sm sm:text-xl leading-none">
+                  Rp {minPrice.toLocaleString('id-ID')}
+                </p>
+              </div>
+            ) : product.discountPercentage && product.discountPercentage > 0 ? (
               <>
                 <p className="text-gray-400 line-through text-[10px] sm:text-sm">Rp {product.price.toLocaleString('id-ID')}</p>
                 <p className="text-emerald-600 font-bold text-sm sm:text-xl leading-none">
-                  Rp {(product.price * (1 - product.discountPercentage / 100)).toLocaleString('id-ID')}
+                  Rp {minPrice.toLocaleString('id-ID')}
                 </p>
               </>
             ) : (
               <p className="text-emerald-600 font-bold text-sm sm:text-xl leading-none">Rp {product.price.toLocaleString('id-ID')}</p>
             )}
           </div>
-          <span className="text-[9px] sm:text-xs font-medium bg-gray-100 text-gray-600 px-1 py-0.5 sm:px-2 sm:py-1 rounded w-fit">
-            Stok: {product.stock !== undefined ? product.stock : '-'}
-          </span>
+          <div className="flex flex-col items-end gap-1">
+            <span className="text-[9px] sm:text-xs font-medium bg-gray-100 text-gray-600 px-1 py-0.5 sm:px-2 sm:py-1 rounded w-fit">
+              Stok: {totalStock} {hasVariants && '(Total)'}
+            </span>
+            {hasVariants && (
+              <span className="text-[9px] sm:text-[10px] text-emerald-600 font-bold flex items-center gap-0.5">
+                <Layers className="h-2 w-2 sm:h-3 sm:w-3" /> {product.variants!.length} Varian
+              </span>
+            )}
+          </div>
         </div>
         
         <div className="hidden sm:block text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4 flex-grow line-clamp-2 leading-relaxed">

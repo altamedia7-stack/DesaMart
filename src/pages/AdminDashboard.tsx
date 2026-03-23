@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/firebase';
 import { collection, query, onSnapshot, addDoc, deleteDoc, doc, updateDoc, serverTimestamp, getDocs, setDoc } from 'firebase/firestore';
-import { Courier, UserProfile, Product } from '../types';
-import { Truck, Trash2, Plus, Users, X, Package, Settings, Edit, Save } from 'lucide-react';
+import { Courier, UserProfile, Product, ProductVariant } from '../types';
+import { Truck, Trash2, Plus, Users, X, Package, Settings, Edit, Save, Layers } from 'lucide-react';
 import SeedData from '../components/SeedData';
 
 const AdminDashboard: React.FC = () => {
@@ -31,7 +31,8 @@ const AdminDashboard: React.FC = () => {
     stock: '',
     discountPercentage: '',
     category: 'Sayur',
-    imageUrl: ''
+    imageUrl: '',
+    variants: [] as ProductVariant[]
   });
 
   const categories = ['Sayur', 'Sembako', 'Minuman', 'Snack', 'Lainnya'];
@@ -152,7 +153,8 @@ const AdminDashboard: React.FC = () => {
       stock: product.stock !== undefined ? product.stock.toString() : '',
       discountPercentage: product.discountPercentage !== undefined ? product.discountPercentage.toString() : '0',
       category: product.category,
-      imageUrl: product.imageUrl
+      imageUrl: product.imageUrl,
+      variants: product.variants || []
     });
   };
 
@@ -165,7 +167,8 @@ const AdminDashboard: React.FC = () => {
         stock: Number(editProduct.stock),
         discountPercentage: Number(editProduct.discountPercentage),
         category: editProduct.category,
-        imageUrl: editProduct.imageUrl
+        imageUrl: editProduct.imageUrl,
+        variants: editProduct.variants
       });
       setEditingProductId(null);
       alert('Produk berhasil diperbarui!');
@@ -270,6 +273,92 @@ const AdminDashboard: React.FC = () => {
                           <input type="text" value={editProduct.name} onChange={e => setEditProduct({...editProduct, name: e.target.value})} className="w-full border border-gray-300 rounded p-1 text-sm" placeholder="Nama Produk" />
                           <input type="text" value={editProduct.imageUrl} onChange={e => setEditProduct({...editProduct, imageUrl: e.target.value})} className="w-full border border-gray-300 rounded p-1 text-sm" placeholder="URL Gambar" />
                           <textarea value={editProduct.description} onChange={e => setEditProduct({...editProduct, description: e.target.value})} className="w-full border border-gray-300 rounded p-1 text-sm" placeholder="Deskripsi" rows={2} />
+                          
+                          {/* Variant Management (Admin Edit) */}
+                          <div className="border-t border-gray-200 pt-2 mt-2">
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-xs font-bold text-gray-700 flex items-center gap-1">
+                                <Layers className="h-3 w-3" /> Varian
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const id = Math.random().toString(36).substring(2, 9);
+                                  setEditProduct({
+                                    ...editProduct,
+                                    variants: [...editProduct.variants, { id, name: '', price: Number(editProduct.price) || 0, stock: Number(editProduct.stock) || 0 }]
+                                  });
+                                }}
+                                className="text-[10px] bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded border border-emerald-200"
+                              >
+                                + Tambah
+                              </button>
+                            </div>
+                            <div className="space-y-2">
+                              {editProduct.variants.map((variant, index) => (
+                                <div key={variant.id} className="grid grid-cols-4 gap-1 p-2 bg-gray-50 rounded relative">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updatedVariants = [...editProduct.variants];
+                                      updatedVariants.splice(index, 1);
+                                      setEditProduct({ ...editProduct, variants: updatedVariants });
+                                    }}
+                                    className="absolute -top-1 -right-1 bg-red-100 text-red-600 p-0.5 rounded-full"
+                                  >
+                                    <X className="h-2 w-2" />
+                                  </button>
+                                  <input
+                                    type="text"
+                                    placeholder="Nama"
+                                    value={variant.name}
+                                    onChange={(e) => {
+                                      const updatedVariants = [...editProduct.variants];
+                                      updatedVariants[index].name = e.target.value;
+                                      setEditProduct({ ...editProduct, variants: updatedVariants });
+                                    }}
+                                    className="border border-gray-300 rounded p-1 text-[10px]"
+                                    required
+                                  />
+                                  <input
+                                    type="number"
+                                    placeholder="Harga"
+                                    value={variant.price}
+                                    onChange={(e) => {
+                                      const updatedVariants = [...editProduct.variants];
+                                      updatedVariants[index].price = Number(e.target.value);
+                                      setEditProduct({ ...editProduct, variants: updatedVariants });
+                                    }}
+                                    className="border border-gray-300 rounded p-1 text-[10px]"
+                                    required
+                                  />
+                                  <input
+                                    type="number"
+                                    placeholder="Stok"
+                                    value={variant.stock}
+                                    onChange={(e) => {
+                                      const updatedVariants = [...editProduct.variants];
+                                      updatedVariants[index].stock = Number(e.target.value);
+                                      setEditProduct({ ...editProduct, variants: updatedVariants });
+                                    }}
+                                    className="border border-gray-300 rounded p-1 text-[10px]"
+                                    required
+                                  />
+                                  <input
+                                    type="number"
+                                    placeholder="Disc %"
+                                    value={variant.discountPercentage || ''}
+                                    onChange={(e) => {
+                                      const updatedVariants = [...editProduct.variants];
+                                      updatedVariants[index].discountPercentage = e.target.value ? Number(e.target.value) : undefined;
+                                      setEditProduct({ ...editProduct, variants: updatedVariants });
+                                    }}
+                                    className="border border-gray-300 rounded p-1 text-[10px]"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                         </div>
                       ) : (
                         <div className="flex items-center">
@@ -313,7 +402,16 @@ const AdminDashboard: React.FC = () => {
                       ) : (
                         <div>
                           <div className="text-sm text-gray-900 font-medium">
-                            {product.discountPercentage && product.discountPercentage > 0 ? (
+                            {product.variants && product.variants.length > 0 ? (
+                              <div className="flex flex-col">
+                                <span className="text-[10px] text-gray-400">Mulai dari</span>
+                                <span className="text-emerald-600 font-bold">
+                                  Rp {Math.min(...product.variants.map(v => 
+                                    v.discountPercentage ? v.price * (1 - v.discountPercentage / 100) : v.price
+                                  )).toLocaleString('id-ID')}
+                                </span>
+                              </div>
+                            ) : product.discountPercentage && product.discountPercentage > 0 ? (
                               <div className="flex flex-col">
                                 <span className="text-xs text-red-500 line-through">Rp {product.price.toLocaleString('id-ID')}</span>
                                 <span>Rp {(product.price * (1 - product.discountPercentage / 100)).toLocaleString('id-ID')}</span>
@@ -323,7 +421,11 @@ const AdminDashboard: React.FC = () => {
                               <span>Rp {product.price.toLocaleString('id-ID')}</span>
                             )}
                           </div>
-                          <div className="text-xs text-gray-500">Stok: {product.stock !== undefined ? product.stock : '-'}</div>
+                          <div className="text-xs text-gray-500">
+                            Stok: {product.variants && product.variants.length > 0 
+                              ? `${product.variants.reduce((sum, v) => sum + v.stock, 0)} (Total)` 
+                              : (product.stock !== undefined ? product.stock : '-')}
+                          </div>
                         </div>
                       )}
                     </td>
