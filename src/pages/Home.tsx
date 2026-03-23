@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { db } from '../lib/firebase';
 import { Product } from '../types';
 import ProductCard from '../components/ProductCard';
-import { Filter, ArrowUpDown } from 'lucide-react';
+import { Filter, ArrowUpDown, ChevronRight, ShoppingBag, Leaf, Coffee, Package, MoreHorizontal } from 'lucide-react';
 
 const Home: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -14,7 +14,14 @@ const Home: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('Semua');
   const [sortOrder, setSortOrder] = useState('newest');
 
-  const categories = ['Semua', 'Sayur', 'Sembako', 'Minuman', 'Snack', 'Lainnya'];
+  const categories = [
+    { name: 'Semua', icon: <ShoppingBag className="h-5 w-5 sm:h-6 sm:w-6" />, color: 'bg-emerald-100 text-emerald-600' },
+    { name: 'Sayur', icon: <Leaf className="h-5 w-5 sm:h-6 sm:w-6" />, color: 'bg-green-100 text-green-600' },
+    { name: 'Sembako', icon: <Package className="h-5 w-5 sm:h-6 sm:w-6" />, color: 'bg-amber-100 text-amber-600' },
+    { name: 'Minuman', icon: <Coffee className="h-5 w-5 sm:h-6 sm:w-6" />, color: 'bg-blue-100 text-blue-600' },
+    { name: 'Snack', icon: <ShoppingBag className="h-5 w-5 sm:h-6 sm:w-6" />, color: 'bg-orange-100 text-orange-600' },
+    { name: 'Lainnya', icon: <MoreHorizontal className="h-5 w-5 sm:h-6 sm:w-6" />, color: 'bg-gray-100 text-gray-600' }
+  ];
 
   useEffect(() => {
     const q = query(collection(db, 'products'), orderBy('createdAt', 'desc'));
@@ -24,7 +31,6 @@ const Home: React.FC = () => {
       snapshot.forEach((doc) => {
         productsData.push({ id: doc.id, ...doc.data() } as Product);
       });
-      console.log("All products:", productsData.map(p => ({id: p.id, name: p.name})));
       setProducts(productsData);
       setLoading(false);
     }, (error) => {
@@ -48,62 +54,81 @@ const Home: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-12 pt-6">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Categories and Sort */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 bg-white p-3 sm:p-0 rounded-xl sm:bg-transparent shadow-sm sm:shadow-none border border-gray-100 sm:border-none">
-          {/* Categories */}
-          <div className="flex items-center w-full sm:w-auto overflow-hidden">
-            <Filter className="h-5 w-5 text-emerald-600 mr-3 flex-shrink-0 hidden sm:block" />
-            <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar w-full pb-1 sm:pb-0">
-              {categories.map(category => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                    selectedCategory === category 
-                      ? 'bg-emerald-600 text-white shadow-md ring-2 ring-emerald-600 ring-offset-1' 
-                      : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'
-                  }`}
-                >
-                  {category}
-                </button>
-              ))}
+    <div className="min-h-screen bg-gray-100 pb-4 sm:pb-12 pt-2 sm:pt-6">
+      <div className="max-w-7xl mx-auto px-0 sm:px-6 lg:px-8">
+        {/* Categories Grid (Shopee Style) */}
+        <div className="bg-white mb-2 sm:mb-6 p-3 sm:p-6 sm:rounded-xl shadow-sm">
+          <div className="flex justify-between items-center mb-3 sm:mb-4 px-1 sm:px-0">
+            <h2 className="text-sm sm:text-lg font-bold text-gray-800">Kategori Pilihan</h2>
+            <div className="flex items-center text-xs sm:text-sm text-emerald-600 font-medium cursor-pointer">
+              Lihat Semua <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </div>
+          <div className="grid grid-cols-4 sm:grid-cols-6 gap-y-4 gap-x-2">
+            {categories.map(category => (
+              <div 
+                key={category.name}
+                onClick={() => setSelectedCategory(category.name)}
+                className="flex flex-col items-center justify-start cursor-pointer group"
+              >
+                <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center mb-1.5 sm:mb-2 transition-transform group-hover:scale-105 ${category.color} ${selectedCategory === category.name ? 'ring-2 ring-emerald-500 ring-offset-2' : ''}`}>
+                  {category.icon}
+                </div>
+                <span className={`text-[10px] sm:text-sm text-center leading-tight ${selectedCategory === category.name ? 'font-bold text-emerald-600' : 'text-gray-600 font-medium'}`}>
+                  {category.name}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
 
-          {/* Sort Dropdown */}
-          <div className="flex items-center justify-between w-full sm:w-auto border-t sm:border-t-0 pt-3 sm:pt-0 border-gray-100">
-            <div className="flex items-center gap-2 sm:hidden text-gray-500">
-              <ArrowUpDown className="h-4 w-4" />
-              <span className="text-sm font-medium">Urutkan</span>
-            </div>
-            <select
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value)}
-              className="border border-gray-300 rounded-lg text-sm py-1.5 px-3 bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none cursor-pointer text-gray-700 w-auto shadow-sm"
+        {/* Sort and Filter Bar */}
+        <div className="bg-white sticky top-14 sm:top-0 z-40 mb-2 sm:mb-6 p-2 sm:p-4 sm:rounded-xl shadow-sm border-b border-gray-100 sm:border-none flex justify-between items-center">
+          <div className="flex items-center gap-4 sm:gap-6 w-full">
+            <button 
+              onClick={() => setSortOrder('newest')}
+              className={`text-xs sm:text-sm font-medium pb-1 border-b-2 transition-colors flex-1 sm:flex-none text-center ${sortOrder === 'newest' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
             >
-              <option value="newest">Terbaru</option>
-              <option value="price-asc">Harga Terendah</option>
-              <option value="price-desc">Harga Tertinggi</option>
-            </select>
+              Terbaru
+            </button>
+            <button 
+              onClick={() => setSortOrder('price-asc')}
+              className={`text-xs sm:text-sm font-medium pb-1 border-b-2 transition-colors flex-1 sm:flex-none text-center ${sortOrder === 'price-asc' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+            >
+              Termurah
+            </button>
+            <button 
+              onClick={() => setSortOrder('price-desc')}
+              className={`text-xs sm:text-sm font-medium pb-1 border-b-2 transition-colors flex-1 sm:flex-none text-center ${sortOrder === 'price-desc' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+            >
+              Termahal
+            </button>
+            
+            <div className="hidden sm:flex items-center ml-auto text-gray-500 cursor-pointer hover:text-emerald-600">
+              <Filter className="h-4 w-4 mr-1" />
+              <span className="text-sm font-medium">Filter</span>
+            </div>
           </div>
         </div>
 
         {/* Product Grid */}
         {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+          <div className="flex justify-center items-center h-64 bg-white sm:bg-transparent sm:rounded-xl">
+            <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-emerald-600"></div>
           </div>
         ) : filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
+          <div className="px-2 sm:px-0 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-4">
             {filteredProducts.map(product => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
         ) : (
-          <div className="text-center py-20">
-            {/* Removed the 'Tidak ada produk ditemukan' message as requested */}
+          <div className="bg-white p-8 sm:p-12 text-center sm:rounded-xl shadow-sm">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
+              <ShoppingBag className="h-8 w-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-800 mb-1">Produk tidak ditemukan</h3>
+            <p className="text-sm text-gray-500">Coba gunakan kata kunci lain atau ubah filter kategori.</p>
           </div>
         )}
       </div>

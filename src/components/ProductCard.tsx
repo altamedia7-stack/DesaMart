@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Product, Courier } from '../types';
-import { MessageCircle, Truck, X, ShoppingCart } from 'lucide-react';
+import { MessageCircle, Truck, X, ShoppingCart, Store } from 'lucide-react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useCart } from '../contexts/CartContext';
@@ -50,8 +50,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition duration-300 flex flex-col h-full">
-      <div className="relative h-32 sm:h-48 w-full bg-gray-100 group">
+    <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition duration-300 flex flex-col h-full">
+      <div className="relative h-28 sm:h-48 w-full bg-gray-100 group">
         <Link to={`/products/${product.id}`}>
           <img 
             src={product.imageUrl || 'https://picsum.photos/seed/product/400/300'} 
@@ -60,42 +60,42 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             referrerPolicy="no-referrer"
           />
         </Link>
-        <div className="absolute top-2 right-2 bg-emerald-500 text-white text-[10px] sm:text-xs font-bold px-2 py-0.5 sm:px-3 sm:py-1 rounded-full pointer-events-none shadow-sm">
+        <div className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-emerald-500 text-white text-[9px] sm:text-xs font-bold px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-sm sm:rounded-full pointer-events-none shadow-sm">
           {product.category}
         </div>
       </div>
       
-      <div className="p-3 sm:p-4 flex flex-col flex-grow">
+      <div className="p-2 sm:p-4 flex flex-col flex-grow">
         <Link to={`/products/${product.id}`} className="hover:text-emerald-600 transition">
-          <h3 className="text-sm sm:text-lg font-bold text-gray-800 line-clamp-2 mb-1 sm:mb-2 leading-tight">{product.name}</h3>
+          <h3 className="text-xs sm:text-lg font-medium sm:font-bold text-gray-800 line-clamp-2 mb-1 sm:mb-2 leading-tight">{product.name}</h3>
         </Link>
-        <div className="flex justify-between items-center mb-2 sm:mb-3">
-          <p className="text-emerald-600 font-bold text-base sm:text-xl leading-none">Rp {product.price.toLocaleString('id-ID')}</p>
-          <span className="text-[10px] sm:text-xs font-medium bg-gray-100 text-gray-600 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-md">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-1 sm:mb-3 gap-1 sm:gap-0">
+          <p className="text-emerald-600 font-bold text-sm sm:text-xl leading-none">Rp {product.price.toLocaleString('id-ID')}</p>
+          <span className="text-[9px] sm:text-xs font-medium bg-gray-100 text-gray-600 px-1 py-0.5 sm:px-2 sm:py-1 rounded w-fit">
             Stok: {product.stock !== undefined ? product.stock : '-'}
           </span>
         </div>
         
-        <div className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4 flex-grow line-clamp-2 leading-relaxed">
+        <div className="hidden sm:block text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4 flex-grow line-clamp-2 leading-relaxed">
           {product.description}
         </div>
         
         {showShipping && (
-          <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-4 text-sm relative">
-            <button onClick={() => setShowShipping(false)} className="absolute top-2 right-2 text-gray-400 hover:text-gray-600">
-              <X className="h-4 w-4" />
+          <div className="bg-gray-50 p-2 sm:p-3 rounded-lg border border-gray-200 mb-2 sm:mb-4 text-xs sm:text-sm relative">
+            <button onClick={() => setShowShipping(false)} className="absolute top-1 right-1 sm:top-2 sm:right-2 text-gray-400 hover:text-gray-600">
+              <X className="h-3 w-3 sm:h-4 sm:w-4" />
             </button>
-            <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-1">
-              <Truck className="h-4 w-4" /> Cek Ongkir
+            <h4 className="font-semibold text-gray-700 mb-1.5 sm:mb-2 flex items-center gap-1 text-[10px] sm:text-sm">
+              <Truck className="h-3 w-3 sm:h-4 sm:w-4" /> Cek Ongkir
             </h4>
             {couriers.length === 0 ? (
-              <p className="text-gray-500 italic">Belum ada kurir tersedia.</p>
+              <p className="text-gray-500 italic text-[10px] sm:text-sm">Belum ada kurir.</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 <div>
-                  <label className="block text-xs text-gray-600 mb-1">Pilih Kurir</label>
+                  <label className="block text-[9px] sm:text-xs text-gray-600 mb-0.5 sm:mb-1">Pilih Kurir</label>
                   <select 
-                    className="w-full border-gray-300 rounded p-1 border text-xs"
+                    className="w-full border-gray-300 rounded p-1 border text-[10px] sm:text-xs"
                     value={selectedCourier?.id || ''}
                     onChange={(e) => setSelectedCourier(couriers.find(c => c.id === e.target.value) || null)}
                   >
@@ -105,17 +105,17 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-600 mb-1">Jarak (KM)</label>
+                  <label className="block text-[9px] sm:text-xs text-gray-600 mb-0.5 sm:mb-1">Jarak (KM)</label>
                   <input 
                     type="number" 
                     min="1" 
                     value={distance} 
                     onChange={(e) => setDistance(Number(e.target.value))}
-                    className="w-full border-gray-300 rounded p-1 border text-xs"
+                    className="w-full border-gray-300 rounded p-1 border text-[10px] sm:text-xs"
                   />
                 </div>
                 {selectedCourier && (
-                  <div className="pt-2 border-t border-gray-200 mt-2 font-medium text-emerald-700">
+                  <div className="pt-1.5 sm:pt-2 border-t border-gray-200 mt-1.5 sm:mt-2 font-medium text-emerald-700 text-[10px] sm:text-sm">
                     Ongkir: Rp {(selectedCourier.baseRate + (selectedCourier.perKmRate * distance)).toLocaleString('id-ID')}
                   </div>
                 )}
@@ -124,29 +124,31 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </div>
         )}
         
-        <div className="flex items-center justify-between mt-auto pt-3 sm:pt-4 border-t border-gray-50">
-          <div className="text-[10px] sm:text-xs text-gray-500 truncate max-w-[40%]">
-            Penjual: <Link to={`/seller/${product.sellerId}`} className="font-medium text-emerald-600 hover:text-emerald-700 hover:underline">{product.sellerName}</Link>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-auto pt-2 sm:pt-4 border-t border-gray-50 gap-2 sm:gap-0">
+          <div className="text-[9px] sm:text-xs text-gray-500 truncate w-full sm:max-w-[40%] flex items-center gap-1">
+            <Store className="h-3 w-3 sm:hidden" />
+            <span className="hidden sm:inline">Penjual: </span>
+            <Link to={`/seller/${product.sellerId}`} className="font-medium text-emerald-600 hover:text-emerald-700 hover:underline truncate">{product.sellerName}</Link>
           </div>
           
-          <div className="flex gap-1.5 sm:gap-2">
+          <div className="flex gap-1.5 sm:gap-2 w-full sm:w-auto">
             <button 
               onClick={() => {
                 addToCart(product);
                 alert('Produk ditambahkan ke keranjang!');
               }}
-              className="flex items-center justify-center border border-emerald-500 text-emerald-600 hover:bg-emerald-50 p-1 sm:p-1.5 rounded transition-colors"
+              className="flex-1 sm:flex-none flex items-center justify-center border border-emerald-500 text-emerald-600 hover:bg-emerald-50 p-1 sm:p-1.5 rounded transition-colors"
               title="Tambah ke Keranjang"
             >
               <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </button>
             <button 
               onClick={handleWhatsApp}
-              className="flex items-center gap-1 sm:gap-1.5 bg-[#25D366] hover:bg-[#1DA851] text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded text-xs sm:text-sm font-medium transition-colors"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-1.5 bg-[#25D366] hover:bg-[#1DA851] text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded text-[10px] sm:text-sm font-medium transition-colors"
             >
               <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">Pesan WA</span>
-              <span className="sm:hidden">WA</span>
+              <span className="sm:hidden">Chat</span>
             </button>
           </div>
         </div>

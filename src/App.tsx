@@ -12,6 +12,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import ProductDetail from './pages/ProductDetail';
 import SellerProfile from './pages/SellerProfile';
 import Cart from './pages/Cart';
+import Notifications from './pages/Notifications';
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
                 <Route path="/products/:id" element={<ProductDetail />} />
                 <Route path="/seller/:id" element={<SellerProfile />} />
                 <Route path="/cart" element={<Cart />} />
+                <Route path="/notifications" element={<Notifications />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/seller" element={<SellerDashboard />} />
