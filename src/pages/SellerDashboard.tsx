@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/firebase';
-import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc, updateDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { Product } from '../types';
-import { Plus, Trash2, Edit, Save, X } from 'lucide-react';
+import { Plus, Trash2, Edit, Save, X, Store } from 'lucide-react';
 
 const SellerDashboard: React.FC = () => {
   const { userProfile } = useAuth();
@@ -93,6 +94,21 @@ const SellerDashboard: React.FC = () => {
         createdAt: serverTimestamp()
       });
       
+      // Send notification
+      try {
+        const notifRef = doc(collection(db, 'notifications'));
+        await setDoc(notifRef, {
+          id: notifRef.id,
+          userId: userProfile.uid,
+          title: 'Produk Berhasil Ditambahkan',
+          message: `Produk "${newProduct.name}" sekarang tersedia di toko Anda.`,
+          isRead: false,
+          createdAt: serverTimestamp()
+        });
+      } catch (err) {
+        console.error("Failed to send notification", err);
+      }
+      
       setIsAddingProduct(false);
       setNewProduct({ name: '', description: '', price: '', stock: '', category: 'Sayur', imageUrl: '' });
       alert('Produk berhasil ditambahkan!');
@@ -147,8 +163,59 @@ const SellerDashboard: React.FC = () => {
     }
   };
 
-  if (!userProfile || (userProfile.role !== 'seller' && userProfile.role !== 'admin')) {
-    return <div className="p-8 text-center">Akses ditolak. Halaman ini hanya untuk penjual dan admin.</div>;
+  const handleUpgradeToSeller = async () => {
+    if (!userProfile?.uid) return;
+    try {
+      await updateDoc(doc(db, 'users', userProfile.uid), {
+        role: 'seller'
+      });
+      
+      // Send notification
+      try {
+        const notifRef = doc(collection(db, 'notifications'));
+        await setDoc(notifRef, {
+          id: notifRef.id,
+          userId: userProfile.uid,
+          title: 'Toko Berhasil Dibuka!',
+          message: 'Selamat! Anda sekarang adalah penjual. Silakan lengkapi profil toko Anda dan tambahkan produk pertama Anda.',
+          isRead: false,
+          createdAt: serverTimestamp()
+        });
+      } catch (err) {
+        console.error("Failed to send notification", err);
+      }
+      
+      alert('Selamat! Anda sekarang adalah penjual. Silakan lengkapi profil toko Anda.');
+    } catch (error) {
+      console.error("Error upgrading to seller", error);
+      alert('Gagal membuka toko.');
+    }
+  };
+
+  if (!userProfile) {
+    return <Navigate to="/login" />;
+  }
+
+  if (userProfile.role === 'buyer') {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-2xl shadow-sm text-center max-w-md w-full border border-gray-100">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-100 mb-4">
+            <Store className="h-8 w-8 text-emerald-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Buka Toko Anda</h2>
+          <p className="text-gray-600 mb-6">
+            Mulai berjualan dan jangkau lebih banyak pembeli di DesaMart. Gratis dan mudah!
+          </p>
+          <button
+            onClick={handleUpgradeToSeller}
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
+          >
+            Daftar Sebagai Penjual
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (

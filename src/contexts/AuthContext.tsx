@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth, db, signInWithGoogle, logout } from '../lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection } from 'firebase/firestore';
 import { UserProfile, Role } from '../types';
 
 interface AuthContextType {
@@ -82,6 +82,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           };
           await setDoc(docRef, newProfile);
           setUserProfile(newProfile);
+
+          // Send welcome notification
+          try {
+            const notifRef = doc(collection(db, 'notifications'));
+            await setDoc(notifRef, {
+              id: notifRef.id,
+              userId: user.uid,
+              title: 'Selamat Datang di DesaMart!',
+              message: 'Terima kasih telah bergabung. Mulai jelajahi produk-produk desa terbaik kami.',
+              isRead: false,
+              createdAt: serverTimestamp()
+            });
+          } catch (err) {
+            console.error("Failed to send welcome notification", err);
+          }
         } else {
           const data = docSnap.data() as UserProfile;
           if (user.email === 'altamedia7@gmail.com' && data.role !== 'admin') {

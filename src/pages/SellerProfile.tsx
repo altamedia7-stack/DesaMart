@@ -1,18 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Product, UserProfile } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 import ProductCard from '../components/ProductCard';
-import { Store, MapPin, MessageCircle, ArrowLeft, Star, Users, Package, Search, ChevronRight } from 'lucide-react';
+import { Store, MapPin, MessageCircle, ArrowLeft, Star, Users, Package, Search, ChevronRight, Check } from 'lucide-react';
 
 const SellerProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [seller, setSeller] = useState<UserProfile | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'home' | 'products'>('products');
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'terkait' | 'terbaru' | 'terlaris' | 'harga_asc' | 'harga_desc'>('terkait');
 
   useEffect(() => {
     const fetchSellerData = async () => {
@@ -47,6 +53,44 @@ const SellerProfile: React.FC = () => {
     fetchSellerData();
   }, [id]);
 
+  useEffect(() => {
+    if (!id) return;
+    
+    const followersRef = collection(db, 'users', id, 'followers');
+    const unsubscribeFollowers = onSnapshot(followersRef, (snapshot) => {
+      setFollowerCount(snapshot.size);
+      if (currentUser) {
+        const isUserFollowing = snapshot.docs.some(doc => doc.id === currentUser.uid);
+        setIsFollowing(isUserFollowing);
+      } else {
+        setIsFollowing(false);
+      }
+    });
+
+    return () => unsubscribeFollowers();
+  }, [id, currentUser]);
+
+  const handleFollow = async () => {
+    if (!currentUser) {
+      navigate('/login');
+      return;
+    }
+    if (!id) return;
+
+    const followerDocRef = doc(db, 'users', id, 'followers', currentUser.uid);
+    try {
+      if (isFollowing) {
+        await deleteDoc(followerDocRef);
+      } else {
+        await setDoc(followerDocRef, {
+          followedAt: new Date()
+        });
+      }
+    } catch (error) {
+      console.error("Error toggling follow:", error);
+    }
+  };
+
   const handleWhatsApp = () => {
     if (!seller || !seller.whatsapp) return;
     let phone = seller.whatsapp;
@@ -57,6 +101,26 @@ const SellerProfile: React.FC = () => {
     const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
   };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      setActiveTab('products');
+    }
+  };
+
+  const filteredAndSortedProducts = [...products]
+    .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    .sort((a, b) => {
+      if (sortBy === 'terbaru') {
+        return (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0);
+      } else if (sortBy === 'harga_asc') {
+        return a.price - b.price;
+      } else if (sortBy === 'harga_desc') {
+        return b.price - a.price;
+      }
+      return 0;
+    });
 
   if (loading) {
     return (
@@ -85,15 +149,16 @@ const SellerProfile: React.FC = () => {
         <button onClick={() => navigate(-1)} className="mr-3">
           <ArrowLeft className="h-6 w-6" />
         </button>
-        <div className="flex-1 bg-white/20 rounded-sm flex items-center px-3 py-1.5">
+        <form onSubmit={handleSearchSubmit} className="flex-1 bg-white/20 rounded-sm flex items-center px-3 py-1.5">
           <Search className="h-4 w-4 text-white/80 mr-2" />
           <input 
             type="text" 
             placeholder={`Cari di toko ${seller.name}`} 
             className="bg-transparent text-white placeholder-white/80 outline-none text-sm w-full"
-            disabled
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
-        </div>
+        </form>
       </div>
 
       {/* Desktop Back Button */}
@@ -143,8 +208,15 @@ const SellerProfile: React.FC = () => {
 
               {/* Action Buttons (Desktop) */}
               <div className="hidden sm:flex gap-3 pb-1">
-                <button className="border border-white text-white hover:bg-white/20 px-6 py-2 rounded-sm font-medium transition flex items-center gap-2">
-                  <span className="text-lg leading-none">+</span> Ikuti
+                <button 
+                  onClick={handleFollow}
+                  className={`border border-white px-6 py-2 rounded-sm font-medium transition flex items-center gap-2 ${isFollowing ? 'bg-white text-emerald-600' : 'text-white hover:bg-white/20'}`}
+                >
+                  {isFollowing ? (
+                    <><Check className="h-4 w-4" /> Mengikuti</>
+                  ) : (
+                    <><span className="text-lg leading-none">+</span> Ikuti</>
+                  )}
                 </button>
                 {seller.whatsapp && (
                   <button 
@@ -161,8 +233,15 @@ const SellerProfile: React.FC = () => {
 
           {/* Action Buttons (Mobile) */}
           <div className="sm:hidden flex p-3 gap-2 border-b border-gray-100">
-            <button className="flex-1 border border-emerald-600 text-emerald-600 py-1.5 rounded-sm text-sm font-medium flex items-center justify-center gap-1">
-              <span className="text-base leading-none">+</span> Ikuti
+            <button 
+              onClick={handleFollow}
+              className={`flex-1 border border-emerald-600 py-1.5 rounded-sm text-sm font-medium flex items-center justify-center gap-1 ${isFollowing ? 'bg-emerald-600 text-white' : 'text-emerald-600'}`}
+            >
+              {isFollowing ? (
+                <><Check className="h-4 w-4" /> Mengikuti</>
+              ) : (
+                <><span className="text-base leading-none">+</span> Ikuti</>
+              )}
             </button>
             {seller.whatsapp && (
               <button 
@@ -190,7 +269,7 @@ const SellerProfile: React.FC = () => {
                 <Users className="h-4 w-4" />
                 <span className="hidden sm:inline">Pengikut:</span>
               </div>
-              <span className="font-bold text-emerald-600">1,2RB</span>
+              <span className="font-bold text-emerald-600">{followerCount >= 1000 ? (followerCount / 1000).toFixed(1) + 'RB' : followerCount}</span>
               <span className="sm:hidden text-xs text-gray-500">Pengikut</span>
             </div>
             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
@@ -244,28 +323,49 @@ const SellerProfile: React.FC = () => {
           </div>
         ) : (
           <div>
-            {/* Filter/Sort Bar (Visual only for Shopee look) */}
-            <div className="bg-white p-3 mb-2 sm:mb-4 sm:rounded-lg sm:shadow-sm flex items-center justify-between text-sm">
+            {/* Filter/Sort Bar */}
+            <div className="bg-white p-3 mb-2 sm:mb-4 sm:rounded-lg sm:shadow-sm flex items-center justify-between text-sm overflow-x-auto whitespace-nowrap hide-scrollbar">
               <div className="flex items-center gap-4">
-                <span className="text-emerald-600 font-medium">Terkait</span>
-                <span className="text-gray-600">Terbaru</span>
-                <span className="text-gray-600">Terlaris</span>
-                <div className="flex items-center gap-1 text-gray-600">
-                  Harga <ChevronRight className="h-3 w-3 rotate-90" />
-                </div>
+                <button 
+                  onClick={() => setSortBy('terkait')}
+                  className={`${sortBy === 'terkait' ? 'text-emerald-600 font-medium' : 'text-gray-600 hover:text-emerald-600'}`}
+                >
+                  Terkait
+                </button>
+                <button 
+                  onClick={() => setSortBy('terbaru')}
+                  className={`${sortBy === 'terbaru' ? 'text-emerald-600 font-medium' : 'text-gray-600 hover:text-emerald-600'}`}
+                >
+                  Terbaru
+                </button>
+                <button 
+                  onClick={() => setSortBy('terlaris')}
+                  className={`${sortBy === 'terlaris' ? 'text-emerald-600 font-medium' : 'text-gray-600 hover:text-emerald-600'}`}
+                >
+                  Terlaris
+                </button>
+                <button 
+                  onClick={() => setSortBy(sortBy === 'harga_asc' ? 'harga_desc' : 'harga_asc')}
+                  className={`flex items-center gap-1 ${sortBy.startsWith('harga') ? 'text-emerald-600 font-medium' : 'text-gray-600 hover:text-emerald-600'}`}
+                >
+                  Harga 
+                  <ChevronRight className={`h-3 w-3 transition-transform ${sortBy === 'harga_desc' ? 'rotate-90' : sortBy === 'harga_asc' ? '-rotate-90' : 'rotate-90'}`} />
+                </button>
               </div>
             </div>
 
             {/* Product Grid */}
-            {products.length === 0 ? (
+            {filteredAndSortedProducts.length === 0 ? (
               <div className="bg-white sm:rounded-2xl sm:shadow-sm p-12 text-center">
                 <Store className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Belum ada produk</h3>
-                <p className="text-gray-500 text-sm">Penjual ini belum menambahkan produk apa pun.</p>
+                <p className="text-gray-500 text-sm">
+                  {searchQuery ? 'Tidak ada produk yang sesuai dengan pencarian Anda.' : 'Penjual ini belum menambahkan produk apa pun.'}
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-4 px-2 sm:px-0">
-                {products.map(product => (
+                {filteredAndSortedProducts.map(product => (
                   <ProductCard key={product.id} product={product} />
                 ))}
               </div>

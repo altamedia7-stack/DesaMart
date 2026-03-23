@@ -43,6 +43,20 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["name", "baseRate", "perKmRate", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "A notification for a user",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "isRead": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "title", "message", "isRead", "createdAt"]
     }
   },
   "firestore": {
@@ -57,6 +71,10 @@
     "/couriers/{courierId}": {
       "schema": { "$ref": "#/entities/Courier" },
       "description": "Stores courier services and rates"
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/Notification" },
+      "description": "Stores user notifications"
     }
   }
 }

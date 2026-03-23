@@ -2,10 +2,12 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, Bell, User, Store } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotification } from '../contexts/NotificationContext';
 
 const BottomNav: React.FC = () => {
   const location = useLocation();
   const { currentUser, userProfile } = useAuth();
+  const { unreadCount } = useNotification();
 
   const isProductDetail = location.pathname.startsWith('/products/');
 
@@ -41,6 +43,11 @@ const BottomNav: React.FC = () => {
         >
           <div className="relative">
             <Bell className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1.5 -right-2 bg-red-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full border border-white">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
           </div>
           <span className="text-[10px] font-medium">Notifikasi</span>
         </Link>

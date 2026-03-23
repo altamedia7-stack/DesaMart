@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
+import { useNotification } from '../contexts/NotificationContext';
 import { ShoppingBag, LogOut, User, Store, Shield, ShoppingCart, Search, Bell, HelpCircle, Globe, Facebook, Instagram } from 'lucide-react';
 
 const Navbar: React.FC = () => {
   const { currentUser, userProfile, logoutUser } = useAuth();
   const { totalItems } = useCart();
+  const { unreadCount } = useNotification();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -70,7 +72,7 @@ const Navbar: React.FC = () => {
               <>
                 <Link to="/seller" className="hover:text-emerald-200 transition">Seller Centre</Link>
                 <span className="text-emerald-400/50">|</span>
-                <Link to="/register" className="hover:text-emerald-200 transition">Mulai Berjualan</Link>
+                <Link to={currentUser ? "/seller" : "/register"} className="hover:text-emerald-200 transition">Mulai Berjualan</Link>
               </>
             )}
             <span className="text-emerald-400/50">|</span>
@@ -84,9 +86,14 @@ const Navbar: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5 hover:text-emerald-200 transition cursor-pointer">
+            <Link to="/notifications" className="flex items-center gap-1.5 hover:text-emerald-200 transition cursor-pointer relative">
               <Bell className="h-4 w-4" /> Notifikasi
-            </div>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-emerald-600">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </Link>
             <div className="flex items-center gap-1.5 hover:text-emerald-200 transition cursor-pointer">
               <HelpCircle className="h-4 w-4" /> Bantuan
             </div>

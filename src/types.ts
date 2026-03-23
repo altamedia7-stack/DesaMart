@@ -46,3 +46,12 @@ export interface CartItem {
   product: Product;
   quantity: number;
 }
+
+export interface Notification {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  isRead: boolean;
+  createdAt: any; // Firestore Timestamp
+}

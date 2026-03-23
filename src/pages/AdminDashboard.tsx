@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/firebase';
-import { collection, query, onSnapshot, addDoc, deleteDoc, doc, updateDoc, serverTimestamp, getDocs } from 'firebase/firestore';
+import { collection, query, onSnapshot, addDoc, deleteDoc, doc, updateDoc, serverTimestamp, getDocs, setDoc } from 'firebase/firestore';
 import { Courier, UserProfile, Product } from '../types';
 import { Truck, Trash2, Plus, Users, X, Package, Settings, Edit, Save } from 'lucide-react';
 import SeedData from '../components/SeedData';
@@ -107,6 +107,22 @@ const AdminDashboard: React.FC = () => {
       await updateDoc(doc(db, 'users', userId), {
         role: newRole
       });
+      
+      // Send notification
+      try {
+        const notifRef = doc(collection(db, 'notifications'));
+        await setDoc(notifRef, {
+          id: notifRef.id,
+          userId: userId,
+          title: 'Perubahan Peran Akun',
+          message: `Peran akun Anda telah diubah menjadi ${newRole === 'seller' ? 'Penjual' : newRole === 'admin' ? 'Admin' : 'Pembeli'}.`,
+          isRead: false,
+          createdAt: serverTimestamp()
+        });
+      } catch (err) {
+        console.error("Failed to send notification", err);
+      }
+      
       alert('Peran pengguna berhasil diperbarui!');
     } catch (error) {
       console.error("Error updating user role", error);
