@@ -1,0 +1,152 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: uid
+    // Fields:
+    //   - uid: string (required)
+    //   - name: string (required)
+    //   - email: string (required)
+    //   - role: string (required, enum: ['admin', 'seller', 'buyer'])
+    //   - whatsapp: string (optional)
+    //   - address: string (optional)
+    //   - createdAt: timestamp (required)
+    //
+    // Collection: products
+    // Document ID: auto-generated
+    // Fields:
+    //   - sellerId: string (required)
+    //   - sellerName: string (required)
+    //   - sellerWhatsapp: string (required)
+    //   - name: string (required)
+    //   - description: string (required)
+    //   - price: number (required)
+    //   - category: string (required)
+    //   - imageUrl: string (required)
+    //   - createdAt: timestamp (required)
+    //
+    // Collection: couriers
+    // Document ID: auto-generated
+    // Fields:
+    //   - name: string (required)
+    //   - baseRate: number (required)
+    //   - perKmRate: number (required)
+    //   - createdAt: timestamp (required)
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "altamedia7@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isSeller() {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'seller';
+    }
+
+    function hasOnlyAllowedFields(allowedFields) {
+      return request.resource.data.keys().hasOnly(allowedFields);
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidUrl(url) {
+      return url is string && (url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+
+    // Domain Validators
+
+    function isValidUser(data) {
+      return hasOnlyAllowedFields(['uid', 'name', 'email', 'role', 'whatsapp', 'address', 'createdAt']) &&
+             data.uid is string && data.uid.size() > 0 && data.uid.size() < 128 &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.email is string && isValidEmail(data.email) &&
+             data.role in ['admin', 'seller', 'buyer'] &&
+             (!('whatsapp' in data) || (data.whatsapp is string && data.whatsapp.size() < 20)) &&
+             (!('address' in data) || (data.address is string && data.address.size() < 500)) &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidProduct(data) {
+      return hasOnlyAllowedFields(['sellerId', 'sellerName', 'sellerWhatsapp', 'name', 'description', 'price', 'category', 'imageUrl', 'createdAt']) &&
+             data.sellerId is string && data.sellerId.size() > 0 && data.sellerId.size() < 128 &&
+             data.sellerName is string && data.sellerName.size() > 0 && data.sellerName.size() < 100 &&
+             data.sellerWhatsapp is string && data.sellerWhatsapp.size() > 0 && data.sellerWhatsapp.size() < 20 &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.description is string && data.description.size() > 0 && data.description.size() < 1000 &&
+             data.price is number && data.price >= 0 &&
+             data.category is string && data.category.size() > 0 && data.category.size() < 50 &&
+             data.imageUrl is string && isValidUrl(data.imageUrl) && data.imageUrl.size() < 500 &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidCourier(data) {
+      return hasOnlyAllowedFields(['name', 'baseRate', 'perKmRate', 'createdAt']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.baseRate is number && data.baseRate >= 0 &&
+             data.perKmRate is number && data.perKmRate >= 0 &&
+             data.createdAt is timestamp;
+    }
+
+    // Rules
+
+    match /users/{userId} {
+      // Anyone can read user profiles to see seller info
+      allow read: if true;
+
+      // Users can create their own profile. Role must be 'buyer' or 'seller' unless they are admin.
+      allow create: if isAuthenticated() && isOwner(userId) && isValidUser(request.resource.data) &&
+                    request.resource.data.uid == userId &&
+                    ((request.resource.data.role in ['buyer', 'seller']) || isAdmin());
+
+      // Users can update their own profile, but cannot change their role unless they are admin.
+      allow update: if isAuthenticated() && isValidUser(request.resource.data) &&
+                    ((isOwner(userId) && request.resource.data.uid == resource.data.uid && request.resource.data.role == resource.data.role && request.resource.data.createdAt == resource.data.createdAt) || isAdmin());
+
+      allow delete: if isAdmin();
+    }
+
+    match /products/{productId} {
+      // Anyone can read products
+      allow read: if true;
+
+      // Sellers and Admins can create products
+      allow create: if isAuthenticated() && (isSeller() || isAdmin()) && isValidProduct(request.resource.data) &&
+                    (request.resource.data.sellerId == request.auth.uid || isAdmin());
+
+      // Sellers can update their own products, Admins can update any
+      allow update: if isAuthenticated() && isValidProduct(request.resource.data) &&
+                    ((request.resource.data.sellerId == resource.data.sellerId && resource.data.sellerId == request.auth.uid && request.resource.data.createdAt == resource.data.createdAt) || isAdmin());
+
+      // Sellers can delete their own products, Admins can delete any
+      allow delete: if isAuthenticated() && (resource.data.sellerId == request.auth.uid || isAdmin());
+    }
+
+    match /couriers/{courierId} {
+      // Anyone can read couriers (for shipping calculation)
+      allow read: if true;
+
+      // Only Admins can manage couriers
+      allow create: if isAdmin() && isValidCourier(request.resource.data);
+      allow update: if isAdmin() && isValidCourier(request.resource.data) && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isAdmin();
+    }
+  }
+}

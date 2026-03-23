@@ -1,0 +1,62 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user of the marketplace (buyer, seller, or admin)",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["admin", "seller", "buyer"] },
+        "whatsapp": { "type": "string" },
+        "address": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "email", "role", "createdAt"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "A product listed by a seller",
+      "type": "object",
+      "properties": {
+        "sellerId": { "type": "string" },
+        "sellerName": { "type": "string" },
+        "sellerWhatsapp": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "category": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["sellerId", "sellerName", "sellerWhatsapp", "name", "description", "price", "category", "imageUrl", "createdAt"]
+    },
+    "Courier": {
+      "title": "Courier",
+      "description": "A courier service for delivery",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "baseRate": { "type": "number" },
+        "perKmRate": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "baseRate", "perKmRate", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Stores user profiles"
+    },
+    "/products/{productId}": {
+      "schema": { "$ref": "#/entities/Product" },
+      "description": "Stores product listings"
+    },
+    "/couriers/{courierId}": {
+      "schema": { "$ref": "#/entities/Courier" },
+      "description": "Stores courier services and rates"
+    }
+  }
+}
