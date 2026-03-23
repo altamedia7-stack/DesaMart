@@ -29,6 +29,7 @@ const AdminDashboard: React.FC = () => {
     description: '',
     price: '',
     stock: '',
+    discountPercentage: '',
     category: 'Sayur',
     imageUrl: ''
   });
@@ -149,6 +150,7 @@ const AdminDashboard: React.FC = () => {
       description: product.description,
       price: product.price.toString(),
       stock: product.stock !== undefined ? product.stock.toString() : '',
+      discountPercentage: product.discountPercentage !== undefined ? product.discountPercentage.toString() : '0',
       category: product.category,
       imageUrl: product.imageUrl
     });
@@ -161,6 +163,7 @@ const AdminDashboard: React.FC = () => {
         description: editProduct.description,
         price: Number(editProduct.price),
         stock: Number(editProduct.stock),
+        discountPercentage: Number(editProduct.discountPercentage),
         category: editProduct.category,
         imageUrl: editProduct.imageUrl
       });
@@ -294,12 +297,32 @@ const AdminDashboard: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       {editingProductId === product.id ? (
                         <div className="space-y-2">
-                          <input type="number" value={editProduct.price} onChange={e => setEditProduct({...editProduct, price: e.target.value})} className="w-full border border-gray-300 rounded p-1 text-sm" placeholder="Harga" />
-                          <input type="number" value={editProduct.stock} onChange={e => setEditProduct({...editProduct, stock: e.target.value})} className="w-full border border-gray-300 rounded p-1 text-sm" placeholder="Stok" />
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-400 w-12">Harga:</span>
+                            <input type="number" value={editProduct.price} onChange={e => setEditProduct({...editProduct, price: e.target.value})} className="w-full border border-gray-300 rounded p-1 text-sm" placeholder="Harga" />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-400 w-12">Stok:</span>
+                            <input type="number" value={editProduct.stock} onChange={e => setEditProduct({...editProduct, stock: e.target.value})} className="w-full border border-gray-300 rounded p-1 text-sm" placeholder="Stok" />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-400 w-12">Diskon:</span>
+                            <input type="number" min="0" max="100" value={editProduct.discountPercentage} onChange={e => setEditProduct({...editProduct, discountPercentage: e.target.value})} className="w-full border border-gray-300 rounded p-1 text-sm" placeholder="Diskon %" />
+                          </div>
                         </div>
                       ) : (
                         <div>
-                          <div className="text-sm text-gray-900 font-medium">Rp {product.price.toLocaleString('id-ID')}</div>
+                          <div className="text-sm text-gray-900 font-medium">
+                            {product.discountPercentage && product.discountPercentage > 0 ? (
+                              <div className="flex flex-col">
+                                <span className="text-xs text-red-500 line-through">Rp {product.price.toLocaleString('id-ID')}</span>
+                                <span>Rp {(product.price * (1 - product.discountPercentage / 100)).toLocaleString('id-ID')}</span>
+                                <span className="text-[10px] bg-red-100 text-red-600 px-1 rounded w-fit">-{product.discountPercentage}%</span>
+                              </div>
+                            ) : (
+                              <span>Rp {product.price.toLocaleString('id-ID')}</span>
+                            )}
+                          </div>
                           <div className="text-xs text-gray-500">Stok: {product.stock !== undefined ? product.stock : '-'}</div>
                         </div>
                       )}

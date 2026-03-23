@@ -39,7 +39,10 @@ const Cart: React.FC = () => {
       // Create order in Firestore
       let sellerTotal = 0;
       sellerGroup.items.forEach(item => {
-        sellerTotal += item.product.price * item.quantity;
+        const price = item.product.discountPercentage && item.product.discountPercentage > 0
+          ? item.product.price * (1 - item.product.discountPercentage / 100)
+          : item.product.price;
+        sellerTotal += price * item.quantity;
       });
 
       const path = 'orders';
@@ -68,7 +71,10 @@ const Cart: React.FC = () => {
       let message = `Halo ${sellerGroup.sellerName}, saya ingin memesan produk berikut dari DesaMart:\n\n`;
       
       sellerGroup.items.forEach((item, index) => {
-        const itemTotal = item.product.price * item.quantity;
+        const price = item.product.discountPercentage && item.product.discountPercentage > 0
+          ? item.product.price * (1 - item.product.discountPercentage / 100)
+          : item.product.price;
+        const itemTotal = price * item.quantity;
         message += `${index + 1}. ${item.product.name}\n`;
         message += `   Jumlah: ${item.quantity}\n`;
         message += `   Harga: Rp ${itemTotal.toLocaleString('id-ID')}\n\n`;
@@ -165,9 +171,23 @@ const Cart: React.FC = () => {
                         <Link to={`/products/${item.product.id}`} className="font-bold text-lg text-gray-900 hover:text-emerald-600 transition line-clamp-2 mb-1">
                           {item.product.name}
                         </Link>
-                        <p className="font-bold text-emerald-600 mb-4">
-                          Rp {item.product.price.toLocaleString('id-ID')}
-                        </p>
+                        <div className="mb-4">
+                          {item.product.discountPercentage && item.product.discountPercentage > 0 ? (
+                            <div className="flex flex-col">
+                              <span className="text-xs text-gray-400 line-through">Rp {item.product.price.toLocaleString('id-ID')}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-emerald-600">
+                                  Rp {(item.product.price * (1 - item.product.discountPercentage / 100)).toLocaleString('id-ID')}
+                                </span>
+                                <span className="text-[10px] bg-red-100 text-red-600 px-1 rounded font-bold">-{item.product.discountPercentage}%</span>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="font-bold text-emerald-600">
+                              Rp {item.product.price.toLocaleString('id-ID')}
+                            </p>
+                          )}
+                        </div>
                         
                         <div className="flex items-center justify-between">
                           <div className="flex items-center border border-gray-200 rounded-lg bg-white">

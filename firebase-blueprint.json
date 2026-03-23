@@ -28,6 +28,7 @@
         "price": { "type": "number" },
         "category": { "type": "string" },
         "imageUrl": { "type": "string" },
+        "discountPercentage": { "type": "number" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["sellerId", "sellerName", "sellerWhatsapp", "name", "description", "price", "category", "imageUrl", "createdAt"]

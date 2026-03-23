@@ -112,7 +112,11 @@ const ProductDetail: React.FC = () => {
       phone = '62' + phone.substring(1);
     }
     
-    let message = `Halo, saya tertarik dengan produk ${product.name} yang dijual dengan harga Rp${product.price.toLocaleString('id-ID')}. Apakah masih tersedia?`;
+    const discountedPrice = product.discountPercentage && product.discountPercentage > 0 
+      ? product.price * (1 - product.discountPercentage / 100) 
+      : product.price;
+
+    let message = `Halo, saya tertarik dengan produk ${product.name} yang dijual dengan harga Rp${discountedPrice.toLocaleString('id-ID')}. Apakah masih tersedia?`;
     
     if (selectedCourier && showShipping) {
       const shippingCost = selectedCourier.baseRate + (selectedCourier.perKmRate * distance);
@@ -176,6 +180,11 @@ const ProductDetail: React.FC = () => {
           
           {/* Product Image */}
           <div className="w-full md:w-1/2 aspect-square relative bg-white">
+            {product.discountPercentage && product.discountPercentage > 0 && (
+              <div className="absolute top-4 left-4 z-10 bg-red-500 text-white text-xs sm:text-sm font-bold px-3 py-1 rounded-full shadow-lg animate-bounce">
+                DISKON {product.discountPercentage}%
+              </div>
+            )}
             <img 
               src={product.imageUrl || 'https://picsum.photos/seed/product/800/800'} 
               alt={product.name} 
@@ -189,9 +198,23 @@ const ProductDetail: React.FC = () => {
             
             {/* Price & Title Block */}
             <div className="bg-white p-4 sm:p-6 mb-2 sm:mb-0">
-              <p className="text-2xl sm:text-3xl font-bold text-emerald-600 mb-2">
-                Rp {product.price.toLocaleString('id-ID')}
-              </p>
+              <div className="flex flex-col mb-2">
+                {product.discountPercentage && product.discountPercentage > 0 ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm sm:text-base text-gray-400 line-through">Rp {product.price.toLocaleString('id-ID')}</span>
+                      <span className="bg-red-100 text-red-600 text-[10px] sm:text-xs font-bold px-1.5 py-0.5 rounded">-{product.discountPercentage}%</span>
+                    </div>
+                    <p className="text-2xl sm:text-4xl font-black text-emerald-600">
+                      Rp {(product.price * (1 - product.discountPercentage / 100)).toLocaleString('id-ID')}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-2xl sm:text-3xl font-bold text-emerald-600">
+                    Rp {product.price.toLocaleString('id-ID')}
+                  </p>
+                )}
+              </div>
               <h1 className="text-lg sm:text-xl font-medium text-gray-900 leading-snug mb-3">
                 {product.name}
               </h1>

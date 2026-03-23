@@ -38,7 +38,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       phone = '62' + phone.substring(1);
     }
     
-    let message = `Halo, saya tertarik dengan produk ${product.name} yang dijual dengan harga Rp${product.price.toLocaleString('id-ID')}. Apakah masih tersedia?`;
+    const discountedPrice = product.discountPercentage && product.discountPercentage > 0 
+      ? product.price * (1 - product.discountPercentage / 100) 
+      : product.price;
+
+    let message = `Halo, saya tertarik dengan produk ${product.name} yang dijual dengan harga Rp${discountedPrice.toLocaleString('id-ID')}. Apakah masih tersedia?`;
     
     if (selectedCourier && showShipping) {
       const shippingCost = selectedCourier.baseRate + (selectedCourier.perKmRate * distance);
@@ -80,6 +84,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           />
         </Link>
         <div className="absolute top-1 right-1 sm:top-2 sm:right-2 flex flex-col gap-1 items-end">
+          {product.discountPercentage && product.discountPercentage > 0 && (
+            <div className="bg-red-500 text-white text-[9px] sm:text-xs font-bold px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-sm sm:rounded-full pointer-events-none shadow-sm animate-pulse">
+              -{product.discountPercentage}%
+            </div>
+          )}
           <div className="bg-emerald-500 text-white text-[9px] sm:text-xs font-bold px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-sm sm:rounded-full pointer-events-none shadow-sm">
             {product.category}
           </div>
@@ -98,7 +107,18 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <h3 className="text-xs sm:text-lg font-medium sm:font-bold text-gray-800 line-clamp-2 mb-1 sm:mb-2 leading-tight">{product.name}</h3>
         </Link>
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-1 sm:mb-3 gap-1 sm:gap-0">
-          <p className="text-emerald-600 font-bold text-sm sm:text-xl leading-none">Rp {product.price.toLocaleString('id-ID')}</p>
+          <div className="flex flex-col">
+            {product.discountPercentage && product.discountPercentage > 0 ? (
+              <>
+                <p className="text-gray-400 line-through text-[10px] sm:text-sm">Rp {product.price.toLocaleString('id-ID')}</p>
+                <p className="text-emerald-600 font-bold text-sm sm:text-xl leading-none">
+                  Rp {(product.price * (1 - product.discountPercentage / 100)).toLocaleString('id-ID')}
+                </p>
+              </>
+            ) : (
+              <p className="text-emerald-600 font-bold text-sm sm:text-xl leading-none">Rp {product.price.toLocaleString('id-ID')}</p>
+            )}
+          </div>
           <span className="text-[9px] sm:text-xs font-medium bg-gray-100 text-gray-600 px-1 py-0.5 sm:px-2 sm:py-1 rounded w-fit">
             Stok: {product.stock !== undefined ? product.stock : '-'}
           </span>

@@ -118,15 +118,17 @@ service cloud.firestore {
     }
 
     function isValidProduct(data) {
-      return hasOnlyAllowedFields(['sellerId', 'sellerName', 'sellerWhatsapp', 'name', 'description', 'price', 'category', 'imageUrl', 'createdAt']) &&
+      return hasOnlyAllowedFields(['sellerId', 'sellerName', 'sellerWhatsapp', 'name', 'description', 'price', 'stock', 'category', 'imageUrl', 'discountPercentage', 'createdAt']) &&
              data.sellerId is string && data.sellerId.size() > 0 && data.sellerId.size() < 128 &&
              data.sellerName is string && data.sellerName.size() > 0 && data.sellerName.size() < 100 &&
              data.sellerWhatsapp is string && data.sellerWhatsapp.size() > 0 && data.sellerWhatsapp.size() < 20 &&
              data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
              data.description is string && data.description.size() > 0 && data.description.size() < 1000 &&
              data.price is number && data.price >= 0 &&
+             (!('stock' in data) || (data.stock is number && data.stock >= 0)) &&
              data.category is string && data.category.size() > 0 && data.category.size() < 50 &&
              data.imageUrl is string && isValidUrl(data.imageUrl) && data.imageUrl.size() < 500 &&
+             (!('discountPercentage' in data) || (data.discountPercentage is number && data.discountPercentage >= 0 && data.discountPercentage <= 100)) &&
              data.createdAt is timestamp;
     }
 

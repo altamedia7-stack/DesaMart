@@ -22,6 +22,7 @@ export interface Product {
   stock?: number;
   category: string;
   imageUrl: string;
+  discountPercentage?: number;
   createdAt: any; // Firestore Timestamp
 }
 
