@@ -28,35 +28,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    let unsubscribeProfile: (() => void) | null = null;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
       if (user) {
         const docRef = doc(db, 'users', user.uid);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data() as UserProfile;
-          // Auto-upgrade to admin if email matches
-          if (user.email === 'altamedia7@gmail.com' && data.role !== 'admin') {
-            try {
-              await updateDoc(docRef, { role: 'admin' });
-              data.role = 'admin';
-            } catch (err) {
-              console.error("Failed to auto-upgrade admin", err);
+        
+        // Use onSnapshot for real-time profile updates
+        unsubscribeProfile = onSnapshot(docRef, async (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data() as UserProfile;
+            // Auto-upgrade to admin if email matches
+            if (user.email === 'altamedia7@gmail.com' && data.role !== 'admin') {
+              try {
+                await updateDoc(docRef, { role: 'admin' });
+                data.role = 'admin';
+              } catch (err) {
+                console.error("Failed to auto-upgrade admin", err);
+              }
             }
+            setUserProfile(data);
+          } else {
+            setUserProfile(null);
           }
-          setUserProfile(data);
-        } else {
-          // If profile doesn't exist, we might need to create it.
-          // But usually we do this during registration.
-          setUserProfile(null);
-        }
+          setLoading(false);
+        }, (error) => {
+          console.error("Profile listener error", error);
+          setLoading(false);
+        });
       } else {
         setUserProfile(null);
+        if (unsubscribeProfile) {
+          unsubscribeProfile();
+          unsubscribeProfile = null;
+        }
+        setLoading(false);
       }
-      setLoading(false);
     });
 
-    return unsubscribe;
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeProfile) {
+        unsubscribeProfile();
+      }
+    };
   }, []);
 
   const loginWithGoogle = async (role: Role = 'buyer') => {
