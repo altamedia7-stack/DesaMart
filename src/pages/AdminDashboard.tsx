@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { db } from '../lib/firebase';
+import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, query, onSnapshot, addDoc, deleteDoc, doc, updateDoc, serverTimestamp, getDocs, setDoc } from 'firebase/firestore';
 import { Courier, UserProfile, Product, ProductVariant } from '../types';
 import { Truck, Trash2, Plus, Users, X, Package, Settings, Edit, Save, Layers } from 'lucide-react';
@@ -47,6 +47,8 @@ const AdminDashboard: React.FC = () => {
         data.push({ id: doc.id, ...doc.data() } as Courier);
       });
       setCouriers(data);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'couriers');
     });
 
     const usersQ = query(collection(db, 'users'));
@@ -56,6 +58,8 @@ const AdminDashboard: React.FC = () => {
         data.push({ uid: doc.id, ...doc.data() } as UserProfile);
       });
       setUsers(data);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'users');
     });
 
     const productsQ = query(collection(db, 'products'));
@@ -65,6 +69,9 @@ const AdminDashboard: React.FC = () => {
         data.push({ id: doc.id, ...doc.data() } as Product);
       });
       setProducts(data);
+      setLoading(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'products');
       setLoading(false);
     });
 
@@ -88,8 +95,7 @@ const AdminDashboard: React.FC = () => {
       setNewCourier({ name: '', baseRate: '', perKmRate: '' });
       alert('Kurir berhasil ditambahkan!');
     } catch (error) {
-      console.error("Error adding courier", error);
-      alert('Gagal menambahkan kurir.');
+      handleFirestoreError(error, OperationType.WRITE, 'couriers');
     }
   };
 
@@ -98,8 +104,7 @@ const AdminDashboard: React.FC = () => {
       try {
         await deleteDoc(doc(db, 'couriers', courierId));
       } catch (error) {
-        console.error("Error deleting courier", error);
-        alert('Gagal menghapus kurir.');
+        handleFirestoreError(error, OperationType.DELETE, `couriers/${courierId}`);
       }
     }
   };
@@ -127,8 +132,7 @@ const AdminDashboard: React.FC = () => {
       
       alert('Peran pengguna berhasil diperbarui!');
     } catch (error) {
-      console.error("Error updating user role", error);
-      alert('Gagal memperbarui peran pengguna.');
+      handleFirestoreError(error, OperationType.UPDATE, `users/${userId}`);
     }
   };
 
@@ -138,8 +142,7 @@ const AdminDashboard: React.FC = () => {
         await deleteDoc(doc(db, 'products', productId));
         alert('Produk berhasil dihapus.');
       } catch (error) {
-        console.error("Error deleting product", error);
-        alert('Gagal menghapus produk.');
+        handleFirestoreError(error, OperationType.DELETE, `products/${productId}`);
       }
     }
   };
@@ -173,8 +176,7 @@ const AdminDashboard: React.FC = () => {
       setEditingProductId(null);
       alert('Produk berhasil diperbarui!');
     } catch (error) {
-      console.error("Error updating product", error);
-      alert('Gagal memperbarui produk.');
+      handleFirestoreError(error, OperationType.UPDATE, `products/${productId}`);
     }
   };
 

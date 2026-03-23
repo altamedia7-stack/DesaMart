@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, collection, query, where, getDocs, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { Product, UserProfile } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import ProductCard from '../components/ProductCard';
@@ -44,7 +44,7 @@ const SellerProfile: React.FC = () => {
         });
         setProducts(productsData);
       } catch (error) {
-        console.error("Error fetching seller data:", error);
+        handleFirestoreError(error, OperationType.LIST, 'products');
       } finally {
         setLoading(false);
       }
@@ -65,6 +65,8 @@ const SellerProfile: React.FC = () => {
       } else {
         setIsFollowing(false);
       }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, `users/${id}/followers`);
     });
 
     return () => unsubscribeFollowers();
@@ -87,7 +89,7 @@ const SellerProfile: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error("Error toggling follow:", error);
+      handleFirestoreError(error, OperationType.WRITE, `users/${id}/followers/${currentUser.uid}`);
     }
   };
 

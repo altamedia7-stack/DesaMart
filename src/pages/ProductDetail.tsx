@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { doc, getDoc, collection, getDocs, query, where, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { Product, Courier, Review, ProductVariant } from '../types';
 import { MessageCircle, Truck, ArrowLeft, Store, Star, ShoppingCart, ChevronRight, Layers } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -44,7 +44,7 @@ const ProductDetail: React.FC = () => {
           setProduct(null);
         }
       } catch (error) {
-        console.error("Error fetching product:", error);
+        handleFirestoreError(error, OperationType.GET, `products/${id}`);
       } finally {
         setLoading(false);
       }
@@ -81,6 +81,8 @@ const ProductDetail: React.FC = () => {
         reviewsData.push({ id: doc.id, ...doc.data() } as Review);
       });
       setReviews(reviewsData);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'reviews');
     });
     return () => unsubscribe();
   }, [id]);
@@ -102,8 +104,7 @@ const ProductDetail: React.FC = () => {
       setNewReviewText('');
       setNewRating(5);
     } catch (error) {
-      console.error("Error adding review:", error);
-      alert("Gagal mengirim ulasan.");
+      handleFirestoreError(error, OperationType.WRITE, 'reviews');
     } finally {
       setIsSubmittingReview(false);
     }

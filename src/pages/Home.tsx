@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { useSearchParams } from 'react-router-dom';
-import { db } from '../lib/firebase';
+import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { Product } from '../types';
 import ProductCard from '../components/ProductCard';
 import { Filter, ArrowUpDown, ChevronRight, ShoppingBag, Leaf, Coffee, Package, MoreHorizontal } from 'lucide-react';
@@ -35,7 +35,7 @@ const Home: React.FC = () => {
       setProducts(productsData);
       setLoading(false);
     }, (error) => {
-      console.error("Error fetching products: ", error);
+      handleFirestoreError(error, OperationType.LIST, 'products');
       setLoading(false);
     });
 

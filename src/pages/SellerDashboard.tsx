@@ -57,6 +57,9 @@ const SellerDashboard: React.FC = () => {
       });
       setProducts(productsData);
       setLoading(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'products');
+      setLoading(false);
     });
 
     const path = 'orders';

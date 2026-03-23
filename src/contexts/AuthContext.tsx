@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth, db, signInWithGoogle, logout } from '../lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, onSnapshot } from 'firebase/firestore';
 import { UserProfile, Role } from '../types';
 
 interface AuthContextType {
@@ -55,6 +55,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setLoading(false);
         }, (error) => {
           console.error("Profile listener error", error);
+          // Don't use handleFirestoreError here to avoid infinite loop if it's a permission error on the user's own profile
+          // but we should still set loading to false so the app can render (maybe showing a login screen)
           setLoading(false);
         });
       } else {

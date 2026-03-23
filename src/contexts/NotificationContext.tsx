@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, orderBy, updateDoc, doc, writeBatch, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { useAuth } from './AuthContext';
 import { Notification } from '../types';
 
@@ -44,6 +44,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         notifsData.push({ id: doc.id, ...doc.data() } as Notification);
       });
       setNotifications(notifsData);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'notifications');
     });
 
     return () => unsubscribe();
@@ -57,7 +59,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         isRead: true
       });
     } catch (error) {
-      console.error("Error marking notification as read:", error);
+      handleFirestoreError(error, OperationType.UPDATE, `notifications/${notificationId}`);
     }
   };
 
@@ -77,7 +79,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         await batch.commit();
       }
     } catch (error) {
-      console.error("Error marking all notifications as read:", error);
+      handleFirestoreError(error, OperationType.WRITE, 'notifications/batch-update');
     }
   };
 
@@ -94,7 +96,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         createdAt: serverTimestamp()
       });
     } catch (error) {
-      console.error("Error adding notification:", error);
+      handleFirestoreError(error, OperationType.WRITE, 'notifications');
     }
   }, [currentUser]);
 
