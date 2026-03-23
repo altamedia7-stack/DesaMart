@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, orderBy, updateDoc, doc, writeBatch } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, updateDoc, doc, writeBatch, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from './AuthContext';
 import { Notification } from '../types';
@@ -9,6 +9,7 @@ interface NotificationContextType {
   unreadCount: number;
   markAsRead: (notificationId: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
+  addNotification: (title: string, message: string) => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -80,8 +81,25 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
   };
 
+  const addNotification = React.useCallback(async (title: string, message: string) => {
+    if (!currentUser) return;
+    try {
+      const notifRef = doc(collection(db, 'notifications'));
+      await setDoc(notifRef, {
+        id: notifRef.id,
+        userId: currentUser.uid,
+        title,
+        message,
+        isRead: false,
+        createdAt: serverTimestamp()
+      });
+    } catch (error) {
+      console.error("Error adding notification:", error);
+    }
+  }, [currentUser]);
+
   return (
-    <NotificationContext.Provider value={{ notifications, unreadCount, markAsRead, markAllAsRead }}>
+    <NotificationContext.Provider value={{ notifications, unreadCount, markAsRead, markAllAsRead, addNotification }}>
       {children}
     </NotificationContext.Provider>
   );

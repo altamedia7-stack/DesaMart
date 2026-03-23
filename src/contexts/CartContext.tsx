@@ -1,5 +1,9 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { Product, CartItem } from '../types';
+import { useNotification } from './NotificationContext';
+import { useAuth } from './AuthContext';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 interface CartContextType {
   cartItems: CartItem[];
@@ -19,9 +23,49 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return savedCart ? JSON.parse(savedCart) : [];
   });
 
+  const { addNotification } = useNotification();
+  const { currentUser } = useAuth();
+  const notifiedProducts = useRef<Set<string>>(new Set());
+
   useEffect(() => {
     localStorage.setItem('desamart_cart', JSON.stringify(cartItems));
   }, [cartItems]);
+
+  useEffect(() => {
+    const checkStock = async () => {
+      if (!currentUser) return;
+      
+      for (const item of cartItems) {
+        if (!notifiedProducts.current.has(item.product.id)) {
+          try {
+            const productDoc = await getDoc(doc(db, 'products', item.product.id));
+            if (productDoc.exists()) {
+              const productData = productDoc.data() as Product;
+              if (productData.stock < 5 && productData.stock > 0) {
+                await addNotification(
+                  'Stok Hampir Habis!',
+                  `Produk "${productData.name}" di keranjang Anda sisa ${productData.stock}. Segera checkout sebelum kehabisan!`
+                );
+                notifiedProducts.current.add(item.product.id);
+              } else if (productData.stock === 0) {
+                await addNotification(
+                  'Produk Habis!',
+                  `Maaf, produk "${productData.name}" di keranjang Anda sudah habis.`
+                );
+                notifiedProducts.current.add(item.product.id);
+              }
+            }
+          } catch (error) {
+            console.error("Error checking stock:", error);
+          }
+        }
+      }
+    };
+
+    if (cartItems.length > 0) {
+      checkStock();
+    }
+  }, [cartItems, addNotification, currentUser]);
 
   const addToCart = (product: Product, quantity: number = 1) => {
     setCartItems(prev => {
