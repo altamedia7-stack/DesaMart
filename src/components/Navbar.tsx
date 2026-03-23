@@ -10,10 +10,35 @@ const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [searchInput, setSearchInput] = useState(searchParams.get('q') || '');
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   useEffect(() => {
     setSearchInput(searchParams.get('q') || '');
   }, [searchParams]);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log(`User response to the install prompt: ${outcome}`);
+      setDeferredPrompt(null);
+    } else {
+      alert('Aplikasi sudah diinstal atau browser Anda tidak mendukung fitur ini.');
+    }
+  };
 
   const handleLogout = async () => {
     await logoutUser();
@@ -45,7 +70,7 @@ const Navbar: React.FC = () => {
               </>
             )}
             <span className="text-emerald-400/50">|</span>
-            <span className="hover:text-emerald-200 transition cursor-pointer">Download</span>
+            <span onClick={handleInstallClick} className="hover:text-emerald-200 transition cursor-pointer">Download</span>
             <span className="text-emerald-400/50">|</span>
             <div className="flex items-center gap-1.5">
               <span>Ikuti kami di</span>
