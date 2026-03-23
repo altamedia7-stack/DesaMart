@@ -13,6 +13,7 @@ const Home: React.FC = () => {
   const searchTerm = searchParams.get('q') || '';
   const [selectedCategory, setSelectedCategory] = useState('Semua');
   const [sortOrder, setSortOrder] = useState('newest');
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const categories = [
     { name: 'Semua', icon: <ShoppingBag className="h-5 w-5 sm:h-6 sm:w-6" />, color: 'bg-emerald-100 text-emerald-600' },
@@ -65,20 +66,29 @@ const Home: React.FC = () => {
             </div>
           </div>
           <div className="grid grid-cols-4 sm:grid-cols-6 gap-y-4 gap-x-2">
-            {categories.map(category => (
-              <div 
-                key={category.name}
-                onClick={() => setSelectedCategory(category.name)}
-                className="flex flex-col items-center justify-start cursor-pointer group"
-              >
-                <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center mb-1.5 sm:mb-2 transition-transform group-hover:scale-105 ${category.color} ${selectedCategory === category.name ? 'ring-2 ring-emerald-500 ring-offset-2' : ''}`}>
-                  {category.icon}
+            {categories.map(category => {
+              const isHiddenOnMobile = (category.name === 'Minuman' || category.name === 'Snack') && !isExpanded;
+              
+              return (
+                <div 
+                  key={category.name}
+                  onClick={() => {
+                    if (category.name === 'Lainnya') {
+                      setIsExpanded(!isExpanded);
+                    }
+                    setSelectedCategory(category.name);
+                  }}
+                  className={`${isHiddenOnMobile ? 'hidden sm:flex' : 'flex'} flex-col items-center justify-start cursor-pointer group`}
+                >
+                  <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center mb-1.5 sm:mb-2 transition-transform group-hover:scale-105 ${category.color} ${selectedCategory === category.name ? 'ring-2 ring-emerald-500 ring-offset-2' : ''}`}>
+                    {category.icon}
+                  </div>
+                  <span className={`text-[10px] sm:text-sm text-center leading-tight ${selectedCategory === category.name ? 'font-bold text-emerald-600' : 'text-gray-600 font-medium'}`}>
+                    {category.name}
+                  </span>
                 </div>
-                <span className={`text-[10px] sm:text-sm text-center leading-tight ${selectedCategory === category.name ? 'font-bold text-emerald-600' : 'text-gray-600 font-medium'}`}>
-                  {category.name}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
