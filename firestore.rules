@@ -165,25 +165,25 @@ service cloud.firestore {
 
     function isValidOrder(data) {
       return hasOnlyAllowedFields(['buyerId', 'buyerName', 'sellerId', 'sellerName', 'items', 'totalPrice', 'status', 'paymentMethod', 'payment_name', 'pay_code', 'qr_url', 'instructions', 'expired_time', 'shippingMethod', 'shippingCost', 'shippingAddress', 'tripay_reference', 'checkout_url', 'merchant_ref', 'createdAt', 'updatedAt']) &&
-             data.buyerId is string && data.buyerId.size() > 0 && data.buyerId.size() < 128 &&
-             data.buyerName is string && data.buyerName.size() > 0 && data.buyerName.size() < 100 &&
-             data.sellerId is string && data.sellerId.size() > 0 && data.sellerId.size() < 128 &&
-             data.sellerName is string && data.sellerName.size() > 0 && data.sellerName.size() < 100 &&
+             data.buyerId is string && data.buyerId.size() > 0 &&
+             data.buyerName is string && data.buyerName.size() > 0 &&
+             data.sellerId is string && data.sellerId.size() > 0 &&
+             data.sellerName is string && data.sellerName.size() > 0 &&
              data.items is list && data.items.size() > 0 &&
              data.totalPrice is number && data.totalPrice >= 0 &&
              data.status in ['unpaid', 'paid', 'pending', 'shipped', 'in_transit', 'delivered', 'cancelled'] &&
-             (!('paymentMethod' in data) || (data.paymentMethod is string && data.paymentMethod.size() < 50)) &&
-             (!('payment_name' in data) || (data.payment_name is string)) &&
-             (!('pay_code' in data) || (data.pay_code is string)) &&
-             (!('qr_url' in data) || (data.qr_url is string)) &&
-             (!('instructions' in data) || (data.instructions is list)) &&
-             (!('expired_time' in data) || (data.expired_time is number)) &&
-             (!('shippingMethod' in data) || (data.shippingMethod is string && data.shippingMethod.size() < 50)) &&
-             (!('shippingCost' in data) || (data.shippingCost is number && data.shippingCost >= 0)) &&
-             (!('shippingAddress' in data) || (data.shippingAddress is map)) &&
-             (!('tripay_reference' in data) || (data.tripay_reference is string)) &&
-             (!('checkout_url' in data) || (data.checkout_url is string)) &&
-             (!('merchant_ref' in data) || (data.merchant_ref is string)) &&
+             (!('paymentMethod' in data) || (data.paymentMethod is string || data.paymentMethod == null)) &&
+             (!('payment_name' in data) || (data.payment_name is string || data.payment_name == null)) &&
+             (!('pay_code' in data) || (data.pay_code is string || data.pay_code == null)) &&
+             (!('qr_url' in data) || (data.qr_url is string || data.qr_url == null)) &&
+             (!('instructions' in data) || (data.instructions is list || data.instructions == null)) &&
+             (!('expired_time' in data) || (data.expired_time is number || data.expired_time == null)) &&
+             (!('shippingMethod' in data) || (data.shippingMethod is string || data.shippingMethod == null)) &&
+             (!('shippingCost' in data) || (data.shippingCost is number || data.shippingCost == null)) &&
+             (!('shippingAddress' in data) || (data.shippingAddress is map || data.shippingAddress == null)) &&
+             (!('tripay_reference' in data) || (data.tripay_reference is string || data.tripay_reference == null)) &&
+             (!('checkout_url' in data) || (data.checkout_url is string || data.checkout_url == null)) &&
+             (!('merchant_ref' in data) || (data.merchant_ref is string || data.merchant_ref == null)) &&
              data.createdAt is timestamp &&
              data.updatedAt is timestamp;
     }
