@@ -161,13 +161,29 @@ const Checkout: React.FC = () => {
           );
         })}
 
+        {/* Pesan */}
+        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+          <span className="text-sm font-medium text-gray-900">Pesan untuk Penjual</span>
+          <div className="flex items-center">
+            <input 
+              type="text" 
+              placeholder="Tinggalkan pesan" 
+              className="text-sm text-gray-900 outline-none placeholder-gray-400 text-right w-32 sm:w-48"
+            />
+            <ChevronRight className="h-4 w-4 text-gray-400 ml-1" />
+          </div>
+        </div>
+
         {/* Opsi Pengiriman */}
         <div className="p-4 border-b border-gray-100">
-          <div className="flex justify-between items-center mb-2">
+          <div className="flex justify-between items-center mb-3">
             <span className="text-sm font-medium text-gray-900">Opsi Pengiriman</span>
-            <div className="flex items-center text-sm text-gray-500">
-              Lihat Semua <ChevronRight className="h-4 w-4 ml-1" />
-            </div>
+            <button 
+              onClick={() => window.open('https://maps.google.com', '_blank')}
+              className="flex items-center text-sm text-gray-500 hover:text-emerald-600 transition-colors"
+            >
+              Cek di Google Maps <ChevronRight className="h-4 w-4 ml-1" />
+            </button>
           </div>
           <div className="bg-[#f6fbf9] border border-[#a5d6c1] rounded p-3">
             <div className="flex justify-between items-start">
@@ -179,22 +195,13 @@ const Checkout: React.FC = () => {
                 </div>
                 <div className="text-xs text-gray-600 mt-1">Voucher s.d. Rp10.000 jika pesanan belum tiba 31 Mar 2026.</div>
               </div>
-              <div className="text-sm">
-                <span className="text-gray-400 line-through mr-1">Rp8.000</span>
-                <span className="font-medium text-gray-900">Rp0</span>
+              <div className="text-sm flex items-center">
+                <span className="text-gray-400 line-through mr-1 text-xs">Rp8.000</span>
+                <span className="font-bold text-gray-900">Rp0</span>
+                <CheckCircle2 className="h-4 w-4 text-[#00bfa5] ml-2" />
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Pesan */}
-        <div className="p-4 border-b border-gray-100 flex items-center">
-          <span className="text-sm text-gray-900 w-24">Pesan:</span>
-          <input 
-            type="text" 
-            placeholder="Silakan tinggalkan pesan..." 
-            className="flex-grow text-sm text-gray-900 outline-none placeholder-gray-400 text-right"
-          />
         </div>
 
         {/* Total Produk */}
