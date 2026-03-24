@@ -208,7 +208,15 @@ const SellerDashboard: React.FC = () => {
       method: 'POST',
       body: formData
     });
+    
+    if (!response.ok) {
+      throw new Error('Gagal mengunggah gambar ke Cloudinary');
+    }
+
     const data = await response.json();
+    if (!data.secure_url) {
+      throw new Error('URL gambar tidak ditemukan');
+    }
     return data.secure_url;
   };
 
@@ -226,7 +234,9 @@ const SellerDashboard: React.FC = () => {
       let imageUrl = newProduct.imageUrl;
       if (newProductImage) {
         imageUrl = await uploadToCloudinary(newProductImage);
-      } else if (!imageUrl) {
+      }
+      
+      if (!imageUrl) {
         imageUrl = `https://picsum.photos/seed/${newProduct.name}/400/300`;
       }
 
@@ -304,7 +314,9 @@ const SellerDashboard: React.FC = () => {
       let imageUrl = editProduct.imageUrl;
       if (editProductImage) {
         imageUrl = await uploadToCloudinary(editProductImage);
-      } else if (!imageUrl) {
+      }
+      
+      if (!imageUrl) {
         imageUrl = `https://picsum.photos/seed/${editProduct.name}/400/300`;
       }
 
