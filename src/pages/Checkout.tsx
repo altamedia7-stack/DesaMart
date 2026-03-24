@@ -163,6 +163,12 @@ const Checkout: React.FC = () => {
   const handlePlaceOrder = async () => {
     if (!currentUser || !sellerId) return;
     
+    console.log("handlePlaceOrder dipanggil. shippingCost:", shippingCost);
+    if (shippingCost === null) {
+      alert("Ongkos kirim belum dihitung. Silakan pilih lokasi.");
+      return;
+    }
+
     setIsSubmitting(true);
     console.log("Memulai proses pesanan...");
 
@@ -180,7 +186,6 @@ const Checkout: React.FC = () => {
         status: 'pending',
         paymentMethod: 'COD',
         shippingMethod: 'Reguler',
-        shippingCost: shippingCost || 0,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
