@@ -72,9 +72,14 @@ const Checkout: React.FC = () => {
       setIsLoadingChannels(true);
       try {
         const response = await fetch('/api/tripay/payment-channels');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
-        if (data.success) {
+        if (data && data.success) {
           setPaymentChannels(data.data);
+        } else {
+          console.error("TriPay API returned failure:", data?.message);
         }
       } catch (error) {
         console.error("Error fetching payment channels:", error);
