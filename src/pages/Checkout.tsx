@@ -4,8 +4,8 @@ import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { ArrowLeft, MapPin, ChevronRight, CheckCircle2, Circle, Map, Store, Home } from 'lucide-react';
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
+import { ArrowLeft, MapPin, ChevronRight, CheckCircle2, Circle, Map, Store, Home, LocateFixed } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -32,6 +32,14 @@ function LocationSelector({ onLocationSelect }: { onLocationSelect: (lat: number
   return null;
 }
 
+function MapUpdater({ center, zoom }: { center: [number, number], zoom: number }) {
+  const map = useMap();
+  useEffect(() => {
+    map.flyTo(center, zoom);
+  }, [center, zoom, map]);
+  return null;
+}
+
 const Checkout: React.FC = () => {
   const { sellerId } = useParams<{ sellerId: string }>();
   const navigate = useNavigate();
@@ -40,9 +48,51 @@ const Checkout: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{lat: number, lng: number} | null>(null);
   const [shippingCost, setShippingCost] = useState<number | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
 
   const [selectedCity, setSelectedCity] = useState<string>('');
   const [selectedVillage, setSelectedVillage] = useState<string>('');
+
+  const handleGetCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation tidak didukung oleh browser Anda');
+      return;
+    }
+
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        setSelectedLocation({ lat, lng });
+
+        // Calculate distance in km
+        const R = 6371; // Radius of the earth in km
+        const dLat = (lat - SELLER_LOCATION.lat) * Math.PI / 180;
+        const dLon = (lng - SELLER_LOCATION.lng) * Math.PI / 180;
+        const a = 
+          Math.sin(dLat/2) * Math.sin(dLat/2) +
+          Math.cos(SELLER_LOCATION.lat * Math.PI / 180) * Math.cos(lat * Math.PI / 180) * 
+          Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+        const distanceKm = R * c;
+        
+        // Mock calculation: Rp 2000 per km
+        setShippingCost(Math.max(5000, Math.round(distanceKm * 2000))); // Minimum Rp 5000
+        setIsLocating(false);
+        
+        // Reset dropdowns
+        setSelectedCity('');
+        setSelectedVillage('');
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+        alert('Gagal mendapatkan lokasi. Pastikan Anda memberikan izin akses lokasi pada browser Anda.');
+        setIsLocating(false);
+      },
+      { enableHighAccuracy: true }
+    );
+  };
 
   // Mock data for cities and villages
   const locations = {
@@ -290,6 +340,22 @@ const Checkout: React.FC = () => {
               </p>
 
               <div className="space-y-4 mb-4">
+                <button
+                  type="button"
+                  onClick={handleGetCurrentLocation}
+                  disabled={isLocating}
+                  className="w-full flex items-center justify-center gap-2 bg-blue-50 text-blue-600 border border-blue-200 py-2.5 px-4 rounded-lg font-medium hover:bg-blue-100 transition-colors disabled:opacity-50"
+                >
+                  <LocateFixed className="h-4 w-4" />
+                  {isLocating ? 'Mencari lokasi...' : 'Gunakan Lokasi Saat Ini'}
+                </button>
+
+                <div className="relative flex items-center py-2">
+                  <div className="flex-grow border-t border-gray-200"></div>
+                  <span className="flex-shrink-0 mx-4 text-gray-400 text-sm">atau pilih manual</span>
+                  <div className="flex-grow border-t border-gray-200"></div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Kota/Kabupaten</label>
                   <select 
@@ -352,6 +418,10 @@ const Checkout: React.FC = () => {
                   zoom={selectedLocation ? 13 : 11} 
                   style={{ height: '100%', width: '100%' }}
                 >
+                  <MapUpdater 
+                    center={selectedLocation ? [selectedLocation.lat, selectedLocation.lng] : [SELLER_LOCATION.lat, SELLER_LOCATION.lng]} 
+                    zoom={selectedLocation ? 13 : 11} 
+                  />
                   <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

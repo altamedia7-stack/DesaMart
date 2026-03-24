@@ -80,15 +80,6 @@ const Cart: React.FC = () => {
                     <span className="text-sm text-gray-500">Penjual:</span>
                     <h3 className="font-bold text-gray-900">{group.sellerName}</h3>
                   </div>
-                  <button 
-                    onClick={() => handleCheckoutSeller(sellerId)}
-                    disabled={isCheckingOut}
-                    className="flex items-center gap-1.5 bg-[#25D366] hover:bg-[#1DA851] text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:shadow-md transition-all disabled:opacity-50"
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                    <span className="hidden sm:inline">{isCheckingOut ? 'Memproses...' : 'Pesan ke Penjual'}</span>
-                    <span className="sm:hidden">{isCheckingOut ? '...' : 'Pesan'}</span>
-                  </button>
                 </div>
                 
                 <div className="divide-y divide-gray-100">
@@ -195,10 +186,6 @@ const Cart: React.FC = () => {
                   <span>Total Harga ({totalItems} barang)</span>
                   <span className="font-medium text-gray-900">Rp {totalPrice.toLocaleString('id-ID')}</span>
                 </div>
-                {/* Note about shipping */}
-                <div className="bg-blue-50 text-blue-800 p-3 rounded-lg text-xs leading-relaxed">
-                  Ongkos kirim akan dihitung saat Anda menghubungi masing-masing penjual via WhatsApp.
-                </div>
               </div>
               
               <div className="border-t border-gray-100 pt-4 mb-6">
@@ -212,14 +199,15 @@ const Cart: React.FC = () => {
               
               <button 
                 onClick={() => {
-                  if (window.confirm('Apakah Anda yakin ingin mengosongkan keranjang?')) {
-                    clearCart();
+                  const sellerIds = Object.keys(itemsBySeller);
+                  if (sellerIds.length > 0) {
+                    handleCheckoutSeller(sellerIds[0]);
                   }
                 }}
-                className="w-full py-3 px-4 border border-red-200 text-red-600 rounded-xl font-bold hover:bg-red-50 transition flex items-center justify-center gap-2"
+                className="w-full py-3 px-4 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition flex items-center justify-center gap-2"
               >
-                <Trash2 className="h-4 w-4" />
-                Kosongkan Keranjang
+                <ShoppingBag className="h-5 w-5" />
+                Pesan Sekarang
               </button>
             </div>
           </div>
