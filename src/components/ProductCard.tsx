@@ -203,12 +203,18 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, showStock = true }) 
           
           <div className="flex gap-1.5 sm:gap-2 w-full sm:w-auto">
             <button 
-              onClick={() => {
-                addToCart(product);
-                alert('Produk ditambahkan ke keranjang!');
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (product.variants && product.variants.length > 0) {
+                  navigate(`/product/${product.id}`);
+                } else {
+                  addToCart(product);
+                  alert('Produk ditambahkan ke keranjang!');
+                }
               }}
               className="flex-1 sm:flex-none flex items-center justify-center border border-emerald-500 text-emerald-600 hover:bg-emerald-50 p-1 sm:p-1.5 rounded transition-colors"
-              title="Tambah ke Keranjang"
+              title={product.variants && product.variants.length > 0 ? "Pilih Varian" : "Tambah ke Keranjang"}
             >
               <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </button>

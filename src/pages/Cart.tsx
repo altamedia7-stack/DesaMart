@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
-import { db, handleFirestoreError, OperationType } from '../lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { Trash2, Plus, Minus, ArrowLeft, MessageCircle, ShoppingBag } from 'lucide-react';
 
 const Cart: React.FC = () => {
@@ -26,74 +24,12 @@ const Cart: React.FC = () => {
     return acc;
   }, {} as Record<string, { sellerName: string; sellerWhatsapp: string; items: typeof cartItems }>);
 
-  const handleCheckoutSeller = async (sellerId: string) => {
-    const sellerGroup = itemsBySeller[sellerId];
-    if (!sellerGroup || !currentUser) {
-      if (!currentUser) navigate('/login');
+  const handleCheckoutSeller = (sellerId: string) => {
+    if (!currentUser) {
+      navigate('/login');
       return;
     }
-
-    setIsCheckingOut(true);
-
-    try {
-      // Create order in Firestore
-      let sellerTotal = 0;
-      sellerGroup.items.forEach(item => {
-        const basePrice = item.selectedVariant ? item.selectedVariant.price : item.product.price;
-        const discount = item.selectedVariant ? (item.selectedVariant.discountPercentage || 0) : (item.product.discountPercentage || 0);
-        const price = discount > 0 ? basePrice * (1 - discount / 100) : basePrice;
-        sellerTotal += price * item.quantity;
-      });
-
-      const path = 'orders';
-      try {
-        await addDoc(collection(db, path), {
-          buyerId: currentUser.uid,
-          buyerName: userProfile?.name || currentUser.email,
-          sellerId: sellerId,
-          sellerName: sellerGroup.sellerName,
-          items: sellerGroup.items,
-          totalPrice: sellerTotal,
-          status: 'pending',
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        });
-      } catch (error) {
-        handleFirestoreError(error, OperationType.WRITE, path);
-      }
-
-      // WhatsApp logic
-      let phone = sellerGroup.sellerWhatsapp;
-      if (phone.startsWith('0')) {
-        phone = '62' + phone.substring(1);
-      }
-
-      let message = `Halo ${sellerGroup.sellerName}, saya ingin memesan produk berikut dari DesaMart:\n\n`;
-      
-      sellerGroup.items.forEach((item, index) => {
-        const basePrice = item.selectedVariant ? item.selectedVariant.price : item.product.price;
-        const discount = item.selectedVariant ? (item.selectedVariant.discountPercentage || 0) : (item.product.discountPercentage || 0);
-        const price = discount > 0 ? basePrice * (1 - discount / 100) : basePrice;
-        const itemTotal = price * item.quantity;
-        message += `${index + 1}. ${item.product.name}${item.selectedVariant ? ` (${item.selectedVariant.name})` : ''}\n`;
-        message += `   Jumlah: ${item.quantity}\n`;
-        message += `   Harga: Rp ${itemTotal.toLocaleString('id-ID')}\n\n`;
-      });
-
-      message += `*Total Pesanan: Rp ${sellerTotal.toLocaleString('id-ID')}*\n\n`;
-      message += `Mohon info ketersediaan dan total biaya termasuk ongkos kirim. Terima kasih!`;
-
-      const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-      window.open(url, '_blank');
-      
-      // Optionally remove items from cart
-      sellerGroup.items.forEach(item => removeFromCart(item.product.id, item.selectedVariant?.id));
-    } catch (error) {
-      console.error("Error creating order:", error);
-      alert("Gagal membuat pesanan. Silakan coba lagi.");
-    } finally {
-      setIsCheckingOut(false);
-    }
+    navigate(`/checkout/${sellerId}`);
   };
 
   if (cartItems.length === 0) {

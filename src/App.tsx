@@ -17,6 +17,8 @@ import Notifications from './pages/Notifications';
 import MyOrders from './pages/MyOrders';
 import ErrorBoundary from './components/ErrorBoundary';
 
+import Checkout from './pages/Checkout';
+
 function App() {
   return (
     <ErrorBoundary>
@@ -32,6 +34,7 @@ function App() {
                     <Route path="/products/:id" element={<ProductDetail />} />
                     <Route path="/seller/:id" element={<SellerProfile />} />
                     <Route path="/cart" element={<Cart />} />
+                    <Route path="/checkout/:sellerId" element={<Checkout />} />
                     <Route path="/notifications" element={<Notifications />} />
                     <Route path="/orders" element={<MyOrders />} />
                     <Route path="/login" element={<Login />} />

@@ -470,6 +470,10 @@ const ProductDetail: React.FC = () => {
         
         <button 
           onClick={() => {
+            if (product.variants && product.variants.length > 0 && !selectedVariant) {
+              alert('Silakan pilih varian terlebih dahulu');
+              return;
+            }
             addToCart(product, selectedVariant || undefined);
             alert('Produk ditambahkan ke keranjang!');
           }} 
@@ -481,6 +485,10 @@ const ProductDetail: React.FC = () => {
         
         <button 
           onClick={() => {
+            if (product.variants && product.variants.length > 0 && !selectedVariant) {
+              alert('Silakan pilih varian terlebih dahulu');
+              return;
+            }
             addToCart(product, selectedVariant || undefined);
             navigate('/cart');
           }} 
