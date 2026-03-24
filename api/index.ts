@@ -56,7 +56,17 @@ app.get("/api/tripay/payment-channels", async (req, res) => {
       }
     });
     
-    const data = await response.json();
+    const text = await response.text();
+    console.log("TriPay Raw Response:", text);
+    
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      console.error("Failed to parse TriPay response as JSON:", text);
+      return res.status(502).json({ success: false, message: "Respon dari TriPay bukan JSON yang valid" });
+    }
+    
     console.log("TriPay Channels Response Success:", data.success);
     
     if (!data.success) {
@@ -66,8 +76,12 @@ app.get("/api/tripay/payment-channels", async (req, res) => {
     res.json(data);
   } catch (error) {
     console.error("TriPay Payment Channels Fetch Error:", error);
-    res.status(500).json({ success: false, message: "Gagal menghubungi server TriPay" });
+    res.status(500).json({ success: false, message: `Gagal menghubungi server TriPay: ${error instanceof Error ? error.message : String(error)}` });
   }
+});
+
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", time: new Date().toISOString() });
 });
 
 app.post("/api/tripay/create-transaction", async (req, res) => {

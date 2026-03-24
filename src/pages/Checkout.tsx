@@ -74,7 +74,22 @@ const Checkout: React.FC = () => {
       setPaymentError(null);
       try {
         const response = await fetch('/api/tripay/payment-channels');
-        const data = await response.json();
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Server error response:", errorText);
+          setPaymentError(`Server error (${response.status}): ${errorText.substring(0, 50)}...`);
+          return;
+        }
+
+        let data;
+        try {
+          data = await response.json();
+        } catch (e) {
+          console.error("Failed to parse JSON:", e);
+          setPaymentError("Respon server tidak valid (bukan JSON)");
+          return;
+        }
         
         if (data && data.success) {
           setPaymentChannels(data.data);
@@ -83,7 +98,7 @@ const Checkout: React.FC = () => {
           console.error("TriPay API returned failure:", data?.message);
         }
       } catch (error) {
-        setPaymentError("Terjadi kesalahan saat menghubungi server");
+        setPaymentError(`Koneksi gagal: ${error instanceof Error ? error.message : String(error)}`);
         console.error("Error fetching payment channels:", error);
       } finally {
         setIsLoadingChannels(false);
