@@ -164,9 +164,11 @@ const Checkout: React.FC = () => {
     if (!currentUser || !sellerId) return;
     
     setIsSubmitting(true);
+    console.log("Memulai proses pesanan...");
 
     try {
       // 1. Save to Firestore first
+      console.log("Menyimpan ke Firestore...");
       const path = 'orders';
       await addDoc(collection(db, path), {
         buyerId: currentUser.uid,
@@ -182,11 +184,14 @@ const Checkout: React.FC = () => {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
+      console.log("Berhasil disimpan ke Firestore.");
       
       // 2. Remove items from cart
+      console.log("Mengosongkan keranjang...");
       sellerItems.forEach(item => removeFromCart(item.product.id, item.selectedVariant?.id));
 
       // 3. WhatsApp logic
+      console.log("Membuka WhatsApp...");
       let phone = sellerWhatsapp;
       if (phone.startsWith('0')) {
         phone = '62' + phone.substring(1);
@@ -216,12 +221,15 @@ const Checkout: React.FC = () => {
       window.open(url, '_blank');
       
       // 4. Navigate
+      console.log("Navigasi ke halaman pesanan...");
       navigate('/orders');
     } catch (error) {
+      console.error("Error di handlePlaceOrder:", error);
       handleFirestoreError(error, OperationType.WRITE, 'orders');
       alert("Gagal membuat pesanan di sistem. Silakan coba lagi.");
     } finally {
       setIsSubmitting(false);
+      console.log("Proses selesai.");
     }
   };
 
