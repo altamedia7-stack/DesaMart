@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Navigate, Link } from 'react-router-dom';
+import { Navigate, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
@@ -8,6 +8,7 @@ import { Package, Truck, CheckCircle, Clock, AlertCircle, ChevronRight, Shopping
 
 const MyOrders: React.FC = () => {
   const { currentUser, userProfile } = useAuth();
+  const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -185,14 +186,22 @@ const MyOrders: React.FC = () => {
 
                 {/* Action Button (Optional: Link to Chat Seller) */}
                 <div className="mt-6 pt-6 border-t border-gray-50 flex flex-col gap-3">
+                  {order.status === 'unpaid' && order.merchant_ref && (
+                    <button 
+                      onClick={() => navigate(`/payment/${order.merchant_ref}`)}
+                      className="w-full inline-flex items-center justify-center px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-orange-200"
+                    >
+                      Bayar Sekarang
+                    </button>
+                  )}
                   {order.status === 'unpaid' && order.checkout_url && (
                     <a 
                       href={order.checkout_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full inline-flex items-center justify-center px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-orange-200"
+                      className="text-center text-xs text-gray-400 hover:underline"
                     >
-                      Bayar Sekarang
+                      Buka Halaman TriPay (Alternatif)
                     </a>
                   )}
                   <div className="flex justify-end">

@@ -274,7 +274,7 @@ const Checkout: React.FC = () => {
           return {
             sku: item.product.id,
             name: item.product.name,
-            price: price,
+            price: Math.round(price),
             quantity: item.quantity
           };
         });
@@ -283,7 +283,7 @@ const Checkout: React.FC = () => {
         orderItems.push({
           sku: 'SHIPPING',
           name: 'Ongkos Kirim',
-          price: shippingCost,
+          price: Math.round(shippingCost),
           quantity: 1
         });
 
@@ -314,6 +314,13 @@ const Checkout: React.FC = () => {
             totalPrice: totalPembayaran,
             status: 'unpaid',
             paymentMethod: selectedPaymentMethod,
+            payment_name: data.data.payment_name,
+            pay_code: data.data.pay_code,
+            qr_url: data.data.qr_url,
+            instructions: data.data.instructions,
+            expired_time: data.data.expired_time,
+            shippingMethod: selectedCourier?.name || 'Standard',
+            shippingCost: shippingCost || 0,
             tripay_reference: data.data.reference,
             checkout_url: data.data.checkout_url,
             shippingAddress: {
@@ -328,8 +335,8 @@ const Checkout: React.FC = () => {
           
           sellerItems.forEach(item => removeFromCart(item.product.id, item.selectedVariant?.id));
           
-          // Redirect to TriPay checkout
-          window.location.href = data.data.checkout_url;
+          // Navigate to local payment detail instead of redirecting
+          navigate(`/payment/${merchant_ref}`);
         } else {
           alert(`Gagal membuat transaksi: ${data.message}`);
         }

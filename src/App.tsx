@@ -17,6 +17,7 @@ import Notifications from './pages/Notifications';
 import MyOrders from './pages/MyOrders';
 import Profile from './pages/Profile';
 import ErrorBoundary from './components/ErrorBoundary';
+import PaymentDetail from './pages/PaymentDetail';
 
 import Checkout from './pages/Checkout';
 
@@ -36,6 +37,7 @@ function App() {
                     <Route path="/seller/:id" element={<SellerProfile />} />
                     <Route path="/cart" element={<Cart />} />
                     <Route path="/checkout/:sellerId" element={<Checkout />} />
+                    <Route path="/payment/:merchantRef" element={<PaymentDetail />} />
                     <Route path="/notifications" element={<Notifications />} />
                     <Route path="/orders" element={<MyOrders />} />
                     <Route path="/profile" element={<Profile />} />

@@ -164,17 +164,21 @@ service cloud.firestore {
     }
 
     function isValidOrder(data) {
-      return hasOnlyAllowedFields(['buyerId', 'buyerName', 'sellerId', 'sellerName', 'items', 'totalPrice', 'status', 'paymentMethod', 'shippingMethod', 'shippingCost', 'createdAt', 'updatedAt']) &&
+      return hasOnlyAllowedFields(['buyerId', 'buyerName', 'sellerId', 'sellerName', 'items', 'totalPrice', 'status', 'paymentMethod', 'shippingMethod', 'shippingCost', 'shippingAddress', 'tripay_reference', 'checkout_url', 'merchant_ref', 'createdAt', 'updatedAt']) &&
              data.buyerId is string && data.buyerId.size() > 0 && data.buyerId.size() < 128 &&
              data.buyerName is string && data.buyerName.size() > 0 && data.buyerName.size() < 100 &&
              data.sellerId is string && data.sellerId.size() > 0 && data.sellerId.size() < 128 &&
              data.sellerName is string && data.sellerName.size() > 0 && data.sellerName.size() < 100 &&
              data.items is list && data.items.size() > 0 &&
              data.totalPrice is number && data.totalPrice >= 0 &&
-             data.status in ['pending', 'shipped', 'in_transit', 'delivered', 'cancelled'] &&
+             data.status in ['unpaid', 'paid', 'pending', 'shipped', 'in_transit', 'delivered', 'cancelled'] &&
              (!('paymentMethod' in data) || (data.paymentMethod is string && data.paymentMethod.size() < 50)) &&
              (!('shippingMethod' in data) || (data.shippingMethod is string && data.shippingMethod.size() < 50)) &&
              (!('shippingCost' in data) || (data.shippingCost is number && data.shippingCost >= 0)) &&
+             (!('shippingAddress' in data) || (data.shippingAddress is map)) &&
+             (!('tripay_reference' in data) || (data.tripay_reference is string)) &&
+             (!('checkout_url' in data) || (data.checkout_url is string)) &&
+             (!('merchant_ref' in data) || (data.merchant_ref is string)) &&
              data.createdAt is timestamp &&
              data.updatedAt is timestamp;
     }
