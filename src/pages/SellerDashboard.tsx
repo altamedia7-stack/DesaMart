@@ -143,10 +143,22 @@ const SellerDashboard: React.FC = () => {
 
     setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
         setLocation({ lat, lng });
+        
+        // Reverse geocoding using OpenStreetMap Nominatim API
+        try {
+          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+          const data = await response.json();
+          if (data.display_name) {
+            setAddress(data.display_name);
+          }
+        } catch (error) {
+          console.error("Error reverse geocoding:", error);
+        }
+        
         setIsLocating(false);
       },
       (error) => {

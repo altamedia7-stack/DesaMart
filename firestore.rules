@@ -14,6 +14,7 @@ service cloud.firestore {
     //   - role: string (required, enum: ['admin', 'seller', 'buyer'])
     //   - whatsapp: string (optional)
     //   - address: string (optional)
+    //   - location: map (optional, {lat: number, lng: number})
     //   - createdAt: timestamp (required)
     //
     // Collection: products
@@ -107,13 +108,14 @@ service cloud.firestore {
     // Domain Validators
 
     function isValidUser(data) {
-      return hasOnlyAllowedFields(['uid', 'name', 'email', 'role', 'whatsapp', 'address', 'createdAt']) &&
+      return hasOnlyAllowedFields(['uid', 'name', 'email', 'role', 'whatsapp', 'address', 'location', 'createdAt']) &&
              data.uid is string && data.uid.size() > 0 && data.uid.size() < 128 &&
              data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
              data.email is string && isValidEmail(data.email) &&
              data.role in ['admin', 'seller', 'buyer'] &&
              (!('whatsapp' in data) || (data.whatsapp is string && data.whatsapp.size() < 20)) &&
              (!('address' in data) || (data.address is string && data.address.size() < 500)) &&
+             (!('location' in data) || (data.location is map && data.location.lat is number && data.location.lng is number)) &&
              data.createdAt is timestamp;
     }
 
