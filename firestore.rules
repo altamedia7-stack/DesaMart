@@ -164,7 +164,7 @@ service cloud.firestore {
     }
 
     function isValidOrder(data) {
-      return hasOnlyAllowedFields(['buyerId', 'buyerName', 'sellerId', 'sellerName', 'items', 'totalPrice', 'status', 'paymentMethod', 'shippingMethod', 'shippingCost', 'shippingAddress', 'tripay_reference', 'checkout_url', 'merchant_ref', 'createdAt', 'updatedAt']) &&
+      return hasOnlyAllowedFields(['buyerId', 'buyerName', 'sellerId', 'sellerName', 'items', 'totalPrice', 'status', 'paymentMethod', 'payment_name', 'pay_code', 'qr_url', 'instructions', 'expired_time', 'shippingMethod', 'shippingCost', 'shippingAddress', 'tripay_reference', 'checkout_url', 'merchant_ref', 'createdAt', 'updatedAt']) &&
              data.buyerId is string && data.buyerId.size() > 0 && data.buyerId.size() < 128 &&
              data.buyerName is string && data.buyerName.size() > 0 && data.buyerName.size() < 100 &&
              data.sellerId is string && data.sellerId.size() > 0 && data.sellerId.size() < 128 &&
@@ -173,6 +173,11 @@ service cloud.firestore {
              data.totalPrice is number && data.totalPrice >= 0 &&
              data.status in ['unpaid', 'paid', 'pending', 'shipped', 'in_transit', 'delivered', 'cancelled'] &&
              (!('paymentMethod' in data) || (data.paymentMethod is string && data.paymentMethod.size() < 50)) &&
+             (!('payment_name' in data) || (data.payment_name is string)) &&
+             (!('pay_code' in data) || (data.pay_code is string)) &&
+             (!('qr_url' in data) || (data.qr_url is string)) &&
+             (!('instructions' in data) || (data.instructions is list)) &&
+             (!('expired_time' in data) || (data.expired_time is number)) &&
              (!('shippingMethod' in data) || (data.shippingMethod is string && data.shippingMethod.size() < 50)) &&
              (!('shippingCost' in data) || (data.shippingCost is number && data.shippingCost >= 0)) &&
              (!('shippingAddress' in data) || (data.shippingAddress is map)) &&

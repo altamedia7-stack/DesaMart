@@ -134,19 +134,24 @@ app.post("/api/tripay/create-transaction", async (req, res) => {
       signature
     };
 
+    console.log("TriPay Create Payload:", JSON.stringify(payload, null, 2));
+
     const response = await axios.post(`${TRIPAY_BASE_URL}transaction/create`, payload, {
       headers: {
         'Authorization': `Bearer ${TRIPAY_API_KEY}`
       }
     });
 
-    console.log("TriPay Create Response:", JSON.stringify(response.data, null, 2));
+    console.log("TriPay Create Response Status:", response.status);
+    console.log("TriPay Create Response Data:", JSON.stringify(response.data, null, 2));
     res.json(response.data);
   } catch (error: any) {
-    console.error("TriPay Create Transaction Error:", error.response?.data || error.message);
+    const errorData = error.response?.data || error.message;
+    console.error("TriPay Create Transaction Error:", JSON.stringify(errorData, null, 2));
     res.status(500).json({ 
       success: false, 
-      message: error.response?.data?.message || "Failed to create transaction" 
+      message: error.response?.data?.message || "Failed to create transaction",
+      error: errorData
     });
   }
 });

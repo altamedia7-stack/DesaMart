@@ -304,13 +304,23 @@ const Checkout: React.FC = () => {
           quantity: 1
         });
 
+        // Recalculate total amount from rounded items to ensure consistency for TriPay
+        const calculatedAmount = orderItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+
+        console.log("Creating TriPay transaction with:", {
+          method: selectedPaymentMethod,
+          merchant_ref,
+          amount: calculatedAmount,
+          order_items: orderItems
+        });
+
         const response = await fetch('/api/tripay/create-transaction', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             method: selectedPaymentMethod,
             merchant_ref,
-            amount: totalPembayaran,
+            amount: calculatedAmount,
             customer_name: userProfile?.name || 'Customer',
             customer_email: currentUser.email || 'customer@example.com',
             customer_phone: userProfile?.whatsapp || '',
@@ -319,16 +329,17 @@ const Checkout: React.FC = () => {
         });
 
         const data = await response.json();
+        console.log("TriPay API response:", data);
         
         if (data.success) {
           const path = 'orders';
-          await addDoc(collection(db, path), {
+          const orderData = {
             buyerId: currentUser.uid,
             buyerName: userProfile?.name || currentUser.email,
             sellerId: sellerId,
             sellerName: sellerName,
             items: sellerItems,
-            totalPrice: totalPembayaran,
+            totalPrice: calculatedAmount,
             status: 'unpaid',
             paymentMethod: selectedPaymentMethod,
             payment_name: data.data.payment_name,
@@ -348,7 +359,10 @@ const Checkout: React.FC = () => {
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
             merchant_ref
-          });
+          };
+
+          console.log("Saving order to Firestore:", orderData);
+          await addDoc(collection(db, path), orderData);
           
           sellerItems.forEach(item => removeFromCart(item.product.id, item.selectedVariant?.id));
           
@@ -358,7 +372,9 @@ const Checkout: React.FC = () => {
           alert(`Gagal membuat transaksi: ${data.message}`);
         }
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Error in handlePlaceOrder:", error);
+      alert(`Terjadi kesalahan: ${error.message || String(error)}`);
       handleFirestoreError(error, OperationType.WRITE, 'orders');
     } finally {
       setIsSubmitting(false);
