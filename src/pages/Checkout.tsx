@@ -57,6 +57,7 @@ const Checkout: React.FC = () => {
   const navigate = useNavigate();
   const { cartItems, removeFromCart } = useCart();
   const { currentUser, userProfile, loading } = useAuth();
+  const [selectedCourier, setSelectedCourier] = useState<{name: string, baseRate: number, perKmRate: number} | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{lat: number, lng: number} | null>(null);
   const [shippingCost, setShippingCost] = useState<number | null>(null);
@@ -151,6 +152,17 @@ const Checkout: React.FC = () => {
   }, 0);
 
   const totalPembayaran = subtotalPesanan + (shippingCost || 0);
+
+  const calculateShipping = (lat: number, lng: number, courier: {baseRate: number, perKmRate: number}) => {
+    const distanceKm = calculateDistance(sellerLocation.lat, sellerLocation.lng, lat, lng);
+    return Math.max(courier.baseRate, Math.round(distanceKm * courier.perKmRate));
+  };
+
+  useEffect(() => {
+    if (selectedLocation && selectedCourier) {
+      setShippingCost(calculateShipping(selectedLocation.lat, selectedLocation.lng, selectedCourier));
+    }
+  }, [selectedLocation, selectedCourier]);
 
   useEffect(() => {
     if (!loading && !currentUser) {
@@ -341,15 +353,41 @@ const Checkout: React.FC = () => {
                 <div className="bg-[#f6fbf9] border border-[#a5d6c1] rounded p-3">
                   <div className="flex justify-between items-start">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">Reguler</div>
+                      <div className="text-sm font-medium text-gray-900">Kurir Desa (Tarjo)</div>
                       <div className="text-xs text-[#00bfa5] mt-1 flex items-center gap-1">
-                        <svg viewBox="0 0 16 16" className="w-4 h-4 fill-current"><path d="M11.5 2h-7a.5.5 0 0 0-.5.5v8a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 .5-.5v-8a.5.5 0 0 0-.5-.5Zm-7-1h7A1.5 1.5 0 0 1 13 2.5v8A1.5 1.5 0 0 1 11.5 12h-7A1.5 1.5 0 0 1 3 10.5v-8A1.5 1.5 0 0 1 4.5 1Zm5.5 4a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z"></path></svg>
-                        Garansi tiba 28 - 31 Mar
+                        Tarif: Rp2.000 + Rp2.000/km
                       </div>
                     </div>
                     <div className="text-sm flex items-center">
-                      <span className="font-bold text-gray-900">Rp0</span>
-                      <CheckCircle2 className="h-4 w-4 text-[#00bfa5] ml-2" />
+                      <input 
+                        type="radio" 
+                        name="courier" 
+                        className="h-4 w-4 text-[#00bfa5]"
+                        onChange={() => {
+                          // Logika untuk Tarjo
+                          if (selectedLocation) {
+                             // Hitung ulang ongkir berdasarkan tarif Tarjo
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-start mt-2 pt-2 border-t border-[#a5d6c1]">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">Kurir Desa (Sarwo)</div>
+                      <div className="text-xs text-[#00bfa5] mt-1 flex items-center gap-1">
+                        Tarif: Rp1.000 + Rp1.000/km
+                      </div>
+                    </div>
+                    <div className="text-sm flex items-center">
+                      <input 
+                        type="radio" 
+                        name="courier" 
+                        className="h-4 w-4 text-[#00bfa5]"
+                        onChange={() => {
+                          // Logika untuk Sarwo
+                        }}
+                      />
                     </div>
                   </div>
                 </div>
