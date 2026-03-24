@@ -59,7 +59,19 @@ const getDb = () => {
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({
+  verify: (req: any, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
+
+// Logging middleware to debug incoming requests
+app.use((req, res, next) => {
+  if (req.url.startsWith('/api/tripay')) {
+    console.log(`Incoming ${req.method} request to ${req.url}`);
+  }
+  next();
+});
 
 const TRIPAY_API_KEY = process.env.TRIPAY_API_KEY;
 const TRIPAY_PRIVATE_KEY = process.env.TRIPAY_PRIVATE_KEY || process.env.TRIPAY_PRIVATE_KE;
@@ -156,10 +168,13 @@ app.post("/api/tripay/create-transaction", async (req, res) => {
   }
 });
 
-app.post("/api/tripay/callback", async (req, res) => {
+app.post(["/api/tripay/callback", "/api/tripay/callback/"], async (req: any, res) => {
+  console.log("TriPay Callback received!");
   try {
     const callbackSignature = req.headers['x-callback-signature'] as string;
-    const json = JSON.stringify(req.body);
+    
+    // Use rawBody for signature verification if available
+    const json = req.rawBody ? req.rawBody.toString() : JSON.stringify(req.body);
     
     const signature = crypto
       .createHmac('sha256', TRIPAY_PRIVATE_KEY || '')
@@ -168,6 +183,8 @@ app.post("/api/tripay/callback", async (req, res) => {
 
     if (signature !== callbackSignature) {
       console.error("TriPay Callback: Invalid Signature");
+      console.error("Expected:", signature);
+      console.error("Received:", callbackSignature);
       return res.status(403).json({ error: "Invalid signature" });
     }
 
@@ -188,7 +205,7 @@ app.post("/api/tripay/callback", async (req, res) => {
             status: 'paid',
             updatedAt: FieldValue.serverTimestamp()
           });
-          console.log(`Order ${merchant_ref} updated to PAID`);
+          console.log(`Order ${merchant_ref} updated to PAID in Firestore`);
         } else {
           console.warn(`Order ${merchant_ref} not found in Firestore`);
         }
