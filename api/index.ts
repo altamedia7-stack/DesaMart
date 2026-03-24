@@ -2,20 +2,59 @@ import express from "express";
 import crypto from "crypto";
 import dotenv from "dotenv";
 import cors from "cors";
+import axios from "axios";
+import { readFileSync } from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import { initializeApp, getApps } from "firebase-admin/app";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
-import firebaseConfig from "../firebase-applet-config.json" assert { type: "json" };
 
 dotenv.config();
 
-// Initialize Firebase Admin
-if (getApps().length === 0) {
-  initializeApp({
-    projectId: firebaseConfig.projectId,
-  });
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+console.log("Backend starting...");
+console.log("Environment Check:", {
+  hasApiKey: !!process.env.TRIPAY_API_KEY,
+  hasPrivateKey: !!(process.env.TRIPAY_PRIVATE_KEY || process.env.TRIPAY_PRIVATE_KE),
+  merchantCode: process.env.TRIPAY_MERCHANT_CODE || process.env.TRIPAY_MERCHANT,
+  sandbox: process.env.TRIPAY_SANDBOX
+});
+
+// Load Firebase Config safely
+let firebaseConfig: any = {};
+try {
+  const configPath = path.join(__dirname, "../firebase-applet-config.json");
+  firebaseConfig = JSON.parse(readFileSync(configPath, "utf8"));
+} catch (error) {
+  console.error("Failed to load firebase-applet-config.json:", error);
 }
 
-const db = getFirestore(firebaseConfig.firestoreDatabaseId);
+// Initialize Firebase Admin
+if (getApps().length === 0 && firebaseConfig.projectId) {
+  try {
+    initializeApp({
+      projectId: firebaseConfig.projectId,
+    });
+  } catch (error) {
+    console.error("Firebase Admin initialization error:", error);
+  }
+}
+
+// Lazy Firestore initialization
+let _db: any = null;
+const getDb = () => {
+  if (!_db) {
+    try {
+      _db = getFirestore(firebaseConfig.firestoreDatabaseId || undefined);
+    } catch (error) {
+      console.error("Firestore initialization error:", error);
+      throw error;
+    }
+  }
+  return _db;
+};
 
 const app = express();
 
@@ -23,7 +62,7 @@ app.use(cors());
 app.use(express.json());
 
 const TRIPAY_API_KEY = process.env.TRIPAY_API_KEY;
-const TRIPAY_PRIVATE_KEY = process.env.TRIPAY_PRIVATE_KEY;
+const TRIPAY_PRIVATE_KEY = process.env.TRIPAY_PRIVATE_KEY || process.env.TRIPAY_PRIVATE_KE;
 const TRIPAY_MERCHANT_CODE = process.env.TRIPAY_MERCHANT_CODE || process.env.TRIPAY_MERCHANT;
 const TRIPAY_SANDBOX = process.env.TRIPAY_SANDBOX === 'true' || 
                        process.env.TRIPAY_SANDBOX === 'Merchant Sandbox' || 
@@ -37,46 +76,27 @@ const TRIPAY_BASE_URL = TRIPAY_SANDBOX
 
 // API Routes for TriPay
 app.get("/api/tripay/payment-channels", async (req, res) => {
-  console.log("Fetching payment channels from TriPay...");
-  console.log("Using Base URL:", TRIPAY_BASE_URL);
+  console.log("Fetching payment channels from TriPay via Axios...");
   
   if (!TRIPAY_API_KEY) {
-    console.error("TRIPAY_API_KEY is missing in environment variables");
     return res.status(500).json({ success: false, message: "Konfigurasi TriPay belum lengkap (API Key kosong)" });
   }
 
-  console.log("API Key present (starts with):", TRIPAY_API_KEY.substring(0, 7) + "...");
-  console.log("Sandbox Mode:", TRIPAY_SANDBOX);
-
   try {
-    const response = await fetch(`${TRIPAY_BASE_URL}merchant/payment-channel`, {
-      method: 'GET',
+    const response = await axios.get(`${TRIPAY_BASE_URL}merchant/payment-channel`, {
       headers: {
         'Authorization': `Bearer ${TRIPAY_API_KEY}`
       }
     });
     
-    const text = await response.text();
-    console.log("TriPay Raw Response:", text);
-    
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch (e) {
-      console.error("Failed to parse TriPay response as JSON:", text);
-      return res.status(502).json({ success: false, message: "Respon dari TriPay bukan JSON yang valid" });
-    }
-    
-    console.log("TriPay Channels Response Success:", data.success);
-    
-    if (!data.success) {
-      console.error("TriPay API Error:", data.message);
-    }
-    
-    res.json(data);
-  } catch (error) {
-    console.error("TriPay Payment Channels Fetch Error:", error);
-    res.status(500).json({ success: false, message: `Gagal menghubungi server TriPay: ${error instanceof Error ? error.message : String(error)}` });
+    console.log("TriPay Channels Response Success:", response.data.success);
+    res.json(response.data);
+  } catch (error: any) {
+    console.error("TriPay Payment Channels Fetch Error:", error.response?.data || error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: `Gagal menghubungi server TriPay: ${error.response?.data?.message || error.message}` 
+    });
   }
 });
 
@@ -85,11 +105,10 @@ app.get("/api/health", (req, res) => {
 });
 
 app.post("/api/tripay/create-transaction", async (req, res) => {
-  console.log("Creating TriPay transaction...");
+  console.log("Creating TriPay transaction via Axios...");
   try {
     const { method, merchant_ref, amount, customer_name, customer_email, customer_phone, order_items } = req.body;
 
-    // Ensure amount is integer
     const intAmount = Math.round(Number(amount));
 
     const signature = crypto
@@ -107,7 +126,7 @@ app.post("/api/tripay/create-transaction", async (req, res) => {
       amount: intAmount,
       customer_name,
       customer_email,
-      customer_phone: customer_phone || '081234567890', // Fallback phone
+      customer_phone: customer_phone || '081234567890',
       order_items,
       callback_url: `${baseUrl}/api/tripay/callback`,
       return_url: `${baseUrl}/order-success/${merchant_ref}`,
@@ -115,23 +134,20 @@ app.post("/api/tripay/create-transaction", async (req, res) => {
       signature
     };
 
-    console.log("TriPay Payload:", JSON.stringify(payload, null, 2));
-
-    const response = await fetch(`${TRIPAY_BASE_URL}transaction/create`, {
-      method: 'POST',
+    const response = await axios.post(`${TRIPAY_BASE_URL}transaction/create`, payload, {
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${TRIPAY_API_KEY}`
-      },
-      body: JSON.stringify(payload)
+      }
     });
 
-    const data = await response.json();
-    console.log("TriPay Create Response:", JSON.stringify(data, null, 2));
-    res.json(data);
-  } catch (error) {
-    console.error("TriPay Create Transaction Error:", error);
-    res.status(500).json({ error: "Failed to create transaction" });
+    console.log("TriPay Create Response:", JSON.stringify(response.data, null, 2));
+    res.json(response.data);
+  } catch (error: any) {
+    console.error("TriPay Create Transaction Error:", error.response?.data || error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: error.response?.data?.message || "Failed to create transaction" 
+    });
   }
 });
 
@@ -157,6 +173,7 @@ app.post("/api/tripay/callback", async (req, res) => {
       const { merchant_ref, status } = req.body;
       
       if (status === 'PAID') {
+        const db = getDb();
         const ordersRef = db.collection('orders');
         const snapshot = await ordersRef.where('merchant_ref', '==', merchant_ref).get();
         
