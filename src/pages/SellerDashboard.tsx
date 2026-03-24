@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { db, handleFirestoreError, OperationType, storage } from '../lib/firebase';
+import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc, updateDoc, serverTimestamp, setDoc, orderBy } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Product, Order, OrderStatus, ProductVariant } from '../types';
 import { Plus, Trash2, Edit, Save, X, Store, Package, Truck, CheckCircle, Clock, AlertCircle, Layers, LocateFixed } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
@@ -200,10 +199,17 @@ const SellerDashboard: React.FC = () => {
     );
   };
 
-  const uploadImage = async (file: File, userId: string, productName: string) => {
-    const storageRef = ref(storage, `products/${userId}/${Date.now()}_${productName}`);
-    const snapshot = await uploadBytes(storageRef, file);
-    return await getDownloadURL(snapshot.ref);
+  const uploadToCloudinary = async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+    
+    const response = await fetch(`https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`, {
+      method: 'POST',
+      body: formData
+    });
+    const data = await response.json();
+    return data.secure_url;
   };
 
   const handleAddProduct = async (e: React.FormEvent) => {
@@ -219,7 +225,7 @@ const SellerDashboard: React.FC = () => {
     try {
       let imageUrl = newProduct.imageUrl;
       if (newProductImage) {
-        imageUrl = await uploadImage(newProductImage, userProfile.uid, newProduct.name);
+        imageUrl = await uploadToCloudinary(newProductImage);
       } else if (!imageUrl) {
         imageUrl = `https://picsum.photos/seed/${newProduct.name}/400/300`;
       }
@@ -297,7 +303,7 @@ const SellerDashboard: React.FC = () => {
     try {
       let imageUrl = editProduct.imageUrl;
       if (editProductImage) {
-        imageUrl = await uploadImage(editProductImage, userProfile.uid, editProduct.name);
+        imageUrl = await uploadToCloudinary(editProductImage);
       } else if (!imageUrl) {
         imageUrl = `https://picsum.photos/seed/${editProduct.name}/400/300`;
       }
