@@ -306,7 +306,7 @@ const Checkout: React.FC = () => {
               {/* Opsi Pengiriman */}
               <div className="p-4 border-b border-gray-100">
                 <div className="flex justify-between items-center mb-3">
-                  <span className="text-sm font-medium text-gray-900">Opsi Pengiriman</span>
+                  <span className="text-sm font-medium text-gray-900">Opsi Kurir</span>
                   <div className="flex items-center text-sm text-gray-500">
                     Lihat Semua <ChevronRight className="h-4 w-4 ml-1" />
                   </div>
