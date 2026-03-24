@@ -10,13 +10,14 @@ const BottomNav: React.FC = () => {
   const { unreadCount } = useNotification();
 
   const isProductDetail = location.pathname.startsWith('/products/');
+  const isCheckout = location.pathname.startsWith('/checkout/');
 
   const isActive = (path: string) => {
     if (path === '/' && location.pathname !== '/') return false;
     return location.pathname.startsWith(path);
   };
 
-  if (isProductDetail) return null;
+  if (isProductDetail || isCheckout) return null;
 
   return (
     <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 pb-safe">
