@@ -150,14 +150,10 @@ const SellerDashboard: React.FC = () => {
         
         // Reverse geocoding using OpenStreetMap Nominatim API
         try {
-          console.log(`Fetching address for: ${lat}, ${lng}`);
           const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
           const data = await response.json();
-          console.log("Reverse geocoding response:", data);
           if (data.display_name) {
             setAddress(data.display_name);
-          } else {
-            console.warn("No display_name in response");
           }
         } catch (error) {
           console.error("Error reverse geocoding:", error);
