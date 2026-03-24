@@ -218,7 +218,7 @@ const Checkout: React.FC = () => {
     return <div className="p-8 text-center">Memuat data...</div>;
   }
 
-  if (sellerItems.length === 0) {
+  if (sellerItems.length === 0 && !isSubmitting) {
     navigate('/cart');
     return null;
   }
@@ -362,12 +362,15 @@ const Checkout: React.FC = () => {
           };
 
           console.log("Saving order to Firestore:", orderData);
-          await addDoc(collection(db, path), orderData);
+          const docRef = await addDoc(collection(db, path), orderData);
+          console.log("Order saved with ID:", docRef.id);
           
-          sellerItems.forEach(item => removeFromCart(item.product.id, item.selectedVariant?.id));
-          
-          // Navigate to local payment detail instead of redirecting
+          // Navigate first, then clear cart to avoid re-render issues
+          console.log("Navigating to:", `/payment/${merchant_ref}`);
           navigate(`/payment/${merchant_ref}`);
+          
+          // Clear only items from this seller
+          sellerItems.forEach(item => removeFromCart(item.product.id, item.selectedVariant?.id));
         } else {
           alert(`Gagal membuat transaksi: ${data.message}`);
         }

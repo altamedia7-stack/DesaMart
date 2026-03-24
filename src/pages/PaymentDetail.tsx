@@ -14,18 +14,25 @@ const PaymentDetail = () => {
 
   useEffect(() => {
     const fetchOrder = async () => {
-      if (!merchantRef) return;
+      if (!merchantRef) {
+        console.log("No merchantRef in params");
+        return;
+      }
+      console.log("Fetching order for merchantRef:", merchantRef);
       try {
         const ordersRef = collection(db, 'orders');
         const q = query(ordersRef, where('merchant_ref', '==', merchantRef), limit(1));
         const querySnapshot = await getDocs(q);
         
         if (!querySnapshot.empty) {
-          setOrder(querySnapshot.docs[0].data());
+          const data = querySnapshot.docs[0].data();
+          console.log("Order found:", data);
+          setOrder(data);
         } else {
-          console.error("Order not found");
+          console.error("Order not found for merchantRef:", merchantRef);
         }
       } catch (error) {
+        console.error("Error fetching order:", error);
         handleFirestoreError(error, OperationType.GET, 'orders');
       } finally {
         setLoading(false);
