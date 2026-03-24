@@ -61,7 +61,10 @@ const Home: React.FC = () => {
         <div className="bg-white mb-2 sm:mb-6 p-3 sm:p-6 sm:rounded-xl shadow-sm">
           <div className="flex justify-between items-center mb-3 sm:mb-4 px-1 sm:px-0">
             <h2 className="text-sm sm:text-lg font-bold text-gray-800">Kategori Pilihan</h2>
-            <div className="flex items-center text-xs sm:text-sm text-emerald-600 font-medium cursor-pointer">
+            <div 
+              className="flex items-center text-xs sm:text-sm text-emerald-600 font-medium cursor-pointer hover:underline"
+              onClick={() => setSelectedCategory('Semua')}
+            >
               Lihat Semua <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </div>
