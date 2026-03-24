@@ -25,18 +25,43 @@ console.log("Environment Check:", {
 // Load Firebase Config safely
 let firebaseConfig: any = {};
 try {
-  const configPath = path.join(__dirname, "../firebase-applet-config.json");
-  firebaseConfig = JSON.parse(readFileSync(configPath, "utf8"));
+  // Try multiple paths for robustness
+  const paths = [
+    path.join(process.cwd(), "firebase-applet-config.json"),
+    path.join(__dirname, "../firebase-applet-config.json"),
+    path.join(__dirname, "../../firebase-applet-config.json")
+  ];
+  
+  let loaded = false;
+  for (const configPath of paths) {
+    try {
+      if (require('fs').existsSync(configPath)) {
+        firebaseConfig = JSON.parse(readFileSync(configPath, "utf8"));
+        console.log("Loaded firebase config from:", configPath);
+        loaded = true;
+        break;
+      }
+    } catch (e) {}
+  }
+  
+  if (!loaded) {
+    console.error("Could not find firebase-applet-config.json in any expected path");
+  }
 } catch (error) {
   console.error("Failed to load firebase-applet-config.json:", error);
 }
 
 // Initialize Firebase Admin
-if (getApps().length === 0 && firebaseConfig.projectId) {
+if (getApps().length === 0) {
   try {
-    initializeApp({
-      projectId: firebaseConfig.projectId,
-    });
+    if (firebaseConfig.projectId) {
+      initializeApp({
+        projectId: firebaseConfig.projectId,
+      });
+      console.log("Firebase Admin initialized with Project ID:", firebaseConfig.projectId);
+    } else {
+      console.warn("Firebase Project ID missing, initialization skipped");
+    }
   } catch (error) {
     console.error("Firebase Admin initialization error:", error);
   }
@@ -166,6 +191,21 @@ app.post("/api/tripay/create-transaction", async (req, res) => {
       error: errorData
     });
   }
+});
+
+app.get(["/api/tripay/callback", "/api/tripay/callback/"], (req, res) => {
+  res.send(`
+    <html>
+      <body style="font-family: sans-serif; padding: 20px; text-align: center;">
+        <h2>TriPay Callback Endpoint</h2>
+        <p>This URL is for TriPay system communication only.</p>
+        <p>If you see this, the endpoint is working and ready to receive POST requests from TriPay.</p>
+        <div style="margin-top: 20px; padding: 10px; background: #f0f0f0; border-radius: 5px; display: inline-block;">
+          <strong>Status:</strong> Online & Ready
+        </div>
+      </body>
+    </html>
+  `);
 });
 
 app.post(["/api/tripay/callback", "/api/tripay/callback/"], async (req: any, res) => {
