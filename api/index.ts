@@ -25,7 +25,11 @@ app.use(express.json());
 const TRIPAY_API_KEY = process.env.TRIPAY_API_KEY;
 const TRIPAY_PRIVATE_KEY = process.env.TRIPAY_PRIVATE_KEY;
 const TRIPAY_MERCHANT_CODE = process.env.TRIPAY_MERCHANT_CODE || process.env.TRIPAY_MERCHANT;
-const TRIPAY_SANDBOX = process.env.TRIPAY_SANDBOX === 'true' || process.env.TRIPAY_SANDBOX === 'Merchant Sandbox';
+const TRIPAY_SANDBOX = process.env.TRIPAY_SANDBOX === 'true' || 
+                       process.env.TRIPAY_SANDBOX === 'Merchant Sandbox' || 
+                       process.env.TRIPAY_SANDBOX === '1' ||
+                       process.env.TRIPAY_SANDBOX === 'sandbox' ||
+                       process.env.TRIPAY_SANDBOX === 'Sandbox';
 
 const TRIPAY_BASE_URL = TRIPAY_SANDBOX 
   ? 'https://tripay.co.id/api-sandbox/' 
@@ -34,6 +38,16 @@ const TRIPAY_BASE_URL = TRIPAY_SANDBOX
 // API Routes for TriPay
 app.get("/api/tripay/payment-channels", async (req, res) => {
   console.log("Fetching payment channels from TriPay...");
+  console.log("Using Base URL:", TRIPAY_BASE_URL);
+  
+  if (!TRIPAY_API_KEY) {
+    console.error("TRIPAY_API_KEY is missing in environment variables");
+    return res.status(500).json({ success: false, message: "Konfigurasi TriPay belum lengkap (API Key kosong)" });
+  }
+
+  console.log("API Key present (starts with):", TRIPAY_API_KEY.substring(0, 7) + "...");
+  console.log("Sandbox Mode:", TRIPAY_SANDBOX);
+
   try {
     const response = await fetch(`${TRIPAY_BASE_URL}merchant/payment-channel`, {
       method: 'GET',
@@ -41,12 +55,18 @@ app.get("/api/tripay/payment-channels", async (req, res) => {
         'Authorization': `Bearer ${TRIPAY_API_KEY}`
       }
     });
+    
     const data = await response.json();
-    console.log("TriPay Channels Response:", data.success ? "Success" : "Failed");
+    console.log("TriPay Channels Response Success:", data.success);
+    
+    if (!data.success) {
+      console.error("TriPay API Error:", data.message);
+    }
+    
     res.json(data);
   } catch (error) {
-    console.error("TriPay Payment Channels Error:", error);
-    res.status(500).json({ error: "Failed to fetch payment channels" });
+    console.error("TriPay Payment Channels Fetch Error:", error);
+    res.status(500).json({ success: false, message: "Gagal menghubungi server TriPay" });
   }
 });
 

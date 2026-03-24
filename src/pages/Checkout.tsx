@@ -66,22 +66,24 @@ const Checkout: React.FC = () => {
   const [paymentChannels, setPaymentChannels] = useState<any[]>([]);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('COD');
   const [isLoadingChannels, setIsLoadingChannels] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchChannels = async () => {
       setIsLoadingChannels(true);
+      setPaymentError(null);
       try {
         const response = await fetch('/api/tripay/payment-channels');
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
         const data = await response.json();
+        
         if (data && data.success) {
           setPaymentChannels(data.data);
         } else {
+          setPaymentError(data?.message || "Gagal memuat metode pembayaran");
           console.error("TriPay API returned failure:", data?.message);
         }
       } catch (error) {
+        setPaymentError("Terjadi kesalahan saat menghubungi server");
         console.error("Error fetching payment channels:", error);
       } finally {
         setIsLoadingChannels(false);
@@ -509,16 +511,21 @@ const Checkout: React.FC = () => {
 
                 {isLoadingChannels ? (
                   <div className="text-center text-sm text-gray-500 py-2">Memuat metode pembayaran...</div>
+                ) : paymentError ? (
+                  <div className="text-center text-xs text-red-500 py-2 bg-red-50 rounded border border-red-100 p-2">
+                    {paymentError}
+                  </div>
                 ) : (
-                  paymentChannels.filter(c => c.active).map(channel => (
+                  paymentChannels.map(channel => (
                     <div 
                       key={channel.code}
-                      className={`flex justify-between items-center cursor-pointer p-2 rounded border ${selectedPaymentMethod === channel.code ? 'border-[#ee4d2d] bg-orange-50' : 'border-gray-100'}`}
-                      onClick={() => setSelectedPaymentMethod(channel.code)}
+                      className={`flex justify-between items-center cursor-pointer p-2 rounded border ${selectedPaymentMethod === channel.code ? 'border-[#ee4d2d] bg-orange-50' : 'border-gray-100'} ${!channel.active ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+                      onClick={() => channel.active && setSelectedPaymentMethod(channel.code)}
                     >
                       <div className="flex items-center gap-2">
                         <img src={channel.icon_url} alt={channel.name} className="h-6 w-auto" referrerPolicy="no-referrer" />
                         <span className="text-sm text-gray-900">{channel.name}</span>
+                        {!channel.active && <span className="text-[10px] text-gray-400 italic">(Tidak tersedia)</span>}
                       </div>
                       {selectedPaymentMethod === channel.code && <CheckCircle2 className="h-5 w-5 text-[#ee4d2d]" />}
                     </div>
