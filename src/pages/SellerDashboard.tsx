@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { db, handleFirestoreError, OperationType } from '../lib/firebase';
+import { db, handleFirestoreError, OperationType, storage } from '../lib/firebase';
 import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc, updateDoc, serverTimestamp, setDoc, orderBy } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Product, Order, OrderStatus, ProductVariant } from '../types';
 import { Plus, Trash2, Edit, Save, X, Store, Package, Truck, CheckCircle, Clock, AlertCircle, Layers, LocateFixed } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
@@ -60,6 +61,8 @@ const SellerDashboard: React.FC = () => {
 
   // New product state
   const [isAddingProduct, setIsAddingProduct] = useState(false);
+  const [editProductImage, setEditProductImage] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [newProduct, setNewProduct] = useState({
     name: '',
     description: '',
@@ -70,6 +73,7 @@ const SellerDashboard: React.FC = () => {
     discountPercentage: '',
     variants: [] as ProductVariant[]
   });
+  const [newProductImage, setNewProductImage] = useState<File | null>(null);
 
   // Edit product state
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
@@ -196,6 +200,12 @@ const SellerDashboard: React.FC = () => {
     );
   };
 
+  const uploadImage = async (file: File, userId: string, productName: string) => {
+    const storageRef = ref(storage, `products/${userId}/${Date.now()}_${productName}`);
+    const snapshot = await uploadBytes(storageRef, file);
+    return await getDownloadURL(snapshot.ref);
+  };
+
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userProfile?.uid) return;
@@ -205,7 +215,15 @@ const SellerDashboard: React.FC = () => {
       return;
     }
 
+    setUploadingImage(true);
     try {
+      let imageUrl = newProduct.imageUrl;
+      if (newProductImage) {
+        imageUrl = await uploadImage(newProductImage, userProfile.uid, newProduct.name);
+      } else if (!imageUrl) {
+        imageUrl = `https://picsum.photos/seed/${newProduct.name}/400/300`;
+      }
+
       await addDoc(collection(db, 'products'), {
         sellerId: userProfile.uid,
         sellerName: userProfile.name,
@@ -217,7 +235,7 @@ const SellerDashboard: React.FC = () => {
         category: newProduct.category,
         discountPercentage: newProduct.discountPercentage ? Number(newProduct.discountPercentage) : 0,
         variants: newProduct.variants,
-        imageUrl: newProduct.imageUrl || `https://picsum.photos/seed/${newProduct.name}/400/300`,
+        imageUrl,
         createdAt: serverTimestamp()
       });
       
@@ -238,9 +256,12 @@ const SellerDashboard: React.FC = () => {
       
       setIsAddingProduct(false);
       setNewProduct({ name: '', description: '', price: '', stock: '', category: 'Sayur', imageUrl: '', discountPercentage: '', variants: [] });
+      setNewProductImage(null);
       alert('Produk berhasil ditambahkan!');
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, 'products');
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -270,9 +291,17 @@ const SellerDashboard: React.FC = () => {
 
   const handleUpdateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingProductId) return;
+    if (!editingProductId || !userProfile?.uid) return;
 
+    setUploadingImage(true);
     try {
+      let imageUrl = editProduct.imageUrl;
+      if (editProductImage) {
+        imageUrl = await uploadImage(editProductImage, userProfile.uid, editProduct.name);
+      } else if (!imageUrl) {
+        imageUrl = `https://picsum.photos/seed/${editProduct.name}/400/300`;
+      }
+
       await updateDoc(doc(db, 'products', editingProductId), {
         name: editProduct.name,
         description: editProduct.description,
@@ -281,13 +310,16 @@ const SellerDashboard: React.FC = () => {
         category: editProduct.category,
         discountPercentage: editProduct.discountPercentage ? Number(editProduct.discountPercentage) : 0,
         variants: editProduct.variants,
-        imageUrl: editProduct.imageUrl || `https://picsum.photos/seed/${editProduct.name}/400/300`
+        imageUrl
       });
       
       setEditingProductId(null);
+      setEditProductImage(null);
       alert('Produk berhasil diperbarui!');
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `products/${editingProductId}`);
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -602,8 +634,15 @@ const SellerDashboard: React.FC = () => {
                     <input type="number" min="0" max="100" value={newProduct.discountPercentage} onChange={e => setNewProduct({...newProduct, discountPercentage: e.target.value})} className="w-full border border-gray-300 rounded-md p-2" placeholder="0" />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">URL Gambar (Opsional)</label>
-                    <input type="text" placeholder="https://..." value={newProduct.imageUrl} onChange={e => setNewProduct({...newProduct, imageUrl: e.target.value})} className="w-full border border-gray-300 rounded-md p-2" />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Gambar Produk</label>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={e => setNewProductImage(e.target.files?.[0] || null)} 
+                      className="w-full border border-gray-300 rounded-md p-2" 
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Atau masukkan URL gambar jika tidak ingin upload:</p>
+                    <input type="text" placeholder="https://..." value={newProduct.imageUrl} onChange={e => setNewProduct({...newProduct, imageUrl: e.target.value})} className="w-full border border-gray-300 rounded-md p-2 mt-1" />
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Deskripsi *</label>
@@ -767,8 +806,15 @@ const SellerDashboard: React.FC = () => {
                                     <input type="number" min="0" max="100" value={editProduct.discountPercentage} onChange={e => setEditProduct({...editProduct, discountPercentage: e.target.value})} className="w-full border border-gray-300 rounded p-1.5 text-sm" placeholder="0" />
                                   </div>
                                   <div className="md:col-span-2">
-                                    <label className="block text-xs font-medium text-gray-700 mb-1">URL Gambar (Opsional)</label>
-                                    <input type="text" value={editProduct.imageUrl} onChange={e => setEditProduct({...editProduct, imageUrl: e.target.value})} className="w-full border border-gray-300 rounded p-1.5 text-sm" />
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">Gambar Produk</label>
+                                    <input 
+                                      type="file" 
+                                      accept="image/*" 
+                                      onChange={e => setEditProductImage(e.target.files?.[0] || null)} 
+                                      className="w-full border border-gray-300 rounded p-1.5 text-sm" 
+                                    />
+                                    <p className="text-[10px] text-gray-500 mt-1">Atau masukkan URL gambar jika tidak ingin upload:</p>
+                                    <input type="text" value={editProduct.imageUrl} onChange={e => setEditProduct({...editProduct, imageUrl: e.target.value})} className="w-full border border-gray-300 rounded p-1.5 text-sm mt-1" />
                                   </div>
                                   <div className="md:col-span-2">
                                     <label className="block text-xs font-medium text-gray-700 mb-1">Deskripsi *</label>
