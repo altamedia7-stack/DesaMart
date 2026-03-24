@@ -15,6 +15,7 @@ import SellerProfile from './pages/SellerProfile';
 import Cart from './pages/Cart';
 import Notifications from './pages/Notifications';
 import MyOrders from './pages/MyOrders';
+import Profile from './pages/Profile';
 import ErrorBoundary from './components/ErrorBoundary';
 
 import Checkout from './pages/Checkout';
@@ -37,6 +38,7 @@ function App() {
                     <Route path="/checkout/:sellerId" element={<Checkout />} />
                     <Route path="/notifications" element={<Notifications />} />
                     <Route path="/orders" element={<MyOrders />} />
+                    <Route path="/profile" element={<Profile />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/seller" element={<SellerDashboard />} />

@@ -52,6 +52,12 @@ const SellerDashboard: React.FC = () => {
   const [isLocating, setIsLocating] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
 
+  useEffect(() => {
+    setWhatsapp(userProfile?.whatsapp || '');
+    setAddress(userProfile?.address || '');
+    setLocation(userProfile?.location || null);
+  }, [userProfile]);
+
   // New product state
   const [isAddingProduct, setIsAddingProduct] = useState(false);
   const [newProduct, setNewProduct] = useState({

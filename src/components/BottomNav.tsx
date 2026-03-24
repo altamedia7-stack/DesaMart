@@ -62,8 +62,8 @@ const BottomNav: React.FC = () => {
         </Link>
 
         <Link 
-          to={currentUser ? (userProfile?.role === 'admin' ? '/admin' : '/seller') : '/login'} 
-          className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/login') || isActive('/admin') || (isActive('/seller') && location.pathname !== '/seller') ? 'text-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}
+          to={currentUser ? '/profile' : '/login'} 
+          className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/login') || isActive('/profile') ? 'text-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}
         >
           <User className="h-5 w-5" />
           <span className="text-[10px] font-medium">Saya</span>

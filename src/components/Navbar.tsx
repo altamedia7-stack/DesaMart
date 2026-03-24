@@ -107,10 +107,10 @@ const Navbar: React.FC = () => {
                     <Shield className="h-3.5 w-3.5" /> Admin
                   </Link>
                 )}
-                <div className="flex items-center gap-1.5 hover:text-emerald-200 transition cursor-pointer">
+                <Link to="/profile" className="flex items-center gap-1.5 hover:text-emerald-200 transition cursor-pointer">
                   <User className="h-4 w-4" />
                   <span>{userProfile?.name}</span>
-                </div>
+                </Link>
                 <button onClick={handleLogout} className="hover:text-emerald-200 transition">Logout</button>
               </div>
             )}
