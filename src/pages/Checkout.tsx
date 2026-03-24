@@ -163,38 +163,10 @@ const Checkout: React.FC = () => {
   const handlePlaceOrder = async () => {
     if (!currentUser || !sellerId) return;
     
-    // WhatsApp logic - prepare first
-    let phone = sellerWhatsapp;
-    if (phone.startsWith('0')) {
-      phone = '62' + phone.substring(1);
-    }
-
-    let message = `Halo ${sellerName}, saya ingin memesan produk berikut dari DesaMart:\n\n`;
-    
-    sellerItems.forEach((item, index) => {
-      const basePrice = item.selectedVariant ? item.selectedVariant.price : item.product.price;
-      const discount = item.selectedVariant ? (item.selectedVariant.discountPercentage || 0) : (item.product.discountPercentage || 0);
-      const price = discount > 0 ? basePrice * (1 - discount / 100) : basePrice;
-      const itemTotal = price * item.quantity;
-      message += `${index + 1}. ${item.product.name}${item.selectedVariant ? ` (${item.selectedVariant.name})` : ''}\n`;
-      message += `   Jumlah: ${item.quantity}\n`;
-      message += `   Harga: Rp ${itemTotal.toLocaleString('id-ID')}\n\n`;
-    });
-
-    message += `*Subtotal Pesanan: Rp ${subtotalPesanan.toLocaleString('id-ID')}*\n`;
-    if (shippingCost !== null) {
-      message += `*Ongkos Kirim: Rp ${shippingCost.toLocaleString('id-ID')}*\n`;
-    }
-    message += `*Total Pembayaran: Rp ${totalPembayaran.toLocaleString('id-ID')}*\n\n`;
-    message += `Metode Pembayaran: COD (Bayar di Tempat)\n`;
-    message += `Mohon segera diproses. Terima kasih!`;
-
-    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
-
     setIsSubmitting(true);
 
     try {
+      // 1. Save to Firestore first
       const path = 'orders';
       await addDoc(collection(db, path), {
         buyerId: currentUser.uid,
@@ -211,13 +183,43 @@ const Checkout: React.FC = () => {
         updatedAt: serverTimestamp()
       });
       
-      // Remove items from cart
+      // 2. Remove items from cart
       sellerItems.forEach(item => removeFromCart(item.product.id, item.selectedVariant?.id));
+
+      // 3. WhatsApp logic
+      let phone = sellerWhatsapp;
+      if (phone.startsWith('0')) {
+        phone = '62' + phone.substring(1);
+      }
+
+      let message = `Halo ${sellerName}, saya ingin memesan produk berikut dari DesaMart:\n\n`;
       
+      sellerItems.forEach((item, index) => {
+        const basePrice = item.selectedVariant ? item.selectedVariant.price : item.product.price;
+        const discount = item.selectedVariant ? (item.selectedVariant.discountPercentage || 0) : (item.product.discountPercentage || 0);
+        const price = discount > 0 ? basePrice * (1 - discount / 100) : basePrice;
+        const itemTotal = price * item.quantity;
+        message += `${index + 1}. ${item.product.name}${item.selectedVariant ? ` (${item.selectedVariant.name})` : ''}\n`;
+        message += `   Jumlah: ${item.quantity}\n`;
+        message += `   Harga: Rp ${itemTotal.toLocaleString('id-ID')}\n\n`;
+      });
+
+      message += `*Subtotal Pesanan: Rp ${subtotalPesanan.toLocaleString('id-ID')}*\n`;
+      if (shippingCost !== null) {
+        message += `*Ongkos Kirim: Rp ${shippingCost.toLocaleString('id-ID')}*\n`;
+      }
+      message += `*Total Pembayaran: Rp ${totalPembayaran.toLocaleString('id-ID')}*\n\n`;
+      message += `Metode Pembayaran: COD (Bayar di Tempat)\n`;
+      message += `Mohon segera diproses. Terima kasih!`;
+
+      const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+      window.open(url, '_blank');
+      
+      // 4. Navigate
       navigate('/orders');
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, 'orders');
-      alert("Gagal membuat pesanan di sistem. Namun, pesan WhatsApp sudah terbuka. Silakan kirim pesan tersebut.");
+      alert("Gagal membuat pesanan di sistem. Silakan coba lagi.");
     } finally {
       setIsSubmitting(false);
     }
