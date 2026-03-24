@@ -331,9 +331,12 @@ const Checkout: React.FC = () => {
               <div className="p-4 border-b border-gray-100">
                 <div className="flex justify-between items-center mb-3">
                   <span className="text-sm font-medium text-gray-900">Opsi Kurir</span>
-                  <div className="flex items-center text-sm text-gray-500">
+                  <button 
+                    className="flex items-center text-sm text-[#ee4d2d] hover:underline"
+                    onClick={() => alert('Fitur pemilihan kurir sedang dalam pengembangan.')}
+                  >
                     Lihat Semua <ChevronRight className="h-4 w-4 ml-1" />
-                  </div>
+                  </button>
                 </div>
                 <div className="bg-[#f6fbf9] border border-[#a5d6c1] rounded p-3">
                   <div className="flex justify-between items-start">
