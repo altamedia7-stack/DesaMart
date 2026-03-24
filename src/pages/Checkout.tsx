@@ -155,10 +155,18 @@ const Checkout: React.FC = () => {
   useEffect(() => {
     if (!currentUser) {
       navigate('/login');
-    } else if (sellerItems.length === 0) {
-      navigate('/cart');
     }
-  }, [currentUser, sellerItems, navigate]);
+  }, [currentUser, navigate]);
+
+  // Wait for cart to be populated
+  if (cartItems.length > 0 && sellerItems.length === 0) {
+    return <div className="p-8 text-center">Memuat keranjang...</div>;
+  }
+
+  if (sellerItems.length === 0) {
+    navigate('/cart');
+    return null;
+  }
 
   const handlePlaceOrder = async () => {
     if (!currentUser || !sellerId) return;
