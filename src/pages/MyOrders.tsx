@@ -38,6 +38,8 @@ const MyOrders: React.FC = () => {
 
   const getStatusIcon = (status: OrderStatus) => {
     switch (status) {
+      case 'unpaid': return <AlertCircle className="h-5 w-5 text-orange-500" />;
+      case 'paid': return <CheckCircle className="h-5 w-5 text-emerald-500" />;
       case 'pending': return <Clock className="h-5 w-5 text-yellow-500" />;
       case 'shipped': return <Package className="h-5 w-5 text-blue-500" />;
       case 'in_transit': return <Truck className="h-5 w-5 text-indigo-500" />;
@@ -49,6 +51,8 @@ const MyOrders: React.FC = () => {
 
   const getStatusLabel = (status: OrderStatus) => {
     switch (status) {
+      case 'unpaid': return 'Belum Dibayar';
+      case 'paid': return 'Sudah Dibayar';
       case 'pending': return 'Menunggu Konfirmasi';
       case 'shipped': return 'Telah Dikirim';
       case 'in_transit': return 'Dalam Perjalanan';
@@ -60,6 +64,8 @@ const MyOrders: React.FC = () => {
 
   const getStatusColorClass = (status: OrderStatus) => {
     switch (status) {
+      case 'unpaid': return 'text-orange-600 bg-orange-50 border-orange-100';
+      case 'paid': return 'text-emerald-600 bg-emerald-50 border-emerald-100';
       case 'pending': return 'text-yellow-600 bg-yellow-50 border-yellow-100';
       case 'shipped': return 'text-blue-600 bg-blue-50 border-blue-100';
       case 'in_transit': return 'text-indigo-600 bg-indigo-50 border-indigo-100';
@@ -178,15 +184,27 @@ const MyOrders: React.FC = () => {
                 </div>
 
                 {/* Action Button (Optional: Link to Chat Seller) */}
-                <div className="mt-6 pt-6 border-t border-gray-50 flex justify-end">
-                  <a 
-                    href={`https://wa.me/${order.items[0].product.sellerWhatsapp}?text=Halo, saya ingin bertanya tentang pesanan saya dengan ID ${order.id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-emerald-600 text-sm font-bold flex items-center gap-1 hover:underline"
-                  >
-                    Hubungi Penjual <ChevronRight className="h-4 w-4" />
-                  </a>
+                <div className="mt-6 pt-6 border-t border-gray-50 flex flex-col gap-3">
+                  {order.status === 'unpaid' && order.checkout_url && (
+                    <a 
+                      href={order.checkout_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full inline-flex items-center justify-center px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-orange-200"
+                    >
+                      Bayar Sekarang
+                    </a>
+                  )}
+                  <div className="flex justify-end">
+                    <a 
+                      href={`https://wa.me/${order.items[0].product.sellerWhatsapp}?text=Halo, saya ingin bertanya tentang pesanan saya dengan ID ${order.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-emerald-600 text-sm font-bold flex items-center gap-1 hover:underline"
+                    >
+                      Hubungi Penjual <ChevronRight className="h-4 w-4" />
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>

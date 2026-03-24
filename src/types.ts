@@ -1,5 +1,5 @@
 export type Role = 'admin' | 'seller' | 'buyer';
-export type OrderStatus = 'pending' | 'shipped' | 'in_transit' | 'delivered' | 'cancelled';
+export type OrderStatus = 'pending' | 'shipped' | 'in_transit' | 'delivered' | 'cancelled' | 'unpaid' | 'paid';
 
 export interface UserProfile {
   uid: string;
@@ -78,6 +78,10 @@ export interface Order {
   items: CartItem[];
   totalPrice: number;
   status: OrderStatus;
+  paymentMethod: string;
+  tripay_reference?: string;
+  checkout_url?: string;
+  merchant_ref?: string;
   createdAt: any; // Firestore Timestamp
   updatedAt: any; // Firestore Timestamp
 }

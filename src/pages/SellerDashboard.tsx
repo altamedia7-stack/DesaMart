@@ -383,7 +383,9 @@ const SellerDashboard: React.FC = () => {
         shipped: 'Dikirim',
         in_transit: 'Dalam Perjalanan',
         delivered: 'Diterima',
-        cancelled: 'Dibatalkan'
+        cancelled: 'Dibatalkan',
+        unpaid: 'Belum Dibayar',
+        paid: 'Sudah Dibayar'
       };
 
       try {

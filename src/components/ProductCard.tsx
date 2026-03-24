@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Product, Courier, ProductVariant } from '../types';
 import { MessageCircle, Truck, X, ShoppingCart, Store, Share2, Layers } from 'lucide-react';
 import { collection, getDocs } from 'firebase/firestore';
@@ -13,6 +13,7 @@ interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, showStock = true }) => {
   const { addToCart } = useCart();
+  const navigate = useNavigate();
   const [showShipping, setShowShipping] = useState(false);
   const [couriers, setCouriers] = useState<Courier[]>([]);
   const [distance, setDistance] = useState<number>(1);

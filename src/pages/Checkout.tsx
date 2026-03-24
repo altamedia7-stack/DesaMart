@@ -63,6 +63,27 @@ const Checkout: React.FC = () => {
   const [shippingCost, setShippingCost] = useState<number | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [sellerLocation, setSellerLocation] = useState<{lat: number, lng: number}>(SELLER_LOCATION);
+  const [paymentChannels, setPaymentChannels] = useState<any[]>([]);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('COD');
+  const [isLoadingChannels, setIsLoadingChannels] = useState(false);
+
+  useEffect(() => {
+    const fetchChannels = async () => {
+      setIsLoadingChannels(true);
+      try {
+        const response = await fetch('/api/tripay/payment-channels');
+        const data = await response.json();
+        if (data.success) {
+          setPaymentChannels(data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching payment channels:", error);
+      } finally {
+        setIsLoadingChannels(false);
+      }
+    };
+    fetchChannels();
+  }, []);
 
   useEffect(() => {
     const fetchSeller = async () => {
@@ -183,78 +204,135 @@ const Checkout: React.FC = () => {
   const handlePlaceOrder = async () => {
     if (!currentUser || !sellerId) return;
     
-    console.log("handlePlaceOrder dipanggil. shippingCost:", shippingCost);
     if (shippingCost === null) {
       alert("Ongkos kirim belum dihitung. Silakan pilih lokasi.");
       return;
     }
 
     setIsSubmitting(true);
-    console.log("Memulai proses pesanan...");
 
     try {
-      // 1. Save to Firestore first
-      console.log("Menyimpan ke Firestore...");
-      const path = 'orders';
-      await addDoc(collection(db, path), {
-        buyerId: currentUser.uid,
-        buyerName: userProfile?.name || currentUser.email,
-        sellerId: sellerId,
-        sellerName: sellerName,
-        items: sellerItems,
-        totalPrice: totalPembayaran,
-        status: 'pending',
-        paymentMethod: 'COD',
-        shippingMethod: 'Reguler',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-      console.log("Berhasil disimpan ke Firestore.");
+      const merchant_ref = `ORDER-${Date.now()}`;
       
-      // 2. Remove items from cart
-      console.log("Mengosongkan keranjang...");
-      sellerItems.forEach(item => removeFromCart(item.product.id, item.selectedVariant?.id));
+      if (selectedPaymentMethod === 'COD') {
+        const path = 'orders';
+        await addDoc(collection(db, path), {
+          buyerId: currentUser.uid,
+          buyerName: userProfile?.name || currentUser.email,
+          sellerId: sellerId,
+          sellerName: sellerName,
+          items: sellerItems,
+          totalPrice: totalPembayaran,
+          status: 'pending',
+          paymentMethod: 'COD',
+          shippingMethod: 'Reguler',
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          merchant_ref
+        });
+        
+        sellerItems.forEach(item => removeFromCart(item.product.id, item.selectedVariant?.id));
 
-      // 3. WhatsApp logic
-      console.log("Membuka WhatsApp...");
-      let phone = sellerWhatsapp;
-      if (phone.startsWith('0')) {
-        phone = '62' + phone.substring(1);
-      }
+        let phone = sellerWhatsapp;
+        if (phone.startsWith('0')) {
+          phone = '62' + phone.substring(1);
+        }
 
-      let message = `Halo ${sellerName}, saya ingin memesan produk berikut dari DesaMart:\n\n`;
-      
-      sellerItems.forEach((item, index) => {
-        const basePrice = item.selectedVariant ? item.selectedVariant.price : item.product.price;
-        const discount = item.selectedVariant ? (item.selectedVariant.discountPercentage || 0) : (item.product.discountPercentage || 0);
-        const price = discount > 0 ? basePrice * (1 - discount / 100) : basePrice;
-        const itemTotal = price * item.quantity;
-        message += `${index + 1}. ${item.product.name}${item.selectedVariant ? ` (${item.selectedVariant.name})` : ''}\n`;
-        message += `   Jumlah: ${item.quantity}\n`;
-        message += `   Harga: Rp ${itemTotal.toLocaleString('id-ID')}\n\n`;
-      });
+        let message = `Halo ${sellerName}, saya ingin memesan produk berikut dari DesaMart:\n\n`;
+        
+        sellerItems.forEach((item, index) => {
+          const basePrice = item.selectedVariant ? item.selectedVariant.price : item.product.price;
+          const discount = item.selectedVariant ? (item.selectedVariant.discountPercentage || 0) : (item.product.discountPercentage || 0);
+          const price = discount > 0 ? basePrice * (1 - discount / 100) : basePrice;
+          const itemTotal = price * item.quantity;
+          message += `${index + 1}. ${item.product.name}${item.selectedVariant ? ` (${item.selectedVariant.name})` : ''}\n`;
+          message += `   Jumlah: ${item.quantity}\n`;
+          message += `   Harga: Rp ${itemTotal.toLocaleString('id-ID')}\n\n`;
+        });
 
-      message += `*Subtotal Pesanan: Rp ${subtotalPesanan.toLocaleString('id-ID')}*\n`;
-      if (shippingCost !== null) {
+        message += `*Subtotal Pesanan: Rp ${subtotalPesanan.toLocaleString('id-ID')}*\n`;
         message += `*Ongkos Kirim: Rp ${shippingCost.toLocaleString('id-ID')}*\n`;
-      }
-      message += `*Total Pembayaran: Rp ${totalPembayaran.toLocaleString('id-ID')}*\n\n`;
-      message += `Metode Pembayaran: COD (Bayar di Tempat)\n`;
-      message += `Mohon segera diproses. Terima kasih!`;
+        message += `*Total Pembayaran: Rp ${totalPembayaran.toLocaleString('id-ID')}*\n\n`;
+        message += `Metode Pembayaran: COD (Bayar di Tempat)\n`;
+        message += `Alamat: ${selectedVillage}, ${selectedCity}`;
+        
+        const encodedMessage = encodeURIComponent(message);
+        window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
+        
+        navigate('/orders');
+      } else {
+        // TriPay logic
+        const orderItems = sellerItems.map(item => {
+          const basePrice = item.selectedVariant ? item.selectedVariant.price : item.product.price;
+          const discount = item.selectedVariant ? (item.selectedVariant.discountPercentage || 0) : (item.product.discountPercentage || 0);
+          const price = discount > 0 ? basePrice * (1 - discount / 100) : basePrice;
+          return {
+            sku: item.product.id,
+            name: item.product.name,
+            price: price,
+            quantity: item.quantity
+          };
+        });
 
-      const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-      window.open(url, '_blank');
-      
-      // 4. Navigate
-      console.log("Navigasi ke halaman pesanan...");
-      navigate('/orders');
+        // Add shipping as an item
+        orderItems.push({
+          sku: 'SHIPPING',
+          name: 'Ongkos Kirim',
+          price: shippingCost,
+          quantity: 1
+        });
+
+        const response = await fetch('/api/tripay/create-transaction', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            method: selectedPaymentMethod,
+            merchant_ref,
+            amount: totalPembayaran,
+            customer_name: userProfile?.name || 'Customer',
+            customer_email: currentUser.email || 'customer@example.com',
+            customer_phone: userProfile?.whatsapp || '',
+            order_items: orderItems
+          })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+          const path = 'orders';
+          await addDoc(collection(db, path), {
+            buyerId: currentUser.uid,
+            buyerName: userProfile?.name || currentUser.email,
+            sellerId: sellerId,
+            sellerName: sellerName,
+            items: sellerItems,
+            totalPrice: totalPembayaran,
+            status: 'unpaid',
+            paymentMethod: selectedPaymentMethod,
+            tripay_reference: data.data.reference,
+            checkout_url: data.data.checkout_url,
+            shippingAddress: {
+              city: selectedCity,
+              village: selectedVillage,
+              location: selectedLocation
+            },
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            merchant_ref
+          });
+          
+          sellerItems.forEach(item => removeFromCart(item.product.id, item.selectedVariant?.id));
+          
+          // Redirect to TriPay checkout
+          window.location.href = data.data.checkout_url;
+        } else {
+          alert(`Gagal membuat transaksi: ${data.message}`);
+        }
+      }
     } catch (error) {
-      console.error("Error di handlePlaceOrder:", error);
       handleFirestoreError(error, OperationType.WRITE, 'orders');
-      alert("Gagal membuat pesanan di sistem. Silakan coba lagi.");
     } finally {
       setIsSubmitting(false);
-      console.log("Proses selesai.");
     }
   };
 
@@ -404,18 +482,36 @@ const Checkout: React.FC = () => {
             <div className="bg-white md:rounded-lg shadow-sm">
               <div className="p-4 border-b border-gray-100 flex justify-between items-center">
                 <span className="text-sm font-medium text-gray-900">Metode Pembayaran</span>
-                <div className="flex items-center text-sm text-gray-500">
-                  Lihat Semua <ChevronRight className="h-4 w-4 ml-1" />
-                </div>
               </div>
-              <div className="p-4">
-                <div className="flex justify-between items-center">
+              <div className="p-4 space-y-4">
+                <div 
+                  className={`flex justify-between items-center cursor-pointer p-2 rounded border ${selectedPaymentMethod === 'COD' ? 'border-[#ee4d2d] bg-orange-50' : 'border-gray-100'}`}
+                  onClick={() => setSelectedPaymentMethod('COD')}
+                >
                   <div className="flex items-center gap-2">
                     <span className="bg-orange-100 text-orange-600 text-[10px] font-bold px-1 border border-orange-200 rounded">COD</span>
                     <span className="text-sm text-gray-900">Bayar di Tempat</span>
                   </div>
-                  <CheckCircle2 className="h-5 w-5 text-[#ee4d2d]" />
+                  {selectedPaymentMethod === 'COD' && <CheckCircle2 className="h-5 w-5 text-[#ee4d2d]" />}
                 </div>
+
+                {isLoadingChannels ? (
+                  <div className="text-center text-sm text-gray-500 py-2">Memuat metode pembayaran...</div>
+                ) : (
+                  paymentChannels.filter(c => c.active).map(channel => (
+                    <div 
+                      key={channel.code}
+                      className={`flex justify-between items-center cursor-pointer p-2 rounded border ${selectedPaymentMethod === channel.code ? 'border-[#ee4d2d] bg-orange-50' : 'border-gray-100'}`}
+                      onClick={() => setSelectedPaymentMethod(channel.code)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <img src={channel.icon_url} alt={channel.name} className="h-6 w-auto" referrerPolicy="no-referrer" />
+                        <span className="text-sm text-gray-900">{channel.name}</span>
+                      </div>
+                      {selectedPaymentMethod === channel.code && <CheckCircle2 className="h-5 w-5 text-[#ee4d2d]" />}
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
