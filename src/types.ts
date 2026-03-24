@@ -8,6 +8,7 @@ export interface UserProfile {
   role: Role;
   whatsapp?: string;
   address?: string;
+  location?: { lat: number, lng: number };
   createdAt: any; // Firestore Timestamp
 }
 

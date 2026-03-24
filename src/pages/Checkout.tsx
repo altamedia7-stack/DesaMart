@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import { ArrowLeft, MapPin, ChevronRight, CheckCircle2, Circle, Map, Store, Home, LocateFixed } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -22,6 +22,18 @@ let DefaultIcon = L.icon({
 L.Marker.prototype.options.icon = DefaultIcon;
 
 const SELLER_LOCATION = { lat: -8.2192, lng: 114.3692 }; // Mock seller location (Banyuwangi)
+
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371; // Radius of the earth in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+  return R * c;
+}
 
 function LocationSelector({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number) => void }) {
   useMapEvents({
@@ -49,6 +61,26 @@ const Checkout: React.FC = () => {
   const [selectedLocation, setSelectedLocation] = useState<{lat: number, lng: number} | null>(null);
   const [shippingCost, setShippingCost] = useState<number | null>(null);
   const [isLocating, setIsLocating] = useState(false);
+  const [sellerLocation, setSellerLocation] = useState<{lat: number, lng: number}>(SELLER_LOCATION);
+
+  useEffect(() => {
+    const fetchSeller = async () => {
+      if (!sellerId) return;
+      try {
+        const docRef = doc(db, 'users', sellerId);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.location) {
+            setSellerLocation(data.location);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching seller location:", error);
+      }
+    };
+    fetchSeller();
+  }, [sellerId]);
 
   const [selectedCity, setSelectedCity] = useState<string>('');
   const [selectedVillage, setSelectedVillage] = useState<string>('');
@@ -67,15 +99,7 @@ const Checkout: React.FC = () => {
         setSelectedLocation({ lat, lng });
 
         // Calculate distance in km
-        const R = 6371; // Radius of the earth in km
-        const dLat = (lat - SELLER_LOCATION.lat) * Math.PI / 180;
-        const dLon = (lng - SELLER_LOCATION.lng) * Math.PI / 180;
-        const a = 
-          Math.sin(dLat/2) * Math.sin(dLat/2) +
-          Math.cos(SELLER_LOCATION.lat * Math.PI / 180) * Math.cos(lat * Math.PI / 180) * 
-          Math.sin(dLon/2) * Math.sin(dLon/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-        const distanceKm = R * c;
+        const distanceKm = calculateDistance(sellerLocation.lat, sellerLocation.lng, lat, lng);
         
         // Mock calculation: Rp 2000 per km
         setShippingCost(Math.max(5000, Math.round(distanceKm * 2000))); // Minimum Rp 5000
@@ -414,12 +438,12 @@ const Checkout: React.FC = () => {
 
               <div className="h-[300px] w-full rounded-lg overflow-hidden border border-gray-200 relative z-0">
                 <MapContainer 
-                  center={selectedLocation ? [selectedLocation.lat, selectedLocation.lng] : [SELLER_LOCATION.lat, SELLER_LOCATION.lng]} 
+                  center={selectedLocation ? [selectedLocation.lat, selectedLocation.lng] : [sellerLocation.lat, sellerLocation.lng]} 
                   zoom={selectedLocation ? 13 : 11} 
                   style={{ height: '100%', width: '100%' }}
                 >
                   <MapUpdater 
-                    center={selectedLocation ? [selectedLocation.lat, selectedLocation.lng] : [SELLER_LOCATION.lat, SELLER_LOCATION.lng]} 
+                    center={selectedLocation ? [selectedLocation.lat, selectedLocation.lng] : [sellerLocation.lat, sellerLocation.lng]} 
                     zoom={selectedLocation ? 13 : 11} 
                   />
                   <TileLayer
@@ -427,8 +451,16 @@ const Checkout: React.FC = () => {
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   />
                   
+                  <LocationSelector onLocationSelect={(lat, lng) => {
+                    setSelectedLocation({ lat, lng });
+                    const distanceKm = calculateDistance(sellerLocation.lat, sellerLocation.lng, lat, lng);
+                    setShippingCost(Math.max(5000, Math.round(distanceKm * 2000)));
+                    setSelectedCity('');
+                    setSelectedVillage('');
+                  }} />
+                  
                   {/* Seller Marker */}
-                  <Marker position={[SELLER_LOCATION.lat, SELLER_LOCATION.lng]}>
+                  <Marker position={[sellerLocation.lat, sellerLocation.lng]}>
                     <Popup>Lokasi Penjual</Popup>
                   </Marker>
                   
@@ -440,6 +472,9 @@ const Checkout: React.FC = () => {
                   )}
                 </MapContainer>
               </div>
+              <p className="text-xs text-gray-500 mt-2">
+                * Anda juga bisa menggeser peta dan klik untuk menentukan lokasi pengiriman secara manual.
+              </p>
             </div>
 
           </div>
