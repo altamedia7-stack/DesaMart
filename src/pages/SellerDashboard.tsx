@@ -147,6 +147,31 @@ const SellerDashboard: React.FC = () => {
     }
   };
 
+  const fetchCoordsFromAddress = async (addr: string) => {
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}&limit=1`);
+      const data = await response.json();
+      if (data && data.length > 0) {
+        setLocation({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) });
+      }
+    } catch (error) {
+      console.error("Error geocoding address:", error);
+    }
+  };
+
+  // Debounce address changes to auto-update map
+  useEffect(() => {
+    if (!isEditingProfile || !address) return;
+
+    const handler = setTimeout(() => {
+      // Only trigger if address was not set by location detection
+      // (This is a simple heuristic, might need refinement)
+      fetchCoordsFromAddress(address);
+    }, 1500);
+
+    return () => clearTimeout(handler);
+  }, [address, isEditingProfile]);
+
   const handleGetCurrentLocation = () => {
     if (!navigator.geolocation) {
       alert('Geolocation tidak didukung oleh browser Anda');
@@ -491,8 +516,11 @@ const SellerDashboard: React.FC = () => {
                       zoom={location ? 15 : 11} 
                     />
                     <TileLayer
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                      url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                    />
+                    <TileLayer
+                      url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
                     />
                     {isEditingProfile && (
                       <LocationSelector onLocationSelect={(lat, lng) => {
