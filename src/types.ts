@@ -1,4 +1,4 @@
-export type Role = 'admin' | 'seller' | 'buyer';
+export type Role = 'admin' | 'seller' | 'buyer' | 'courier';
 export type OrderStatus = 'pending' | 'shipped' | 'in_transit' | 'delivered' | 'cancelled' | 'unpaid' | 'paid';
 
 export interface UserProfile {
@@ -38,9 +38,11 @@ export interface Product {
 
 export interface Courier {
   id: string;
+  userId?: string;
   name: string;
   baseRate: number;
-  perKmRate: number;
+  perKmRate?: number;
+  rates?: { [district: string]: number };
   createdAt: any; // Firestore Timestamp
 }
 
@@ -82,6 +84,14 @@ export interface Order {
   tripay_reference?: string;
   checkout_url?: string;
   merchant_ref?: string;
+  shippingAddress?: {
+    city: string;
+    district: string;
+    village: string;
+    detail?: string;
+  };
+  shippingMethod?: string;
+  shippingCost?: number;
   createdAt: any; // Firestore Timestamp
   updatedAt: any; // Firestore Timestamp
 }

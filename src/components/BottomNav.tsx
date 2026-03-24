@@ -39,11 +39,11 @@ const BottomNav: React.FC = () => {
         </Link>
 
         <Link 
-          to="/seller" 
-          className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/seller') ? 'text-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}
+          to={userProfile?.role === 'courier' ? '/courier' : '/seller'} 
+          className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/seller') || isActive('/courier') ? 'text-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}
         >
           <Store className="h-5 w-5" />
-          <span className="text-[10px] font-medium">Toko</span>
+          <span className="text-[10px] font-medium">{userProfile?.role === 'courier' ? 'Kurir' : 'Toko'}</span>
         </Link>
 
         <Link 

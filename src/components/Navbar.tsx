@@ -65,13 +65,23 @@ const Navbar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Top Bar (Hidden on very small screens) */}
         <div className="hidden md:flex justify-between items-center py-2 text-[13px] font-medium border-b border-emerald-500/50">
-          <div className="flex items-center gap-3">
-            {currentUser ? (
-              <Link to="/seller" className="hover:text-emerald-200 transition">Seller Centre</Link>
-            ) : (
-              <Link to="/register" className="hover:text-emerald-200 transition">Mulai Berjualan</Link>
-            )}
-            <span className="text-emerald-400/50">|</span>
+            <div className="flex items-center gap-3">
+              {currentUser ? (
+                <>
+                  {userProfile?.role === 'seller' && (
+                    <Link to="/seller" className="hover:text-emerald-200 transition">Seller Centre</Link>
+                  )}
+                  {userProfile?.role === 'courier' && (
+                    <Link to="/courier" className="hover:text-emerald-200 transition">Courier Centre</Link>
+                  )}
+                  {userProfile?.role === 'buyer' && (
+                    <Link to="/register" className="hover:text-emerald-200 transition">Mulai Berjualan</Link>
+                  )}
+                </>
+              ) : (
+                <Link to="/register" className="hover:text-emerald-200 transition">Mulai Berjualan</Link>
+              )}
+              <span className="text-emerald-400/50">|</span>
             <span onClick={handleInstallClick} className="hover:text-emerald-200 transition cursor-pointer">Download</span>
             <span className="text-emerald-400/50">|</span>
             <div className="flex items-center gap-1.5">

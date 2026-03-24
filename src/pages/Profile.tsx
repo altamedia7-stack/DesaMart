@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, User, Mail, Shield, Store } from 'lucide-react';
+import { LogOut, User, Mail, Shield, Store, Truck } from 'lucide-react';
 
 const Profile: React.FC = () => {
   const { currentUser, userProfile, logoutUser } = useAuth();
@@ -48,6 +48,15 @@ const Profile: React.FC = () => {
             >
               <Store className="h-5 w-5" />
               Dashboard Penjual
+            </button>
+          )}
+          {userProfile?.role === 'courier' && (
+            <button
+              onClick={() => navigate('/courier')}
+              className="w-full flex items-center justify-center gap-2 bg-emerald-50 text-emerald-600 border border-emerald-200 py-2 px-4 rounded-lg font-medium hover:bg-emerald-100 transition-colors"
+            >
+              <Truck className="h-5 w-5" />
+              Dashboard Kurir
             </button>
           )}
         </div>

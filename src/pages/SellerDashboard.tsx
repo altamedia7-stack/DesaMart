@@ -4,39 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc, updateDoc, serverTimestamp, setDoc, orderBy } from 'firebase/firestore';
 import { Product, Order, OrderStatus, ProductVariant } from '../types';
-import { Plus, Trash2, Edit, Save, X, Store, Package, Truck, CheckCircle, Clock, AlertCircle, Layers, LocateFixed } from 'lucide-react';
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-
-// Fix for default marker icon in react-leaflet
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-
-let DefaultIcon = L.icon({
-  iconUrl: icon,
-  shadowUrl: iconShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41]
-});
-L.Marker.prototype.options.icon = DefaultIcon;
-
-function LocationSelector({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number) => void }) {
-  useMapEvents({
-    click(e) {
-      onLocationSelect(e.latlng.lat, e.latlng.lng);
-    },
-  });
-  return null;
-}
-
-function MapUpdater({ center, zoom }: { center: [number, number], zoom: number }) {
-  const map = useMap();
-  useEffect(() => {
-    map.flyTo(center, zoom);
-  }, [center, zoom, map]);
-  return null;
-}
+import { Plus, Trash2, Edit, Save, X, Store, Package, Truck, CheckCircle, Clock, AlertCircle, Layers } from 'lucide-react';
 
 const SellerDashboard: React.FC = () => {
   const { userProfile } = useAuth();
@@ -48,14 +16,11 @@ const SellerDashboard: React.FC = () => {
   // Profile state
   const [whatsapp, setWhatsapp] = useState(userProfile?.whatsapp || '');
   const [address, setAddress] = useState(userProfile?.address || '');
-  const [location, setLocation] = useState<{lat: number, lng: number} | null>(userProfile?.location || null);
-  const [isLocating, setIsLocating] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   useEffect(() => {
     setWhatsapp(userProfile?.whatsapp || '');
     setAddress(userProfile?.address || '');
-    setLocation(userProfile?.location || null);
   }, [userProfile]);
 
   // New product state
@@ -128,75 +93,13 @@ const SellerDashboard: React.FC = () => {
     try {
       await updateDoc(doc(db, 'users', userProfile.uid), {
         whatsapp,
-        address,
-        location
+        address
       });
       setIsEditingProfile(false);
       alert('Profil berhasil diperbarui!');
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `users/${userProfile.uid}`);
     }
-  };
-
-  const fetchAddressFromCoords = async (lat: number, lng: number) => {
-    try {
-      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
-      const data = await response.json();
-      if (data.display_name) {
-        setAddress(data.display_name);
-      }
-    } catch (error) {
-      console.error("Error reverse geocoding:", error);
-    }
-  };
-
-  const fetchCoordsFromAddress = async (addr: string) => {
-    try {
-      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}&limit=1`);
-      const data = await response.json();
-      if (data && data.length > 0) {
-        setLocation({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) });
-      }
-    } catch (error) {
-      console.error("Error geocoding address:", error);
-    }
-  };
-
-  // Debounce address changes to auto-update map
-  useEffect(() => {
-    if (!isEditingProfile || !address) return;
-
-    const handler = setTimeout(() => {
-      // Only trigger if address was not set by location detection
-      // (This is a simple heuristic, might need refinement)
-      fetchCoordsFromAddress(address);
-    }, 1500);
-
-    return () => clearTimeout(handler);
-  }, [address, isEditingProfile]);
-
-  const handleGetCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      alert('Geolocation tidak didukung oleh browser Anda');
-      return;
-    }
-
-    setIsLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        setLocation({ lat, lng });
-        await fetchAddressFromCoords(lat, lng);
-        setIsLocating(false);
-      },
-      (error) => {
-        console.error("Error getting location:", error);
-        alert('Gagal mendapatkan lokasi. Pastikan Anda memberikan izin akses lokasi pada browser Anda.');
-        setIsLocating(false);
-      },
-      { enableHighAccuracy: true }
-    );
   };
 
   const uploadToCloudinary = async (file: File) => {
@@ -540,58 +443,12 @@ const SellerDashboard: React.FC = () => {
                   value={address} 
                   onChange={(e) => setAddress(e.target.value)}
                   placeholder="Masukkan alamat lengkap desa Anda"
-                  rows={2}
-                  className={`w-full border rounded-md shadow-sm p-2 mb-4 ${isEditingProfile ? 'border-emerald-500 focus:ring-emerald-500 focus:border-emerald-500' : 'border-gray-300 bg-gray-50'}`} 
+                  rows={3}
+                  className={`w-full border rounded-md shadow-sm p-2 ${isEditingProfile ? 'border-emerald-500 focus:ring-emerald-500 focus:border-emerald-500' : 'border-gray-300 bg-gray-50'}`} 
                 />
-                
-                <label className="block text-sm font-medium text-gray-700 mb-1">Lokasi GPS Toko (Untuk perhitungan ongkir)</label>
-                {isEditingProfile && (
-                  <button
-                    type="button"
-                    onClick={handleGetCurrentLocation}
-                    disabled={isLocating}
-                    className="mb-3 flex items-center gap-2 bg-blue-50 text-blue-600 border border-blue-200 py-2 px-4 rounded-lg font-medium hover:bg-blue-100 transition-colors disabled:opacity-50 text-sm"
-                  >
-                    <LocateFixed className="h-4 w-4" />
-                    {isLocating ? 'Mencari lokasi...' : 'Deteksi Lokasi Saat Ini'}
-                  </button>
-                )}
-                
-                <div className="h-[250px] w-full rounded-lg overflow-hidden border border-gray-200 relative z-0">
-                  <MapContainer 
-                    center={location ? [location.lat, location.lng] : [-8.2192, 114.3692]} 
-                    zoom={location ? 15 : 11} 
-                    style={{ height: '100%', width: '100%' }}
-                  >
-                    <MapUpdater 
-                      center={location ? [location.lat, location.lng] : [-8.2192, 114.3692]} 
-                      zoom={location ? 15 : 11} 
-                    />
-                    <TileLayer
-                      attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-                      url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                    />
-                    <TileLayer
-                      url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
-                    />
-                    {isEditingProfile && (
-                      <LocationSelector onLocationSelect={(lat, lng) => {
-                        setLocation({ lat, lng });
-                        fetchAddressFromCoords(lat, lng);
-                      }} />
-                    )}
-                    {location && (
-                      <Marker position={[location.lat, location.lng]}>
-                        <Popup>Lokasi Toko Anda</Popup>
-                      </Marker>
-                    )}
-                  </MapContainer>
-                </div>
-                {isEditingProfile && (
-                  <p className="text-xs text-gray-500 mt-2">
-                    * Anda juga bisa menggeser peta dan klik untuk menentukan lokasi toko secara manual.
-                  </p>
-                )}
+                <p className="text-xs text-gray-500 mt-2 italic">
+                  * Alamat ini akan ditampilkan kepada pembeli.
+                </p>
               </div>
             </div>
           </div>

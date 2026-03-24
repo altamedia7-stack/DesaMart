@@ -16,6 +16,7 @@ import Cart from './pages/Cart';
 import Notifications from './pages/Notifications';
 import MyOrders from './pages/MyOrders';
 import Profile from './pages/Profile';
+import CourierDashboard from './pages/CourierDashboard';
 import ErrorBoundary from './components/ErrorBoundary';
 import PaymentDetail from './pages/PaymentDetail';
 
@@ -44,6 +45,7 @@ function App() {
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/seller" element={<SellerDashboard />} />
+                    <Route path="/courier" element={<CourierDashboard />} />
                     <Route path="/admin" element={<AdminDashboard />} />
                   </Routes>
                 </main>

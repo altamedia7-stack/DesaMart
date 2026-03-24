@@ -55,11 +55,11 @@ const Register: React.FC = () => {
         <div className="mt-8 space-y-6">
           <div className="space-y-4">
             <label className="block text-sm font-medium text-gray-700">Pilih Jenis Akun</label>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-3">
               <button
                 type="button"
                 onClick={() => setRole('buyer')}
-                className={`py-3 px-4 border rounded-lg flex items-center justify-center text-sm font-medium transition-colors ${
+                className={`py-3 px-2 border rounded-lg flex items-center justify-center text-xs font-medium transition-colors ${
                   role === 'buyer' 
                     ? 'border-emerald-500 bg-emerald-50 text-emerald-700' 
                     : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
@@ -70,7 +70,7 @@ const Register: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setRole('seller')}
-                className={`py-3 px-4 border rounded-lg flex items-center justify-center text-sm font-medium transition-colors ${
+                className={`py-3 px-2 border rounded-lg flex items-center justify-center text-xs font-medium transition-colors ${
                   role === 'seller' 
                     ? 'border-emerald-500 bg-emerald-50 text-emerald-700' 
                     : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
@@ -78,9 +78,22 @@ const Register: React.FC = () => {
               >
                 Penjual
               </button>
+              <button
+                type="button"
+                onClick={() => setRole('courier')}
+                className={`py-3 px-2 border rounded-lg flex items-center justify-center text-xs font-medium transition-colors ${
+                  role === 'courier' 
+                    ? 'border-emerald-500 bg-emerald-50 text-emerald-700' 
+                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Kurir
+              </button>
             </div>
             <p className="text-xs text-gray-500 mt-2">
-              {role === 'buyer' ? 'Anda dapat mencari dan membeli produk.' : 'Anda dapat membuka toko dan menjual produk.'}
+              {role === 'buyer' && 'Anda dapat mencari dan membeli produk.'}
+              {role === 'seller' && 'Anda dapat membuka toko dan menjual produk.'}
+              {role === 'courier' && 'Anda dapat menawarkan jasa pengiriman barang.'}
             </p>
           </div>
 

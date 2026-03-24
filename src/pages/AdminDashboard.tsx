@@ -3,8 +3,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, query, onSnapshot, addDoc, deleteDoc, doc, updateDoc, serverTimestamp, getDocs, setDoc } from 'firebase/firestore';
 import { Courier, UserProfile, Product, ProductVariant } from '../types';
+import { BANYUWANGI_DISTRICTS } from '../constants';
 import { Truck, Trash2, Plus, Users, X, Package, Settings, Edit, Save, Layers } from 'lucide-react';
-import SeedData from '../components/SeedData';
 
 const AdminDashboard: React.FC = () => {
   const { userProfile } = useAuth();
@@ -19,7 +19,15 @@ const AdminDashboard: React.FC = () => {
   const [newCourier, setNewCourier] = useState({
     name: '',
     baseRate: '',
-    perKmRate: ''
+    rates: {} as { [key: string]: number }
+  });
+
+  // Edit courier state
+  const [editingCourierId, setEditingCourierId] = useState<string | null>(null);
+  const [editCourier, setEditCourier] = useState({
+    name: '',
+    baseRate: '',
+    rates: {} as { [key: string]: number }
   });
 
   // Edit product state
@@ -88,14 +96,37 @@ const AdminDashboard: React.FC = () => {
       await addDoc(collection(db, 'couriers'), {
         name: newCourier.name,
         baseRate: Number(newCourier.baseRate),
-        perKmRate: Number(newCourier.perKmRate),
+        rates: newCourier.rates,
         createdAt: serverTimestamp()
       });
       setIsAddingCourier(false);
-      setNewCourier({ name: '', baseRate: '', perKmRate: '' });
+      setNewCourier({ name: '', baseRate: '', rates: {} });
       alert('Kurir berhasil ditambahkan!');
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, 'couriers');
+    }
+  };
+
+  const handleEditCourier = (courier: Courier) => {
+    setEditingCourierId(courier.id);
+    setEditCourier({
+      name: courier.name,
+      baseRate: courier.baseRate.toString(),
+      rates: courier.rates || {}
+    });
+  };
+
+  const handleSaveEditCourier = async (courierId: string) => {
+    try {
+      await updateDoc(doc(db, 'couriers', courierId), {
+        name: editCourier.name,
+        baseRate: Number(editCourier.baseRate),
+        rates: editCourier.rates
+      });
+      setEditingCourierId(null);
+      alert('Kurir berhasil diperbarui!');
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `couriers/${courierId}`);
     }
   };
 
@@ -209,7 +240,6 @@ const AdminDashboard: React.FC = () => {
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Dashboard Admin</h1>
 
       <div className="mb-6 flex flex-wrap gap-4">
-        <SeedData />
         <button 
           onClick={handleDeleteEmptyProducts}
           className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition"
@@ -484,7 +514,7 @@ const AdminDashboard: React.FC = () => {
           {isAddingCourier && (
             <form onSubmit={handleAddCourier} className="bg-gray-50 p-6 rounded-lg border border-gray-200 mb-8">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Tambah Kurir Baru</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Nama Kurir *</label>
                   <input required type="text" value={newCourier.name} onChange={e => setNewCourier({...newCourier, name: e.target.value})} className="w-full border border-gray-300 rounded-md p-2" placeholder="Contoh: Kurir Desa A" />
@@ -493,11 +523,32 @@ const AdminDashboard: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Tarif Dasar (Rp) *</label>
                   <input required type="number" min="0" value={newCourier.baseRate} onChange={e => setNewCourier({...newCourier, baseRate: e.target.value})} className="w-full border border-gray-300 rounded-md p-2" placeholder="Contoh: 5000" />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tarif per KM (Rp) *</label>
-                  <input required type="number" min="0" value={newCourier.perKmRate} onChange={e => setNewCourier({...newCourier, perKmRate: e.target.value})} className="w-full border border-gray-300 rounded-md p-2" placeholder="Contoh: 2000" />
+              </div>
+
+              <div className="mb-4">
+                <h4 className="text-sm font-bold text-gray-700 mb-2">Tarif per Kecamatan (Banyuwangi)</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-60 overflow-y-auto p-2 bg-white border border-gray-200 rounded-md">
+                  {BANYUWANGI_DISTRICTS.map(district => (
+                    <div key={district} className="space-y-1">
+                      <label className="block text-[10px] text-gray-500 truncate">{district}</label>
+                      <input 
+                        type="number" 
+                        placeholder="Rp" 
+                        className="w-full border border-gray-300 rounded p-1 text-xs"
+                        value={newCourier.rates[district] || ''}
+                        onChange={(e) => {
+                          const val = e.target.value ? Number(e.target.value) : 0;
+                          setNewCourier({
+                            ...newCourier,
+                            rates: { ...newCourier.rates, [district]: val }
+                          });
+                        }}
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
+
               <div className="mt-4 flex justify-end">
                 <button type="submit" className="bg-emerald-600 text-white px-6 py-2 rounded-md font-medium hover:bg-emerald-700">Simpan Kurir</button>
               </div>
@@ -510,20 +561,89 @@ const AdminDashboard: React.FC = () => {
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Kurir</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tarif Dasar</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tarif per KM</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tarif Kecamatan</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {couriers.map((courier) => (
                   <tr key={courier.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{courier.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Rp {courier.baseRate.toLocaleString('id-ID')}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Rp {courier.perKmRate.toLocaleString('id-ID')}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {editingCourierId === courier.id ? (
+                        <input 
+                          type="text" 
+                          value={editCourier.name} 
+                          onChange={e => setEditCourier({...editCourier, name: e.target.value})} 
+                          className="border border-gray-300 rounded p-1 text-sm w-full"
+                        />
+                      ) : courier.name}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {editingCourierId === courier.id ? (
+                        <input 
+                          type="number" 
+                          value={editCourier.baseRate} 
+                          onChange={e => setEditCourier({...editCourier, baseRate: e.target.value})} 
+                          className="border border-gray-300 rounded p-1 text-sm w-full"
+                        />
+                      ) : `Rp ${courier.baseRate.toLocaleString('id-ID')}`}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {editingCourierId === courier.id ? (
+                        <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 border border-gray-200 rounded">
+                          {BANYUWANGI_DISTRICTS.map(district => (
+                            <div key={district} className="flex flex-col">
+                              <span className="text-[10px] text-gray-400">{district}</span>
+                              <input 
+                                type="number" 
+                                value={editCourier.rates[district] || ''} 
+                                onChange={(e) => {
+                                  const val = e.target.value ? Number(e.target.value) : 0;
+                                  setEditCourier({
+                                    ...editCourier,
+                                    rates: { ...editCourier.rates, [district]: val }
+                                  });
+                                }}
+                                className="border border-gray-300 rounded p-1 text-[10px]"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-xs">
+                          {courier.rates && Object.keys(courier.rates).length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {Object.entries(courier.rates).slice(0, 3).map(([d, r]) => (
+                                <span key={d} className="bg-gray-100 px-1.5 py-0.5 rounded">
+                                  {d}: Rp {(r as number).toLocaleString('id-ID')}
+                                </span>
+                              ))}
+                              {Object.keys(courier.rates).length > 3 && <span>...</span>}
+                            </div>
+                          ) : 'Belum ada tarif khusus'}
+                        </div>
+                      )}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button onClick={() => handleDeleteCourier(courier.id)} className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-50 transition">
-                        <Trash2 className="h-5 w-5" />
-                      </button>
+                      {editingCourierId === courier.id ? (
+                        <div className="flex justify-end gap-2">
+                          <button onClick={() => handleSaveEditCourier(courier.id)} className="text-emerald-600 hover:text-emerald-900 p-2 rounded-full hover:bg-emerald-50 transition">
+                            <Save className="h-5 w-5" />
+                          </button>
+                          <button onClick={() => setEditingCourierId(null)} className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-50 transition">
+                            <X className="h-5 w-5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex justify-end gap-2">
+                          <button onClick={() => handleEditCourier(courier)} className="text-blue-600 hover:text-blue-900 p-2 rounded-full hover:bg-blue-50 transition">
+                            <Edit className="h-5 w-5" />
+                          </button>
+                          <button onClick={() => handleDeleteCourier(courier.id)} className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-50 transition">
+                            <Trash2 className="h-5 w-5" />
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}
