@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, limit } from 'firebase/firestore';
 import { ArrowLeft, Clock, Copy, CheckCircle2, ChevronDown, ChevronUp, ExternalLink, QrCode, CreditCard, Wallet } from 'lucide-react';
 
 const PaymentDetail = () => {
@@ -13,33 +13,32 @@ const PaymentDetail = () => {
   const [timeLeft, setTimeLeft] = useState<string>('');
 
   useEffect(() => {
-    const fetchOrder = async () => {
-      if (!merchantRef) {
-        console.log("No merchantRef in params");
-        return;
-      }
-      console.log("Fetching order for merchantRef:", merchantRef);
-      try {
-        const ordersRef = collection(db, 'orders');
-        const q = query(ordersRef, where('merchant_ref', '==', merchantRef), limit(1));
-        const querySnapshot = await getDocs(q);
-        
-        if (!querySnapshot.empty) {
-          const data = querySnapshot.docs[0].data();
-          console.log("Order found:", data);
-          setOrder(data);
-        } else {
-          console.error("Order not found for merchantRef:", merchantRef);
-        }
-      } catch (error) {
-        console.error("Error fetching order:", error);
-        handleFirestoreError(error, OperationType.GET, 'orders');
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (!merchantRef) {
+      console.log("No merchantRef in params");
+      setLoading(false);
+      return;
+    }
 
-    fetchOrder();
+    console.log("Listening to order updates for merchantRef:", merchantRef);
+    const ordersRef = collection(db, 'orders');
+    const q = query(ordersRef, where('merchant_ref', '==', merchantRef), limit(1));
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      if (!querySnapshot.empty) {
+        const data = querySnapshot.docs[0].data();
+        console.log("Order update received:", data);
+        setOrder(data);
+      } else {
+        console.error("Order not found for merchantRef:", merchantRef);
+      }
+      setLoading(false);
+    }, (error) => {
+      console.error("Error listening to order:", error);
+      handleFirestoreError(error, OperationType.GET, 'orders');
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, [merchantRef]);
 
   useEffect(() => {
@@ -94,6 +93,9 @@ const PaymentDetail = () => {
             </div>
             <div className="text-right">
               <p className="text-xs opacity-80 flex items-center justify-end gap-1">
+                Status: <span className={`font-bold uppercase ${order.status === 'paid' ? 'text-white' : 'text-orange-200'}`}>{order.status}</span>
+              </p>
+              <p className="text-xs opacity-80 flex items-center justify-end gap-1 mt-1">
                 <Clock className="h-3 w-3" /> Batas Waktu
               </p>
               <p className="text-lg font-mono font-bold">{timeLeft}</p>
