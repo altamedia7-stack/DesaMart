@@ -135,6 +135,18 @@ const SellerDashboard: React.FC = () => {
     }
   };
 
+  const fetchAddressFromCoords = async (lat: number, lng: number) => {
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+      const data = await response.json();
+      if (data.display_name) {
+        setAddress(data.display_name);
+      }
+    } catch (error) {
+      console.error("Error reverse geocoding:", error);
+    }
+  };
+
   const handleGetCurrentLocation = () => {
     if (!navigator.geolocation) {
       alert('Geolocation tidak didukung oleh browser Anda');
@@ -147,18 +159,7 @@ const SellerDashboard: React.FC = () => {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
         setLocation({ lat, lng });
-        
-        // Reverse geocoding using OpenStreetMap Nominatim API
-        try {
-          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
-          const data = await response.json();
-          if (data.display_name) {
-            setAddress(data.display_name);
-          }
-        } catch (error) {
-          console.error("Error reverse geocoding:", error);
-        }
-        
+        await fetchAddressFromCoords(lat, lng);
         setIsLocating(false);
       },
       (error) => {
@@ -497,7 +498,10 @@ const SellerDashboard: React.FC = () => {
                       url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
                     />
                     {isEditingProfile && (
-                      <LocationSelector onLocationSelect={(lat, lng) => setLocation({ lat, lng })} />
+                      <LocationSelector onLocationSelect={(lat, lng) => {
+                        setLocation({ lat, lng });
+                        fetchAddressFromCoords(lat, lng);
+                      }} />
                     )}
                     {location && (
                       <Marker position={[location.lat, location.lng]}>
