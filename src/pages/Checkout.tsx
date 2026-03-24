@@ -56,7 +56,7 @@ const Checkout: React.FC = () => {
   const { sellerId } = useParams<{ sellerId: string }>();
   const navigate = useNavigate();
   const { cartItems, removeFromCart } = useCart();
-  const { currentUser, userProfile } = useAuth();
+  const { currentUser, userProfile, loading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{lat: number, lng: number} | null>(null);
   const [shippingCost, setShippingCost] = useState<number | null>(null);
@@ -153,14 +153,14 @@ const Checkout: React.FC = () => {
   const totalPembayaran = subtotalPesanan + (shippingCost || 0);
 
   useEffect(() => {
-    if (!currentUser) {
+    if (!loading && !currentUser) {
       navigate('/login');
     }
-  }, [currentUser, navigate]);
+  }, [loading, currentUser, navigate]);
 
-  // Wait for cart to be populated
-  if (cartItems.length > 0 && sellerItems.length === 0) {
-    return <div className="p-8 text-center">Memuat keranjang...</div>;
+  // Wait for auth and cart to be populated
+  if (loading || (cartItems.length > 0 && sellerItems.length === 0)) {
+    return <div className="p-8 text-center">Memuat data...</div>;
   }
 
   if (sellerItems.length === 0) {
