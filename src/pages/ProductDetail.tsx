@@ -186,7 +186,7 @@ const ProductDetail: React.FC = () => {
           
           {/* Product Image */}
           <div className="w-full md:w-1/2 aspect-square relative bg-white">
-            {product.discountPercentage && product.discountPercentage > 0 && (
+            {product.discountPercentage !== undefined && product.discountPercentage > 0 && (
               <div className="absolute top-4 left-4 z-10 bg-red-500 text-white text-xs sm:text-sm font-bold px-3 py-1 rounded-full shadow-lg animate-bounce">
                 DISKON {product.discountPercentage}%
               </div>
@@ -207,7 +207,7 @@ const ProductDetail: React.FC = () => {
               <div className="flex flex-col mb-2">
                 {selectedVariant ? (
                   <>
-                    {selectedVariant.discountPercentage && selectedVariant.discountPercentage > 0 ? (
+                    {selectedVariant.discountPercentage !== undefined && selectedVariant.discountPercentage > 0 ? (
                       <>
                         <div className="flex items-center gap-2">
                           <span className="text-sm sm:text-base text-gray-400 line-through">Rp {selectedVariant.price.toLocaleString('id-ID')}</span>
@@ -223,7 +223,7 @@ const ProductDetail: React.FC = () => {
                       </p>
                     )}
                   </>
-                ) : product.discountPercentage && product.discountPercentage > 0 ? (
+                ) : product.discountPercentage !== undefined && product.discountPercentage > 0 ? (
                   <>
                     <div className="flex items-center gap-2">
                       <span className="text-sm sm:text-base text-gray-400 line-through">Rp {product.price.toLocaleString('id-ID')}</span>
