@@ -71,7 +71,7 @@ const PaymentDetail = () => {
   if (loading) return <div className="p-8 text-center">Memuat detail pembayaran...</div>;
   if (!order) return <div className="p-8 text-center">Pesanan tidak ditemukan.</div>;
 
-  const isQRIS = order.paymentMethod === 'QRIS' || order.paymentMethod === 'QRISC';
+  const isQRIS = order.paymentMethod?.startsWith('QRIS') || !!order.qr_url;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-10">

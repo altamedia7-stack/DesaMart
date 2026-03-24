@@ -59,6 +59,7 @@ const Checkout: React.FC = () => {
   const { currentUser, userProfile, loading } = useAuth();
   const [selectedCourier, setSelectedCourier] = useState<{name: string, baseRate: number, perKmRate: number} | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{lat: number, lng: number} | null>(null);
   const [shippingCost, setShippingCost] = useState<number | null>(null);
   const [isLocating, setIsLocating] = useState(false);
@@ -218,7 +219,7 @@ const Checkout: React.FC = () => {
     return <div className="p-8 text-center">Memuat data...</div>;
   }
 
-  if (sellerItems.length === 0 && !isSubmitting) {
+  if (sellerItems.length === 0 && !isSubmitting && !isSuccess) {
     navigate('/cart');
     return null;
   }
@@ -366,6 +367,7 @@ const Checkout: React.FC = () => {
           console.log("Order saved with ID:", docRef.id);
           
           // Navigate first, then clear cart to avoid re-render issues
+          setIsSuccess(true);
           console.log("Navigating to:", `/payment/${merchant_ref}`);
           navigate(`/payment/${merchant_ref}`);
           
