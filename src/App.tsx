@@ -21,6 +21,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import PaymentDetail from './pages/PaymentDetail';
 
 import Checkout from './pages/Checkout';
+import OrderConfirmation from './pages/OrderConfirmation';
 
 function App() {
   return (
@@ -38,6 +39,7 @@ function App() {
                     <Route path="/seller/:id" element={<SellerProfile />} />
                     <Route path="/cart" element={<Cart />} />
                     <Route path="/checkout/:sellerId" element={<Checkout />} />
+                    <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
                     <Route path="/payment/:merchantRef" element={<PaymentDetail />} />
                     <Route path="/notifications" element={<Notifications />} />
                     <Route path="/orders" element={<MyOrders />} />

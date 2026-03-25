@@ -149,7 +149,7 @@ const Checkout: React.FC = () => {
       
       if (selectedPaymentMethod === 'COD') {
         const path = 'orders';
-        await addDoc(collection(db, path), {
+        const docRef = await addDoc(collection(db, path), {
           buyerId: currentUser.uid,
           buyerName: userProfile?.name || currentUser.email || 'Unknown',
           sellerId: sellerId,
@@ -190,7 +190,7 @@ const Checkout: React.FC = () => {
         message += `Alamat: ${selectedVillage}, Kec. ${selectedDistrict}, ${selectedCity}`;
         
         window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
-        navigate('/orders');
+        navigate(`/order-confirmation/${docRef.id}`);
       } else {
         // TriPay logic
         const orderItems = sellerItems.map(item => {
@@ -258,9 +258,9 @@ const Checkout: React.FC = () => {
             merchant_ref
           };
 
-          await addDoc(collection(db, 'orders'), orderData);
+          const docRef = await addDoc(collection(db, 'orders'), orderData);
           setIsSuccess(true);
-          navigate(`/payment/${merchant_ref}`);
+          navigate(`/order-confirmation/${docRef.id}`);
           sellerItems.forEach(item => removeFromCart(item.product.id, item.selectedVariant?.id));
         } else {
           alert(`Gagal membuat transaksi: ${data.message}`);
