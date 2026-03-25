@@ -96,7 +96,7 @@ const ProductDetail: React.FC = () => {
       await addDoc(collection(db, 'reviews'), {
         productId: id,
         userId: userProfile.uid,
-        userName: userProfile.name,
+        userName: userProfile.name || 'Unknown',
         rating: newRating,
         text: newReviewText,
         createdAt: serverTimestamp()

@@ -145,15 +145,15 @@ const SellerDashboard: React.FC = () => {
 
       await addDoc(collection(db, 'products'), {
         sellerId: userProfile.uid,
-        sellerName: userProfile.name,
-        sellerWhatsapp: whatsapp,
-        name: newProduct.name,
-        description: newProduct.description,
-        price: Number(newProduct.price),
-        stock: Number(newProduct.stock),
-        category: newProduct.category,
+        sellerName: userProfile.name || 'Unknown',
+        sellerWhatsapp: whatsapp || '',
+        name: newProduct.name || '',
+        description: newProduct.description || '',
+        price: Number(newProduct.price) || 0,
+        stock: Number(newProduct.stock) || 0,
+        category: newProduct.category || 'Lainnya',
         discountPercentage: newProduct.discountPercentage ? Number(newProduct.discountPercentage) : 0,
-        variants: newProduct.variants,
+        variants: newProduct.variants || [],
         imageUrl,
         createdAt: serverTimestamp()
       });
