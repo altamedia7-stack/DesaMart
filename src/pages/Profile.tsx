@@ -37,11 +37,27 @@ const Profile: React.FC = () => {
             <Mail className="h-5 w-5 text-gray-400" />
             <span>{userProfile?.email}</span>
           </div>
-          <div className="flex items-center gap-3 text-gray-700">
-            <Shield className="h-5 w-5 text-gray-400" />
+          <div 
+            className={`flex items-center gap-3 ${userProfile?.role !== 'buyer' ? 'cursor-pointer text-emerald-600 hover:text-emerald-700 font-medium' : 'text-gray-700'}`}
+            onClick={() => {
+              if (userProfile?.role === 'admin') navigate('/admin');
+              else if (userProfile?.role === 'seller') navigate('/seller');
+              else if (userProfile?.role === 'courier') navigate('/courier');
+            }}
+          >
+            <Shield className={`h-5 w-5 ${userProfile?.role !== 'buyer' ? 'text-emerald-500' : 'text-gray-400'}`} />
             <span className="capitalize">{userProfile?.role}</span>
           </div>
-          {userProfile?.role === 'seller' && (
+          {userProfile?.role === 'admin' && (
+            <button
+              onClick={() => navigate('/admin')}
+              className="w-full flex items-center justify-center gap-2 bg-emerald-50 text-emerald-600 border border-emerald-200 py-2 px-4 rounded-lg font-medium hover:bg-emerald-100 transition-colors"
+            >
+              <Shield className="h-5 w-5" />
+              Dashboard Admin
+            </button>
+          )}
+          {(userProfile?.role === 'seller' || userProfile?.role === 'admin') && (
             <button
               onClick={() => navigate('/seller')}
               className="w-full flex items-center justify-center gap-2 bg-emerald-50 text-emerald-600 border border-emerald-200 py-2 px-4 rounded-lg font-medium hover:bg-emerald-100 transition-colors"
@@ -50,7 +66,7 @@ const Profile: React.FC = () => {
               Dashboard Penjual
             </button>
           )}
-          {userProfile?.role === 'courier' && (
+          {(userProfile?.role === 'courier' || userProfile?.role === 'admin') && (
             <button
               onClick={() => navigate('/courier')}
               className="w-full flex items-center justify-center gap-2 bg-emerald-50 text-emerald-600 border border-emerald-200 py-2 px-4 rounded-lg font-medium hover:bg-emerald-100 transition-colors"
