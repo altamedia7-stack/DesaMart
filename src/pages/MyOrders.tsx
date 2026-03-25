@@ -194,16 +194,6 @@ const MyOrders: React.FC = () => {
                       Bayar Sekarang
                     </button>
                   )}
-                  {order.status === 'unpaid' && order.checkout_url && (
-                    <a 
-                      href={order.checkout_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-center text-xs text-gray-400 hover:underline"
-                    >
-                      Buka Halaman TriPay (Alternatif)
-                    </a>
-                  )}
                   <div className="flex justify-end">
                     <a 
                       href={`https://wa.me/${order.items[0].product.sellerWhatsapp}?text=Halo, saya ingin bertanya tentang pesanan saya dengan ID ${order.id}`}

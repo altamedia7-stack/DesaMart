@@ -182,14 +182,6 @@ const PaymentDetail = () => {
           >
             Selesai & Cek Status Pesanan
           </button>
-          <a 
-            href={order.checkout_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full bg-white text-gray-600 py-3 rounded-xl font-medium border border-gray-200 flex items-center justify-center gap-2"
-          >
-            Buka Halaman TriPay <ExternalLink className="h-4 w-4" />
-          </a>
         </div>
       </div>
     </div>
