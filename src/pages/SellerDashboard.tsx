@@ -5,13 +5,14 @@ import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc, updateDoc, serverTimestamp, setDoc, orderBy } from 'firebase/firestore';
 import { Product, Order, OrderStatus, ProductVariant } from '../types';
 import { Plus, Trash2, Edit, Save, X, Store, Package, Truck, CheckCircle, Clock, AlertCircle, Layers } from 'lucide-react';
+import SellerRevenue from '../components/SellerRevenue';
 
 const SellerDashboard: React.FC = () => {
   const { userProfile } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'products' | 'orders'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'revenue'>('products');
   
   // Profile state
   const [whatsapp, setWhatsapp] = useState(userProfile?.whatsapp || '');
@@ -395,6 +396,13 @@ const SellerDashboard: React.FC = () => {
             </span>
           )}
           {activeTab === 'orders' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-600"></div>}
+        </button>
+        <button 
+          onClick={() => setActiveTab('revenue')}
+          className={`py-4 px-6 font-medium text-sm transition-colors relative ${activeTab === 'revenue' ? 'text-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}
+        >
+          Pendapatan
+          {activeTab === 'revenue' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-600"></div>}
         </button>
       </div>
 
@@ -872,7 +880,7 @@ const SellerDashboard: React.FC = () => {
             )}
           </div>
         </>
-      ) : (
+      ) : activeTab === 'orders' ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-xl font-semibold text-gray-800 mb-6">Pesanan Masuk</h2>
           
@@ -975,7 +983,9 @@ const SellerDashboard: React.FC = () => {
             </div>
           )}
         </div>
-      )}
+      ) : activeTab === 'revenue' ? (
+        <SellerRevenue orders={orders} />
+      ) : null}
     </div>
   );
 };
