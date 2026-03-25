@@ -12,14 +12,16 @@ const SellerDashboard: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'revenue'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'revenue' | 'profile'>('products');
   
   // Profile state
+  const [name, setName] = useState(userProfile?.name || '');
   const [whatsapp, setWhatsapp] = useState(userProfile?.whatsapp || '');
   const [address, setAddress] = useState(userProfile?.address || '');
   const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   useEffect(() => {
+    setName(userProfile?.name || '');
     setWhatsapp(userProfile?.whatsapp || '');
     setAddress(userProfile?.address || '');
   }, [userProfile]);
@@ -93,6 +95,7 @@ const SellerDashboard: React.FC = () => {
     if (!userProfile?.uid) return;
     try {
       await updateDoc(doc(db, 'users', userProfile.uid), {
+        name,
         whatsapp,
         address
       });
@@ -419,63 +422,17 @@ const SellerDashboard: React.FC = () => {
           Pendapatan
           {activeTab === 'revenue' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-600"></div>}
         </button>
+        <button 
+          onClick={() => setActiveTab('profile')}
+          className={`py-4 px-6 font-medium text-sm transition-colors relative ${activeTab === 'profile' ? 'text-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}
+        >
+          Profil Toko
+          {activeTab === 'profile' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-600"></div>}
+        </button>
       </div>
 
       {activeTab === 'products' ? (
         <>
-          {/* Profile Section */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-800">Informasi Toko</h2>
-              {!isEditingProfile ? (
-                <button onClick={() => setIsEditingProfile(true)} className="text-emerald-600 hover:text-emerald-700 flex items-center gap-1 text-sm font-medium">
-                  <Edit className="h-4 w-4" /> Edit
-                </button>
-              ) : (
-                <div className="flex gap-2">
-                  <button onClick={() => setIsEditingProfile(false)} className="text-gray-500 hover:text-gray-700 flex items-center gap-1 text-sm font-medium">
-                    <X className="h-4 w-4" /> Batal
-                  </button>
-                  <button onClick={handleUpdateProfile} className="text-emerald-600 hover:text-emerald-700 flex items-center gap-1 text-sm font-medium">
-                    <Save className="h-4 w-4" /> Simpan
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nama Pemilik</label>
-                <input type="text" disabled value={userProfile.name} className="w-full border-gray-300 rounded-md shadow-sm bg-gray-50 p-2 border" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nomor WhatsApp (Mulai dengan 08...)</label>
-                <input 
-                  type="text" 
-                  disabled={!isEditingProfile} 
-                  value={whatsapp} 
-                  onChange={(e) => setWhatsapp(e.target.value)}
-                  placeholder="Contoh: 081234567890"
-                  className={`w-full border rounded-md shadow-sm p-2 ${isEditingProfile ? 'border-emerald-500 focus:ring-emerald-500 focus:border-emerald-500' : 'border-gray-300 bg-gray-50'}`} 
-                />
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Alamat Toko / Desa</label>
-                <textarea 
-                  disabled={!isEditingProfile} 
-                  value={address} 
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="Masukkan alamat lengkap desa Anda"
-                  rows={3}
-                  className={`w-full border rounded-md shadow-sm p-2 ${isEditingProfile ? 'border-emerald-500 focus:ring-emerald-500 focus:border-emerald-500' : 'border-gray-300 bg-gray-50'}`} 
-                />
-                <p className="text-xs text-gray-500 mt-2 italic">
-                  * Alamat ini akan ditampilkan kepada pembeli.
-                </p>
-              </div>
-            </div>
-          </div>
-
           {/* Products Section */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex justify-between items-center mb-6">
@@ -1002,7 +959,67 @@ const SellerDashboard: React.FC = () => {
         </div>
       ) : activeTab === 'revenue' ? (
         <SellerRevenue orders={orders} />
-      ) : null}
+      ) : (
+        /* Profile Section */
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold text-gray-800">Informasi Profil Toko</h2>
+            {!isEditingProfile ? (
+              <button onClick={() => setIsEditingProfile(true)} className="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors">
+                <Edit className="h-4 w-4" /> Edit Profil
+              </button>
+            ) : (
+              <div className="flex gap-2">
+                <button onClick={() => setIsEditingProfile(false)} className="bg-gray-50 text-gray-600 hover:bg-gray-100 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors">
+                  <X className="h-4 w-4" /> Batal
+                </button>
+                <button onClick={handleUpdateProfile} className="bg-emerald-600 text-white hover:bg-emerald-700 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors">
+                  <Save className="h-4 w-4" /> Simpan Perubahan
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nama Toko / Pemilik</label>
+              <input 
+                type="text" 
+                disabled={!isEditingProfile} 
+                value={name} 
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Masukkan nama toko atau nama Anda"
+                className={`w-full border rounded-md shadow-sm p-2 ${isEditingProfile ? 'border-emerald-500 focus:ring-emerald-500 focus:border-emerald-500' : 'border-gray-300 bg-gray-50'}`} 
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nomor WhatsApp (Mulai dengan 08...)</label>
+              <input 
+                type="text" 
+                disabled={!isEditingProfile} 
+                value={whatsapp} 
+                onChange={(e) => setWhatsapp(e.target.value)}
+                placeholder="Contoh: 081234567890"
+                className={`w-full border rounded-md shadow-sm p-2 ${isEditingProfile ? 'border-emerald-500 focus:ring-emerald-500 focus:border-emerald-500' : 'border-gray-300 bg-gray-50'}`} 
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Alamat Toko / Desa</label>
+              <textarea 
+                disabled={!isEditingProfile} 
+                value={address} 
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="Masukkan alamat lengkap desa Anda"
+                rows={3}
+                className={`w-full border rounded-md shadow-sm p-2 ${isEditingProfile ? 'border-emerald-500 focus:ring-emerald-500 focus:border-emerald-500' : 'border-gray-300 bg-gray-50'}`} 
+              />
+              <p className="text-xs text-gray-500 mt-2 italic">
+                * Alamat ini akan ditampilkan kepada pembeli pada saat checkout.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
