@@ -241,10 +241,25 @@ app.post(["/api/tripay/callback", "/api/tripay/callback/"], async (req: any, res
         
         if (!snapshot.empty) {
           const orderDoc = snapshot.docs[0];
+          const orderData = orderDoc.data();
           await orderDoc.ref.update({
             status: 'paid',
             updatedAt: FieldValue.serverTimestamp()
           });
+          
+          // Send notification to seller
+          if (orderData.sellerId) {
+            const notifRef = db.collection('notifications').doc();
+            await notifRef.set({
+              id: notifRef.id,
+              userId: orderData.sellerId,
+              title: 'Pembayaran Berhasil',
+              message: `Pembayaran untuk pesanan dari ${orderData.buyerName} telah berhasil. Silakan proses pesanan.`,
+              isRead: false,
+              createdAt: FieldValue.serverTimestamp()
+            });
+          }
+          
           console.log(`Order ${merchant_ref} updated to PAID in Firestore`);
         } else {
           console.warn(`Order ${merchant_ref} not found in Firestore`);

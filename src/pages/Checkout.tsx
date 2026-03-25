@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
-import { collection, addDoc, serverTimestamp, doc, getDoc, getDocs, query } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc, getDocs, query, setDoc } from 'firebase/firestore';
 import { ArrowLeft, MapPin, ChevronRight, CheckCircle2, Circle, Store, Home, Truck } from 'lucide-react';
 
 const Checkout: React.FC = () => {
@@ -189,6 +189,18 @@ const Checkout: React.FC = () => {
         message += `Metode: COD\n`;
         message += `Alamat: ${selectedVillage}, Kec. ${selectedDistrict}, ${selectedCity}`;
         
+        if (sellerId) {
+          const notifRef = doc(collection(db, 'notifications'));
+          await setDoc(notifRef, {
+            id: notifRef.id,
+            userId: sellerId,
+            title: 'Pesanan Baru (COD)',
+            message: `Anda menerima pesanan baru dari ${userProfile?.name || currentUser.email}.`,
+            isRead: false,
+            createdAt: serverTimestamp()
+          });
+        }
+        
         window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
         navigate(`/order-confirmation/${docRef.id}`);
       } else {
@@ -259,6 +271,38 @@ const Checkout: React.FC = () => {
           };
 
           const docRef = await addDoc(collection(db, 'orders'), orderData);
+          
+          let phone = sellerWhatsapp;
+          if (phone.startsWith('0')) phone = '62' + phone.substring(1);
+
+          let message = `Halo ${sellerName}, saya telah membuat pesanan dan akan membayar menggunakan ${selectedPaymentMethod}:\n\n`;
+          sellerItems.forEach((item, index) => {
+            const basePrice = item.selectedVariant ? item.selectedVariant.price : item.product.price;
+            const discount = item.selectedVariant ? (item.selectedVariant.discountPercentage || 0) : (item.product.discountPercentage || 0);
+            const price = discount > 0 ? basePrice * (1 - discount / 100) : basePrice;
+            message += `${index + 1}. ${item.product.name} x${item.quantity} - Rp ${(price * item.quantity).toLocaleString('id-ID')}\n`;
+          });
+
+          message += `\n*Subtotal: Rp ${subtotalPesanan.toLocaleString('id-ID')}*\n`;
+          message += `*Ongkir: Rp ${shippingCost?.toLocaleString('id-ID')}*\n`;
+          message += `*Total: Rp ${calculatedAmount.toLocaleString('id-ID')}*\n\n`;
+          message += `Metode: ${selectedPaymentMethod} (Menunggu Pembayaran)\n`;
+          message += `Alamat: ${selectedVillage}, Kec. ${selectedDistrict}, ${selectedCity}`;
+          
+          if (sellerId) {
+            const notifRef = doc(collection(db, 'notifications'));
+            await setDoc(notifRef, {
+              id: notifRef.id,
+              userId: sellerId,
+              title: 'Pesanan Baru (QRIS/Online)',
+              message: `Pesanan baru dari ${userProfile?.name || currentUser.email} (Menunggu Pembayaran).`,
+              isRead: false,
+              createdAt: serverTimestamp()
+            });
+          }
+          
+          window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+          
           setIsSuccess(true);
           navigate(`/order-confirmation/${docRef.id}`);
           sellerItems.forEach(item => removeFromCart(item.product.id, item.selectedVariant?.id));

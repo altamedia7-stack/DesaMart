@@ -337,12 +337,27 @@ const SellerDashboard: React.FC = () => {
 
   const getStatusBadgeClass = (status: OrderStatus) => {
     switch (status) {
+      case 'unpaid': return 'bg-orange-100 text-orange-800';
+      case 'paid': return 'bg-emerald-100 text-emerald-800';
       case 'pending': return 'bg-yellow-100 text-yellow-800';
       case 'shipped': return 'bg-blue-100 text-blue-800';
       case 'in_transit': return 'bg-indigo-100 text-indigo-800';
       case 'delivered': return 'bg-emerald-100 text-emerald-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusLabel = (status: OrderStatus) => {
+    switch (status) {
+      case 'unpaid': return 'Belum Dibayar';
+      case 'paid': return 'Sudah Dibayar';
+      case 'pending': return 'Menunggu';
+      case 'shipped': return 'Dikirim';
+      case 'in_transit': return 'Dalam Perjalanan';
+      case 'delivered': return 'Diterima';
+      case 'cancelled': return 'Dibatalkan';
+      default: return status;
     }
   };
 
@@ -392,7 +407,7 @@ const SellerDashboard: React.FC = () => {
           Pesanan Masuk
           {orders.length > 0 && (
             <span className="ml-2 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
-              {orders.filter(o => o.status === 'pending').length}
+              {orders.filter(o => o.status === 'pending' || o.status === 'paid' || o.status === 'unpaid').length}
             </span>
           )}
           {activeTab === 'orders' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-600"></div>}
@@ -897,7 +912,7 @@ const SellerDashboard: React.FC = () => {
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Order ID: {order.id.substring(0, 8)}</span>
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${getStatusBadgeClass(order.status)}`}>
-                          {order.status}
+                          {getStatusLabel(order.status)}
                         </span>
                       </div>
                       <div className="text-sm text-gray-600">
@@ -961,10 +976,12 @@ const SellerDashboard: React.FC = () => {
                           <button
                             key={status}
                             onClick={() => handleUpdateOrderStatus(order.id, order.buyerId, order.items[0].product.name, status)}
-                            disabled={order.status === status}
+                            disabled={order.status === status || (order.status === 'unpaid' && status !== 'cancelled')}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
                               order.status === status 
                                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                                : (order.status === 'unpaid' && status !== 'cancelled')
+                                ? 'bg-gray-50 text-gray-300 cursor-not-allowed border border-gray-100'
                                 : 'bg-white border border-gray-200 text-gray-700 hover:border-emerald-500 hover:text-emerald-600'
                             }`}
                           >
