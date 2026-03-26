@@ -29,6 +29,7 @@ const SellerDashboard: React.FC = () => {
   // New product state
   const [isAddingProduct, setIsAddingProduct] = useState(false);
   const [isAddingTravel, setIsAddingTravel] = useState(false);
+  const [travelError, setTravelError] = useState<string | null>(null);
   const [editProductImage, setEditProductImage] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [newProduct, setNewProduct] = useState({
@@ -370,6 +371,7 @@ const SellerDashboard: React.FC = () => {
     e.preventDefault();
     if (!userProfile?.uid) return;
     
+    setTravelError(null);
     try {
       await addDoc(collection(db, 'travel_listings'), {
         sellerId: userProfile.uid,
@@ -389,7 +391,8 @@ const SellerDashboard: React.FC = () => {
       setIsAddingTravel(false);
       setNewTravel({ operatorName: '', origin: '', destination: '', departureTime: '', price: '', totalSeats: '10', imageUrl: '' });
       alert('Layanan Travel berhasil ditambahkan!');
-    } catch (error) {
+    } catch (error: any) {
+      setTravelError(error.message || "Gagal menyimpan data travel.");
       handleFirestoreError(error, OperationType.WRITE, 'travel_listings');
     }
   };
@@ -1173,6 +1176,13 @@ const SellerDashboard: React.FC = () => {
             {isAddingTravel && (
               <form onSubmit={handleAddTravel} className="bg-gray-50 p-4 sm:p-6 rounded-xl border border-gray-200 mb-8">
                 <h3 className="text-lg font-bold text-gray-900 mb-6">Tambah Layanan Travel Baru</h3>
+                
+                {travelError && (
+                  <div className="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl flex items-center gap-3">
+                    <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                    <p className="text-sm font-medium">{travelError}</p>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div className="space-y-4">
                     <div>

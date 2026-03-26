@@ -71,6 +71,41 @@ service cloud.firestore {
     //   - createdAt: timestamp (required)
     //   - updatedAt: timestamp (required)
     //
+    // Collection: travel_listings
+    // Document ID: auto-generated
+    // Fields:
+    //   - sellerId: string (required)
+    //   - sellerName: string (required)
+    //   - sellerWhatsapp: string (required)
+    //   - operatorName: string (required)
+    //   - origin: string (required)
+    //   - destination: string (required)
+    //   - departureTime: string (required)
+    //   - price: number (required)
+    //   - totalSeats: number (required)
+    //   - availableSeats: number (required)
+    //   - imageUrl: string (optional)
+    //   - createdAt: timestamp (required)
+    //
+    // Collection: travel_bookings
+    // Document ID: auto-generated
+    // Fields:
+    //   - buyerId: string (required)
+    //   - buyerName: string (required)
+    //   - sellerId: string (required)
+    //   - listingId: string (required)
+    //   - operatorName: string (required)
+    //   - origin: string (required)
+    //   - destination: string (required)
+    //   - departureDate: string (required)
+    //   - departureTime: string (required)
+    //   - passengers: list (required)
+    //   - totalPrice: number (required)
+    //   - status: string (required, enum: ['pending', 'confirmed', 'cancelled'])
+    //   - paymentMethod: string (required)
+    //   - createdAt: timestamp (required)
+    //   - updatedAt: timestamp (required)
+    //
     // ===============================================================
 
     // Helper Functions
@@ -190,6 +225,41 @@ service cloud.firestore {
              data.updatedAt is timestamp;
     }
 
+    function isValidTravelListing(data) {
+      return hasOnlyAllowedFields(['sellerId', 'sellerName', 'sellerWhatsapp', 'operatorName', 'origin', 'destination', 'departureTime', 'price', 'totalSeats', 'availableSeats', 'imageUrl', 'createdAt']) &&
+             data.sellerId is string && data.sellerId.size() > 0 &&
+             data.sellerName is string && data.sellerName.size() > 0 &&
+             data.sellerWhatsapp is string &&
+             data.operatorName is string && data.operatorName.size() > 0 &&
+             data.origin is string && data.origin.size() > 0 &&
+             data.destination is string && data.destination.size() > 0 &&
+             data.departureTime is string && data.departureTime.size() > 0 &&
+             data.price is number && data.price >= 0 &&
+             data.totalSeats is number && data.totalSeats >= 0 &&
+             data.availableSeats is number && data.availableSeats >= 0 &&
+             (!('imageUrl' in data) || (data.imageUrl is string && isValidUrl(data.imageUrl))) &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidTravelBooking(data) {
+      return hasOnlyAllowedFields(['buyerId', 'buyerName', 'sellerId', 'listingId', 'operatorName', 'origin', 'destination', 'departureDate', 'departureTime', 'passengers', 'totalPrice', 'status', 'paymentMethod', 'createdAt', 'updatedAt']) &&
+             data.buyerId is string && data.buyerId.size() > 0 &&
+             data.buyerName is string && data.buyerName.size() > 0 &&
+             data.sellerId is string && data.sellerId.size() > 0 &&
+             data.listingId is string && data.listingId.size() > 0 &&
+             data.operatorName is string && data.operatorName.size() > 0 &&
+             data.origin is string && data.origin.size() > 0 &&
+             data.destination is string && data.destination.size() > 0 &&
+             data.departureDate is string && data.departureDate.size() > 0 &&
+             data.departureTime is string && data.departureTime.size() > 0 &&
+             data.passengers is list && data.passengers.size() > 0 &&
+             data.totalPrice is number && data.totalPrice >= 0 &&
+             data.status in ['pending', 'confirmed', 'cancelled'] &&
+             data.paymentMethod is string &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp;
+    }
+
     // Rules
 
     match /users/{userId} {
@@ -304,6 +374,34 @@ service cloud.firestore {
                       request.resource.data.createdAt == resource.data.createdAt) || isAdmin());
 
       allow delete: if isAuthenticated() && (resource.data.sellerId == request.auth.uid || isAdmin());
+    }
+
+    match /travel_listings/{listingId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && (isSeller() || isAdmin()) && isValidTravelListing(request.resource.data) &&
+                    (request.resource.data.sellerId == request.auth.uid || isAdmin());
+      allow update: if isAuthenticated() && isValidTravelListing(request.resource.data) &&
+                    ((resource.data.sellerId == request.auth.uid && 
+                      request.resource.data.sellerId == resource.data.sellerId && 
+                      request.resource.data.createdAt == resource.data.createdAt) || 
+                     (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['availableSeats']) &&
+                      request.resource.data.availableSeats >= 0 &&
+                      request.resource.data.availableSeats < resource.data.availableSeats) ||
+                     isAdmin());
+      allow delete: if isAuthenticated() && (resource.data.sellerId == request.auth.uid || isAdmin());
+    }
+
+    match /travel_bookings/{bookingId} {
+      allow read: if isAuthenticated() && (resource.data.buyerId == request.auth.uid || resource.data.sellerId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && isValidTravelBooking(request.resource.data) &&
+                    request.resource.data.buyerId == request.auth.uid;
+      allow update: if isAuthenticated() && isValidTravelBooking(request.resource.data) &&
+                    ((resource.data.sellerId == request.auth.uid && 
+                      request.resource.data.buyerId == resource.data.buyerId &&
+                      request.resource.data.sellerId == resource.data.sellerId &&
+                      request.resource.data.listingId == resource.data.listingId &&
+                      request.resource.data.createdAt == resource.data.createdAt) || isAdmin());
+      allow delete: if isAdmin();
     }
   }
 }

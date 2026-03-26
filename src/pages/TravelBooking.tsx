@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, addDoc, serverTimestamp, getDocs } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, serverTimestamp, getDocs, doc, runTransaction } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { TravelListing, Passenger, OrderStatus } from '../types';
-import { MapPin, Calendar, Clock, Users, ChevronRight, Search, ArrowRight, User, Phone, CreditCard, CheckCircle } from 'lucide-react';
+import { MapPin, Calendar, Clock, Users, ChevronRight, Search, ArrowRight, User, Phone, CreditCard, CheckCircle, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const TravelBooking: React.FC = () => {
@@ -21,6 +21,7 @@ const TravelBooking: React.FC = () => {
   // Results state
   const [listings, setListings] = useState<TravelListing[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [selectedListing, setSelectedListing] = useState<TravelListing | null>(null);
   
   // Booking state
@@ -72,34 +73,67 @@ const TravelBooking: React.FC = () => {
   };
 
   const handleBooking = async () => {
-    if (!userProfile) {
+    if (!userProfile || !selectedListing) {
       navigate('/login');
       return;
     }
 
-    try {
-      const bookingData = {
-        buyerId: userProfile.uid,
-        buyerName: userProfile.name,
-        sellerId: selectedListing?.sellerId,
-        listingId: selectedListing?.id,
-        operatorName: selectedListing?.operatorName,
-        origin: selectedListing?.origin,
-        destination: selectedListing?.destination,
-        departureDate: search.date,
-        departureTime: selectedListing?.departureTime,
-        passengers,
-        totalPrice: (selectedListing?.price || 0) * passengers.length,
-        status: 'pending' as OrderStatus,
-        paymentMethod,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      };
+    setLoading(true);
+    setError(null);
 
-      await addDoc(collection(db, 'travel_bookings'), bookingData);
+    try {
+      await runTransaction(db, async (transaction) => {
+        const listingRef = doc(db, 'travel_listings', selectedListing.id);
+        const listingDoc = await transaction.get(listingRef);
+        
+        if (!listingDoc.exists()) {
+          throw new Error("Layanan travel tidak ditemukan.");
+        }
+
+        const currentAvailable = listingDoc.data().availableSeats;
+        if (currentAvailable < passengers.length) {
+          throw new Error("Maaf, kursi sudah penuh.");
+        }
+
+        // Create booking
+        const bookingData = {
+          buyerId: userProfile.uid,
+          buyerName: userProfile.name,
+          sellerId: selectedListing.sellerId,
+          listingId: selectedListing.id,
+          operatorName: selectedListing.operatorName,
+          origin: selectedListing.origin,
+          destination: selectedListing.destination,
+          departureDate: search.date,
+          departureTime: selectedListing.departureTime,
+          passengers,
+          totalPrice: selectedListing.price * passengers.length,
+          status: 'pending' as OrderStatus,
+          paymentMethod,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        };
+
+        const bookingRef = doc(collection(db, 'travel_bookings'));
+        transaction.set(bookingRef, bookingData);
+
+        // Update available seats
+        transaction.update(listingRef, {
+          availableSeats: currentAvailable - passengers.length
+        });
+      });
+
       setStep('success');
-    } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, 'travel_bookings');
+    } catch (err: any) {
+      setError(err.message || "Gagal melakukan pemesanan.");
+      console.error(err);
+      if (err.message && !err.message.includes('{')) {
+        // Not a FirestoreErrorInfo JSON
+      } else {
+        handleFirestoreError(err, OperationType.WRITE, 'travel_bookings');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -113,6 +147,12 @@ const TravelBooking: React.FC = () => {
       </div>
 
       <div className="max-w-3xl mx-auto px-4 -mt-8">
+        {error && (
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 flex-shrink-0" />
+            <p className="text-sm font-medium">{error}</p>
+          </div>
+        )}
         {step === 'search' && (
           <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
             <form onSubmit={handleSearch} className="space-y-6">

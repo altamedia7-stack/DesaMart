@@ -89,6 +89,49 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["buyerId", "buyerName", "sellerId", "sellerName", "items", "totalPrice", "status", "createdAt", "updatedAt"]
+    },
+    "TravelListing": {
+      "title": "TravelListing",
+      "description": "A travel route and schedule listed by a seller",
+      "type": "object",
+      "properties": {
+        "sellerId": { "type": "string" },
+        "sellerName": { "type": "string" },
+        "sellerWhatsapp": { "type": "string" },
+        "operatorName": { "type": "string" },
+        "origin": { "type": "string" },
+        "destination": { "type": "string" },
+        "departureTime": { "type": "string" },
+        "price": { "type": "number" },
+        "totalSeats": { "type": "number" },
+        "availableSeats": { "type": "number" },
+        "imageUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["sellerId", "sellerName", "sellerWhatsapp", "operatorName", "origin", "destination", "departureTime", "price", "totalSeats", "availableSeats", "createdAt"]
+    },
+    "TravelBooking": {
+      "title": "TravelBooking",
+      "description": "A travel booking made by a buyer",
+      "type": "object",
+      "properties": {
+        "buyerId": { "type": "string" },
+        "buyerName": { "type": "string" },
+        "sellerId": { "type": "string" },
+        "listingId": { "type": "string" },
+        "operatorName": { "type": "string" },
+        "origin": { "type": "string" },
+        "destination": { "type": "string" },
+        "departureDate": { "type": "string" },
+        "departureTime": { "type": "string" },
+        "passengers": { "type": "array" },
+        "totalPrice": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "cancelled"] },
+        "paymentMethod": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["buyerId", "buyerName", "sellerId", "listingId", "operatorName", "origin", "destination", "departureDate", "departureTime", "passengers", "totalPrice", "status", "paymentMethod", "createdAt", "updatedAt"]
     }
   },
   "firestore": {
@@ -111,6 +154,14 @@
     "/orders/{orderId}": {
       "schema": { "$ref": "#/entities/Order" },
       "description": "Stores orders placed by buyers"
+    },
+    "/travel_listings/{listingId}": {
+      "schema": { "$ref": "#/entities/TravelListing" },
+      "description": "Stores travel route listings"
+    },
+    "/travel_bookings/{bookingId}": {
+      "schema": { "$ref": "#/entities/TravelBooking" },
+      "description": "Stores travel bookings"
     }
   }
 }
