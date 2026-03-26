@@ -19,6 +19,7 @@ import Profile from './pages/Profile';
 import CourierDashboard from './pages/CourierDashboard';
 import ErrorBoundary from './components/ErrorBoundary';
 import PaymentDetail from './pages/PaymentDetail';
+import TravelBooking from './pages/TravelBooking';
 
 import Checkout from './pages/Checkout';
 import OrderConfirmation from './pages/OrderConfirmation';
@@ -49,6 +50,7 @@ function App() {
                     <Route path="/seller" element={<SellerDashboard />} />
                     <Route path="/courier" element={<CourierDashboard />} />
                     <Route path="/admin" element={<AdminDashboard />} />
+                    <Route path="/travel-booking" element={<TravelBooking />} />
                   </Routes>
                 </main>
                 <footer className="bg-white border-t border-gray-200 py-8 text-center text-gray-500 text-sm hidden sm:block">

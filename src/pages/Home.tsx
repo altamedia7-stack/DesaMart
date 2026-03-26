@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { Product } from '../types';
 import ProductCard from '../components/ProductCard';
@@ -10,6 +10,7 @@ const Home: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const searchTerm = searchParams.get('q') || '';
   const [selectedCategory, setSelectedCategory] = useState('Semua');
   const [sortOrder, setSortOrder] = useState('newest');
@@ -77,7 +78,11 @@ const Home: React.FC = () => {
                 <div 
                   key={category.name}
                   onClick={() => {
-                    setSelectedCategory(category.name);
+                    if (category.name === 'Travel') {
+                      navigate('/travel-booking');
+                    } else {
+                      setSelectedCategory(category.name);
+                    }
                   }}
                   className={`${isHiddenOnMobile ? 'hidden sm:flex' : 'flex'} flex-col items-center justify-start cursor-pointer group`}
                 >
@@ -91,6 +96,19 @@ const Home: React.FC = () => {
               );
             })}
           </div>
+        </div>
+
+        {/* Bus & Travel Banner */}
+        <div 
+          onClick={() => navigate('/travel-booking')}
+          className="bg-gradient-to-r from-emerald-600 to-teal-600 mb-2 sm:mb-6 p-4 sm:p-6 sm:rounded-xl shadow-md cursor-pointer relative overflow-hidden group"
+        >
+          <div className="relative z-10">
+            <h3 className="text-white font-bold text-lg sm:text-2xl mb-1">Bus & Travel</h3>
+            <p className="text-emerald-50 text-xs sm:text-sm mb-4 max-w-[200px] sm:max-w-md">Pesan tiket travel antar kota dengan mudah. Banyuwangi ⇄ Surabaya, Malang, Bali, dan lainnya.</p>
+            <button className="bg-white text-emerald-600 px-4 py-2 rounded-lg text-xs font-bold shadow-sm group-hover:bg-emerald-50 transition-colors">Pesan Sekarang</button>
+          </div>
+          <Car className="absolute -right-4 -bottom-4 h-32 w-32 text-white/10 transform -rotate-12 group-hover:scale-110 transition-transform" />
         </div>
 
         {/* Sort and Filter Bar */}

@@ -96,3 +96,45 @@ export interface Order {
   createdAt: any; // Firestore Timestamp
   updatedAt: any; // Firestore Timestamp
 }
+
+export interface TravelListing {
+  id: string;
+  sellerId: string;
+  sellerName: string;
+  sellerWhatsapp: string;
+  operatorName: string;
+  origin: string;
+  destination: string;
+  departureTime: string;
+  price: number;
+  totalSeats: number;
+  availableSeats: number;
+  imageUrl: string;
+  createdAt: any; // Firestore Timestamp
+}
+
+export interface Passenger {
+  name: string;
+  idNumber: string;
+  phone: string;
+  seatNumber: string;
+}
+
+export interface TravelBooking {
+  id: string;
+  buyerId: string;
+  buyerName: string;
+  sellerId: string;
+  listingId: string;
+  operatorName: string;
+  origin: string;
+  destination: string;
+  departureDate: string;
+  departureTime: string;
+  passengers: Passenger[];
+  totalPrice: number;
+  status: OrderStatus;
+  paymentMethod: string;
+  createdAt: any; // Firestore Timestamp
+  updatedAt: any; // Firestore Timestamp
+}

@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc, updateDoc, serverTimestamp, setDoc, orderBy } from 'firebase/firestore';
 import { Product, Order, OrderStatus, ProductVariant } from '../types';
-import { Plus, Trash2, Edit, Save, X, Store, Package, Truck, CheckCircle, Clock, AlertCircle, Layers, Download } from 'lucide-react';
+import { Plus, Trash2, Edit, Save, X, Store, Package, Truck, CheckCircle, Clock, AlertCircle, Layers, Download, Car, MapPin, Calendar, Users } from 'lucide-react';
 import SellerRevenue from '../components/SellerRevenue';
 
 const SellerDashboard: React.FC = () => {
@@ -12,7 +12,7 @@ const SellerDashboard: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'revenue' | 'profile'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'revenue' | 'profile' | 'travel'>('products');
   
   // Profile state
   const [name, setName] = useState(userProfile?.name || '');
@@ -28,6 +28,7 @@ const SellerDashboard: React.FC = () => {
 
   // New product state
   const [isAddingProduct, setIsAddingProduct] = useState(false);
+  const [isAddingTravel, setIsAddingTravel] = useState(false);
   const [editProductImage, setEditProductImage] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [newProduct, setNewProduct] = useState({
@@ -42,6 +43,19 @@ const SellerDashboard: React.FC = () => {
     isDigital: false
   });
   const [newProductImage, setNewProductImage] = useState<File | null>(null);
+
+  // New travel state
+  const [newTravel, setNewTravel] = useState({
+    operatorName: '',
+    origin: '',
+    destination: '',
+    departureTime: '',
+    price: '',
+    totalSeats: '10',
+    imageUrl: ''
+  });
+  const [travelListings, setTravelListings] = useState<any[]>([]);
+  const [travelBookings, setTravelBookings] = useState<any[]>([]);
 
   // Edit product state
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
@@ -87,9 +101,29 @@ const SellerDashboard: React.FC = () => {
       handleFirestoreError(error, OperationType.LIST, path);
     });
 
+    const qTravel = query(collection(db, 'travel_listings'), where('sellerId', '==', userProfile.uid));
+    const unsubscribeTravel = onSnapshot(qTravel, (snapshot) => {
+      const travelData: any[] = [];
+      snapshot.forEach((doc) => {
+        travelData.push({ id: doc.id, ...doc.data() });
+      });
+      setTravelListings(travelData);
+    });
+
+    const qTravelBookings = query(collection(db, 'travel_bookings'), where('sellerId', '==', userProfile.uid), orderBy('createdAt', 'desc'));
+    const unsubscribeTravelBookings = onSnapshot(qTravelBookings, (snapshot) => {
+      const bookingsData: any[] = [];
+      snapshot.forEach((doc) => {
+        bookingsData.push({ id: doc.id, ...doc.data() });
+      });
+      setTravelBookings(bookingsData);
+    });
+
     return () => {
       unsubscribeProducts();
       unsubscribeOrders();
+      unsubscribeTravel();
+      unsubscribeTravelBookings();
     };
   }, [userProfile]);
 
@@ -332,6 +366,56 @@ const SellerDashboard: React.FC = () => {
     }
   };
 
+  const handleAddTravel = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userProfile?.uid) return;
+    
+    try {
+      await addDoc(collection(db, 'travel_listings'), {
+        sellerId: userProfile.uid,
+        sellerName: userProfile.name || 'Unknown',
+        sellerWhatsapp: whatsapp || '',
+        operatorName: newTravel.operatorName,
+        origin: newTravel.origin,
+        destination: newTravel.destination,
+        departureTime: newTravel.departureTime,
+        price: Number(newTravel.price),
+        totalSeats: Number(newTravel.totalSeats),
+        availableSeats: Number(newTravel.totalSeats),
+        imageUrl: newTravel.imageUrl || `https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=400&h=400&fit=crop`,
+        createdAt: serverTimestamp()
+      });
+      
+      setIsAddingTravel(false);
+      setNewTravel({ operatorName: '', origin: '', destination: '', departureTime: '', price: '', totalSeats: '10', imageUrl: '' });
+      alert('Layanan Travel berhasil ditambahkan!');
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, 'travel_listings');
+    }
+  };
+
+  const handleDeleteTravel = async (id: string) => {
+    if (window.confirm('Hapus layanan travel ini?')) {
+      try {
+        await deleteDoc(doc(db, 'travel_listings', id));
+      } catch (error) {
+        handleFirestoreError(error, OperationType.DELETE, `travel_listings/${id}`);
+      }
+    }
+  };
+
+  const handleUpdateTravelBookingStatus = async (bookingId: string, newStatus: OrderStatus) => {
+    try {
+      await updateDoc(doc(db, 'travel_bookings', bookingId), {
+        status: newStatus,
+        updatedAt: serverTimestamp()
+      });
+      alert('Status booking berhasil diperbarui!');
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `travel_bookings/${bookingId}`);
+    }
+  };
+
   const getStatusIcon = (status: OrderStatus) => {
     switch (status) {
       case 'pending': return <Clock className="h-4 w-4 text-yellow-500" />;
@@ -430,6 +514,13 @@ const SellerDashboard: React.FC = () => {
               </span>
             )}
             {activeTab === 'orders' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-600 rounded-t-full"></div>}
+          </button>
+          <button 
+            onClick={() => setActiveTab('travel')}
+            className={`py-4 px-5 font-bold text-sm transition-all relative whitespace-nowrap flex items-center gap-2 ${activeTab === 'travel' ? 'text-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            Bus & Travel
+            {activeTab === 'travel' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-600 rounded-t-full"></div>}
           </button>
           <button 
             onClick={() => setActiveTab('revenue')}
@@ -1065,6 +1156,161 @@ const SellerDashboard: React.FC = () => {
             )}
           </div>
         </>
+      ) : activeTab === 'travel' ? (
+        <div className="space-y-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900">Layanan Bus & Travel</h2>
+              <button 
+                onClick={() => setIsAddingTravel(!isAddingTravel)}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium items-center gap-2 transition shadow-sm flex"
+              >
+                {isAddingTravel ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                {isAddingTravel ? 'Batal' : 'Tambah Layanan'}
+              </button>
+            </div>
+
+            {isAddingTravel && (
+              <form onSubmit={handleAddTravel} className="bg-gray-50 p-4 sm:p-6 rounded-xl border border-gray-200 mb-8">
+                <h3 className="text-lg font-bold text-gray-900 mb-6">Tambah Layanan Travel Baru</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1.5">Nama Operator / Travel *</label>
+                      <input required type="text" value={newTravel.operatorName} onChange={e => setNewTravel({...newTravel, operatorName: e.target.value})} className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all" placeholder="Contoh: Banyuwangi Trans" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1.5">Kota Asal *</label>
+                        <input required type="text" value={newTravel.origin} onChange={e => setNewTravel({...newTravel, origin: e.target.value})} className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all" placeholder="Banyuwangi" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1.5">Kota Tujuan *</label>
+                        <input required type="text" value={newTravel.destination} onChange={e => setNewTravel({...newTravel, destination: e.target.value})} className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all" placeholder="Surabaya" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1.5">Jam Keberangkatan *</label>
+                        <input required type="time" value={newTravel.departureTime} onChange={e => setNewTravel({...newTravel, departureTime: e.target.value})} className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1.5">Harga Tiket (Rp) *</label>
+                        <input required type="number" value={newTravel.price} onChange={e => setNewTravel({...newTravel, price: e.target.value})} className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all" placeholder="150000" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1.5">Total Kursi *</label>
+                      <input required type="number" value={newTravel.totalSeats} onChange={e => setNewTravel({...newTravel, totalSeats: e.target.value})} className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1.5">URL Gambar Armada (Opsional)</label>
+                      <input type="text" value={newTravel.imageUrl} onChange={e => setNewTravel({...newTravel, imageUrl: e.target.value})} className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all" placeholder="https://..." />
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-8 flex justify-end">
+                  <button type="submit" className="bg-emerald-600 text-white px-8 py-3 rounded-xl font-bold text-sm hover:bg-emerald-700 shadow-md transition-all">Simpan Layanan</button>
+                </div>
+              </form>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {travelListings.map((listing) => (
+                <div key={listing.id} className="border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all">
+                  <div className="relative h-40">
+                    <img src={listing.imageUrl} alt={listing.operatorName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg text-[10px] font-bold text-emerald-600 border border-emerald-100">
+                      Rp {listing.price.toLocaleString('id-ID')}
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <h4 className="font-bold text-gray-900 mb-2">{listing.operatorName}</h4>
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center gap-2 text-xs text-gray-600">
+                        <MapPin className="h-3 w-3 text-emerald-500" />
+                        <span>{listing.origin} → {listing.destination}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-600">
+                        <Clock className="h-3 w-3 text-emerald-500" />
+                        <span>Pukul {listing.departureTime} WIB</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-600">
+                        <Users className="h-3 w-3 text-emerald-500" />
+                        <span>Kapasitas: {listing.totalSeats} Kursi</span>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => handleDeleteTravel(listing.id)}
+                      className="w-full flex items-center justify-center gap-2 py-2 text-xs font-bold text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                    >
+                      <Trash2 className="h-3 w-3" /> Hapus Layanan
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-6">Booking Travel Masuk</h2>
+            {travelBookings.length === 0 ? (
+              <div className="text-center py-12 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                <Calendar className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-gray-500 text-sm">Belum ada booking travel masuk.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {travelBookings.map((booking) => (
+                  <div key={booking.id} className="border border-gray-100 rounded-2xl p-4 hover:shadow-md transition-all">
+                    <div className="flex flex-col sm:flex-row justify-between gap-4">
+                      <div className="flex-grow">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase">ID: {booking.id.substring(0, 8)}</span>
+                          <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase ${getStatusBadgeClass(booking.status)}`}>
+                            {getStatusLabel(booking.status)}
+                          </span>
+                        </div>
+                        <h4 className="font-bold text-gray-900">{booking.origin} → {booking.destination}</h4>
+                        <p className="text-xs text-gray-500 mb-2">{booking.departureDate} | Pukul {booking.departureTime}</p>
+                        <div className="space-y-1">
+                          {booking.passengers.map((p: any, i: number) => (
+                            <div key={i} className="text-xs text-gray-600 flex items-center gap-2">
+                              <span className="w-4 h-4 bg-emerald-100 text-emerald-700 flex items-center justify-center rounded-full text-[8px] font-bold">{p.seatNumber}</span>
+                              <span>{p.name} ({p.phone})</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex flex-col justify-between items-end gap-4">
+                        <div className="text-right">
+                          <p className="text-[10px] text-gray-400 uppercase font-bold">Total Bayar</p>
+                          <p className="text-lg font-bold text-emerald-600">Rp {booking.totalPrice.toLocaleString('id-ID')}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => handleUpdateTravelBookingStatus(booking.id, 'paid')}
+                            className="px-3 py-1.5 bg-emerald-600 text-white text-[10px] font-bold rounded-lg hover:bg-emerald-700"
+                          >
+                            Konfirmasi Bayar
+                          </button>
+                          <button 
+                            onClick={() => handleUpdateTravelBookingStatus(booking.id, 'cancelled')}
+                            className="px-3 py-1.5 bg-red-50 text-red-600 text-[10px] font-bold rounded-lg hover:bg-red-100"
+                          >
+                            Batalkan
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       ) : activeTab === 'orders' ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
           <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-6">Pesanan Masuk</h2>
