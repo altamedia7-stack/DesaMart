@@ -231,6 +231,91 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const handleCreateDummyData = async () => {
+    if (!userProfile?.uid) return;
+    if (!window.confirm('Buat data dummy produk?')) return;
+
+    try {
+      const dummyProducts = [
+        {
+          sellerId: userProfile.uid,
+          name: 'Sayur Bayam Segar',
+          description: 'Bayam segar langsung dari petani lokal.',
+          price: 5000,
+          stock: 100,
+          category: 'Sayur',
+          imageUrl: 'https://picsum.photos/seed/bayam/400/400',
+          createdAt: serverTimestamp(),
+          isDigital: false
+        },
+        {
+          sellerId: userProfile.uid,
+          name: 'Beras Premium 5kg',
+          description: 'Beras putih pulen kualitas premium.',
+          price: 65000,
+          stock: 50,
+          category: 'Sembako',
+          imageUrl: 'https://picsum.photos/seed/beras/400/400',
+          createdAt: serverTimestamp(),
+          isDigital: false
+        },
+        {
+          sellerId: userProfile.uid,
+          name: 'Kopi Susu Gula Aren',
+          description: 'Kopi susu kekinian dengan gula aren asli.',
+          price: 15000,
+          stock: 30,
+          category: 'Minuman',
+          imageUrl: 'https://picsum.photos/seed/kopi/400/400',
+          createdAt: serverTimestamp(),
+          isDigital: false
+        },
+        {
+          sellerId: userProfile.uid,
+          name: 'Keripik Singkong Pedas',
+          description: 'Keripik singkong renyah dengan bumbu pedas manis.',
+          price: 12000,
+          stock: 200,
+          category: 'Snack',
+          imageUrl: 'https://picsum.photos/seed/keripik/400/400',
+          createdAt: serverTimestamp(),
+          isDigital: false
+        },
+        {
+          sellerId: userProfile.uid,
+          name: 'Voucher Game 100k',
+          description: 'Voucher game online nominal 100.000.',
+          price: 98000,
+          stock: 999,
+          category: 'Digital',
+          imageUrl: 'https://picsum.photos/seed/voucher/400/400',
+          createdAt: serverTimestamp(),
+          isDigital: true
+        },
+        {
+          sellerId: userProfile.uid,
+          name: 'Travel Banyuwangi - Surabaya',
+          description: 'Tiket travel eksekutif Banyuwangi ke Surabaya PP.',
+          price: 150000,
+          stock: 10,
+          category: 'Travel',
+          imageUrl: 'https://picsum.photos/seed/travel/400/400',
+          createdAt: serverTimestamp(),
+          isDigital: true
+        }
+      ];
+
+      for (const product of dummyProducts) {
+        await addDoc(collection(db, 'products'), product);
+      }
+
+      alert('Berhasil membuat data dummy produk!');
+    } catch (error) {
+      console.error("Error creating dummy data", error);
+      alert('Gagal membuat data dummy.');
+    }
+  };
+
   if (!userProfile || userProfile.role !== 'admin') {
     return <div className="p-8 text-center text-red-600 font-bold">Akses ditolak. Halaman ini hanya untuk Admin.</div>;
   }
@@ -246,6 +331,13 @@ const AdminDashboard: React.FC = () => {
         >
           <Trash2 className="h-4 w-4" />
           Hapus Produk "Tidak Ada"
+        </button>
+        <button 
+          onClick={handleCreateDummyData}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition"
+        >
+          <Plus className="h-4 w-4" />
+          Buat Data Dummy
         </button>
       </div>
 
