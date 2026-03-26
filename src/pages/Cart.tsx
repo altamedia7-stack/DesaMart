@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
-import { Trash2, Plus, Minus, ArrowLeft, MessageCircle, ShoppingBag } from 'lucide-react';
+import { Trash2, Plus, Minus, ArrowLeft, MessageCircle, ShoppingBag, Download } from 'lucide-react';
 
 const Cart: React.FC = () => {
   const { cartItems, updateQuantity, removeFromCart, totalItems, totalPrice, clearCart } = useCart();
@@ -98,6 +98,13 @@ const Cart: React.FC = () => {
                         <Link to={`/products/${item.product.id}`} className="font-bold text-lg text-gray-900 hover:text-emerald-600 transition line-clamp-2 mb-1">
                           {item.product.name}
                         </Link>
+                        {item.product.isDigital && (
+                          <div className="mb-2">
+                            <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
+                              <Download className="h-3 w-3" /> Digital
+                            </span>
+                          </div>
+                        )}
                         {item.selectedVariant && (
                           <div className="text-xs text-emerald-600 font-bold mb-2 flex items-center gap-1">
                             <span className="bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">

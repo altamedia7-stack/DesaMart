@@ -33,6 +33,7 @@ export interface Product {
   imageUrl: string;
   discountPercentage?: number;
   variants?: ProductVariant[];
+  isDigital?: boolean;
   createdAt: any; // Firestore Timestamp
 }
 

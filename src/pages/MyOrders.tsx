@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { Order, OrderStatus } from '../types';
-import { Package, Truck, CheckCircle, Clock, AlertCircle, ChevronRight, ShoppingBag } from 'lucide-react';
+import { Package, Truck, CheckCircle, Clock, AlertCircle, ChevronRight, ShoppingBag, Download } from 'lucide-react';
 
 const MyOrders: React.FC = () => {
   const { currentUser, userProfile } = useAuth();
@@ -167,6 +167,13 @@ const MyOrders: React.FC = () => {
                       </div>
                       <div className="flex-grow min-w-0">
                         <h4 className="text-sm font-bold text-gray-900 truncate">{item.product.name}</h4>
+                        {item.product.isDigital && (
+                          <div className="mt-0.5 mb-1">
+                            <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">
+                              <Download className="h-2.5 w-2.5" /> Digital
+                            </span>
+                          </div>
+                        )}
                         {item.selectedVariant && (
                           <p className="text-[10px] text-emerald-600 font-bold">Varian: {item.selectedVariant.name}</p>
                         )}
@@ -182,6 +189,24 @@ const MyOrders: React.FC = () => {
                       </div>
                     </div>
                   ))}
+                </div>
+
+                <div className="mt-4 bg-gray-50 rounded-xl p-4 border border-gray-100">
+                  <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">Informasi Pengiriman</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Metode / Kurir</p>
+                      <p className="text-sm text-gray-900 font-medium">{order.shippingMethod || 'Tidak ada'}</p>
+                    </div>
+                    {order.shippingAddress && (
+                      <div>
+                        <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Alamat Tujuan</p>
+                        <p className="text-sm text-gray-900">
+                          {order.shippingAddress.village}, Kec. {order.shippingAddress.district}, {order.shippingAddress.city}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Action Button (Optional: Link to Chat Seller) */}

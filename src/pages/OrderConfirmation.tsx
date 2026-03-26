@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { CheckCircle2, MapPin, Package, CreditCard, Truck, ChevronRight, ArrowRight, Clock } from 'lucide-react';
+import { CheckCircle2, MapPin, Package, CreditCard, Truck, ChevronRight, ArrowRight, Clock, Download } from 'lucide-react';
 
 const OrderConfirmation: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
@@ -88,6 +88,13 @@ const OrderConfirmation: React.FC = () => {
                   />
                   <div className="flex-1">
                     <h4 className="font-medium text-gray-900 line-clamp-1">{item.product.name}</h4>
+                    {item.product.isDigital && (
+                      <div className="mt-0.5 mb-1">
+                        <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">
+                          <Download className="h-2.5 w-2.5" /> Digital
+                        </span>
+                      </div>
+                    )}
                     {item.selectedVariant && (
                       <p className="text-sm text-gray-500">Varian: {item.selectedVariant.name}</p>
                     )}
@@ -107,10 +114,12 @@ const OrderConfirmation: React.FC = () => {
                 <span>Subtotal Produk</span>
                 <span>Rp {(order.totalPrice - (order.shippingCost || 0)).toLocaleString('id-ID')}</span>
               </div>
-              <div className="flex justify-between text-sm text-gray-600">
-                <span>Ongkos Kirim</span>
-                <span>Rp {(order.shippingCost || 0).toLocaleString('id-ID')}</span>
-              </div>
+              {order.shippingMethod !== 'Digital Delivery' && (
+                <div className="flex justify-between text-sm text-gray-600">
+                  <span>Ongkos Kirim</span>
+                  <span>Rp {(order.shippingCost || 0).toLocaleString('id-ID')}</span>
+                </div>
+              )}
               <div className="flex justify-between font-bold text-gray-900 pt-2 border-t border-gray-100">
                 <span>Total Pembayaran</span>
                 <span className="text-emerald-600">Rp {order.totalPrice?.toLocaleString('id-ID')}</span>
@@ -128,9 +137,15 @@ const OrderConfirmation: React.FC = () => {
             </div>
             <div className="p-4">
               <p className="font-medium text-gray-900">{order.buyerName}</p>
-              <p className="text-gray-600 text-sm mt-1">
-                {order.shippingAddress?.village}, Kec. {order.shippingAddress?.district}, {order.shippingAddress?.city}
-              </p>
+              {order.shippingMethod === 'Digital Delivery' ? (
+                <p className="text-emerald-600 text-sm mt-1 font-medium bg-emerald-50 inline-block px-2 py-1 rounded">
+                  Pengiriman Digital
+                </p>
+              ) : (
+                <p className="text-gray-600 text-sm mt-1">
+                  {order.shippingAddress?.village}, Kec. {order.shippingAddress?.district}, {order.shippingAddress?.city}
+                </p>
+              )}
             </div>
           </div>
 
@@ -153,7 +168,9 @@ const OrderConfirmation: React.FC = () => {
                 <div>
                   <p className="text-sm font-medium text-gray-900">Kurir Pengiriman</p>
                   <p className="text-sm text-gray-600">{order.shippingMethod}</p>
-                  <p className="text-xs text-emerald-600 mt-1 bg-emerald-50 inline-block px-2 py-1 rounded">Estimasi: 1-3 Hari Kerja</p>
+                  {order.shippingMethod !== 'Digital Delivery' && (
+                    <p className="text-xs text-emerald-600 mt-1 bg-emerald-50 inline-block px-2 py-1 rounded">Estimasi: 1-3 Hari Kerja</p>
+                  )}
                 </div>
               </div>
             </div>

@@ -120,7 +120,7 @@ service cloud.firestore {
     }
 
     function isValidProduct(data) {
-      return hasOnlyAllowedFields(['sellerId', 'sellerName', 'sellerWhatsapp', 'name', 'description', 'price', 'stock', 'category', 'imageUrl', 'discountPercentage', 'variants', 'createdAt']) &&
+      return hasOnlyAllowedFields(['sellerId', 'sellerName', 'sellerWhatsapp', 'name', 'description', 'price', 'stock', 'category', 'imageUrl', 'discountPercentage', 'variants', 'isDigital', 'createdAt']) &&
              data.sellerId is string && data.sellerId.size() > 0 && data.sellerId.size() < 128 &&
              data.sellerName is string && data.sellerName.size() > 0 && data.sellerName.size() < 100 &&
              data.sellerWhatsapp is string && data.sellerWhatsapp.size() > 0 && data.sellerWhatsapp.size() < 30 &&
@@ -132,6 +132,7 @@ service cloud.firestore {
              data.imageUrl is string && isValidUrl(data.imageUrl) && data.imageUrl.size() < 1000 &&
              (!('discountPercentage' in data) || (data.discountPercentage is number && data.discountPercentage >= 0 && data.discountPercentage <= 100)) &&
              (!('variants' in data) || (data.variants is list)) &&
+             (!('isDigital' in data) || (data.isDigital is bool)) &&
              data.createdAt is timestamp;
     }
 

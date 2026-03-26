@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Product, Courier, ProductVariant } from '../types';
-import { MessageCircle, Truck, X, ShoppingCart, Store, Share2, Layers } from 'lucide-react';
+import { MessageCircle, Truck, X, ShoppingCart, Store, Share2, Layers, Download } from 'lucide-react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useCart } from '../contexts/CartContext';
@@ -99,6 +99,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, showStock = true }) 
           <div className="bg-emerald-500 text-white text-[9px] sm:text-xs font-bold px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-sm sm:rounded-full pointer-events-none shadow-sm">
             {product.category}
           </div>
+          {product.isDigital && (
+            <div className="bg-blue-500 text-white text-[9px] sm:text-xs font-bold px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-sm sm:rounded-full pointer-events-none shadow-sm flex items-center gap-1">
+              <Download className="h-2 w-2 sm:h-3 sm:w-3" /> Digital
+            </div>
+          )}
           <button 
             onClick={handleShare}
             className="bg-white/90 hover:bg-white text-gray-700 p-1 sm:p-1.5 rounded-full shadow-sm transition-all border border-gray-100"

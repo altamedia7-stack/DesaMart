@@ -4,7 +4,7 @@ import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc, getDocs, query, setDoc } from 'firebase/firestore';
-import { ArrowLeft, MapPin, ChevronRight, CheckCircle2, Circle, Store, Home, Truck } from 'lucide-react';
+import { ArrowLeft, MapPin, ChevronRight, CheckCircle2, Circle, Store, Home, Truck, Download } from 'lucide-react';
 
 const Checkout: React.FC = () => {
   const { sellerId } = useParams<{ sellerId: string }>();
@@ -107,6 +107,8 @@ const Checkout: React.FC = () => {
   const sellerItems = cartItems.filter(item => item.product.sellerId === sellerId);
   const sellerName = sellerItems.length > 0 ? sellerItems[0].product.sellerName : '';
   const sellerWhatsapp = sellerItems.length > 0 ? sellerItems[0].product.sellerWhatsapp : '';
+  
+  const isAllDigital = sellerItems.length > 0 && sellerItems.every(item => item.product.isDigital);
 
   // Calculate totals
   const subtotalPesanan = sellerItems.reduce((total, item) => {
@@ -116,7 +118,7 @@ const Checkout: React.FC = () => {
     return total + (price * item.quantity);
   }, 0);
 
-  const totalPembayaran = subtotalPesanan + (shippingCost || 0);
+  const totalPembayaran = subtotalPesanan + (isAllDigital ? 0 : (shippingCost || 0));
 
   useEffect(() => {
     if (!loading && !currentUser) navigate('/login');
@@ -133,11 +135,11 @@ const Checkout: React.FC = () => {
 
   const handlePlaceOrder = async () => {
     if (!currentUser || !sellerId) return;
-    if (!selectedDistrict || !selectedVillage) {
+    if (!isAllDigital && (!selectedDistrict || !selectedVillage)) {
       alert("Silakan pilih Kecamatan dan Desa terlebih dahulu.");
       return;
     }
-    if (!selectedCourier) {
+    if (!isAllDigital && !selectedCourier) {
       alert("Silakan pilih kurir terlebih dahulu.");
       return;
     }
@@ -161,9 +163,9 @@ const Checkout: React.FC = () => {
             totalPrice: totalPembayaran,
             status: 'pending',
             paymentMethod: 'COD',
-            shippingMethod: selectedCourier?.name || 'Unknown',
-            shippingCost: shippingCost || 0,
-            shippingAddress: {
+            shippingMethod: isAllDigital ? 'Digital Delivery' : (selectedCourier?.name || 'Unknown'),
+            shippingCost: isAllDigital ? 0 : (shippingCost || 0),
+            shippingAddress: isAllDigital ? null : {
               city: selectedCity || '',
               district: selectedDistrict || '',
               village: selectedVillage || ''
@@ -191,10 +193,16 @@ const Checkout: React.FC = () => {
         });
 
         message += `\n*Subtotal: Rp ${subtotalPesanan.toLocaleString('id-ID')}*\n`;
-        message += `*Ongkir: Rp ${shippingCost?.toLocaleString('id-ID')}*\n`;
+        if (!isAllDigital) {
+          message += `*Ongkir: Rp ${shippingCost?.toLocaleString('id-ID')}*\n`;
+        }
         message += `*Total: Rp ${totalPembayaran.toLocaleString('id-ID')}*\n\n`;
         message += `Metode: COD\n`;
-        message += `Alamat: ${selectedVillage}, Kec. ${selectedDistrict}, ${selectedCity}`;
+        if (!isAllDigital) {
+          message += `Alamat: ${selectedVillage}, Kec. ${selectedDistrict}, ${selectedCity}`;
+        } else {
+          message += `Alamat: Pengiriman Digital`;
+        }
         
         if (sellerId) {
           const notifRef = doc(collection(db, 'notifications'));
@@ -229,12 +237,14 @@ const Checkout: React.FC = () => {
           };
         });
 
-        orderItems.push({
-          sku: 'SHIPPING',
-          name: 'Ongkos Kirim',
-          price: Math.round(shippingCost || 0),
-          quantity: 1
-        });
+        if (!isAllDigital) {
+          orderItems.push({
+            sku: 'SHIPPING',
+            name: 'Ongkos Kirim',
+            price: Math.round(shippingCost || 0),
+            quantity: 1
+          });
+        }
 
         const calculatedAmount = orderItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
@@ -341,62 +351,64 @@ const Checkout: React.FC = () => {
           <div className="flex-grow space-y-2 md:space-y-4">
             
             {/* Alamat Pengiriman */}
-            <div className="bg-white md:rounded-lg shadow-sm p-4">
-              <div className="flex items-start gap-3 mb-4">
-                <MapPin className="h-5 w-5 text-emerald-600 mt-0.5 flex-shrink-0" />
-                <div className="flex-grow">
-                  <div className="text-sm text-gray-900">
-                    <span className="font-bold">{userProfile?.name || 'Nama Pembeli'}</span> | {userProfile?.whatsapp || 'No. WhatsApp'}
-                  </div>
-                  <div className="text-sm text-gray-600 mt-1">
-                    {userProfile?.address || 'Alamat lengkap belum diatur.'}
+            {!isAllDigital && (
+              <div className="bg-white md:rounded-lg shadow-sm p-4">
+                <div className="flex items-start gap-3 mb-4">
+                  <MapPin className="h-5 w-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <div className="flex-grow">
+                    <div className="text-sm text-gray-900">
+                      <span className="font-bold">{userProfile?.name || 'Nama Pembeli'}</span> | {userProfile?.whatsapp || 'No. WhatsApp'}
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      {userProfile?.address || 'Alamat lengkap belum diatur.'}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-gray-100">
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1 uppercase">Kota</label>
-                  <select 
-                    className="w-full border border-gray-200 rounded-lg p-2 text-sm bg-gray-50"
-                    value={selectedCity}
-                    onChange={(e) => setSelectedCity(e.target.value)}
-                  >
-                    <option value="Banyuwangi">Banyuwangi</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1 uppercase">Kecamatan</label>
-                  <select 
-                    className="w-full border border-gray-200 rounded-lg p-2 text-sm focus:ring-emerald-500"
-                    value={selectedDistrict}
-                    onChange={(e) => {
-                      setSelectedDistrict(e.target.value);
-                      setSelectedVillage('');
-                    }}
-                  >
-                    <option value="">Pilih Kecamatan</option>
-                    {Object.keys(locations.Banyuwangi.districts).map(d => (
-                      <option key={d} value={d}>{d}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1 uppercase">Desa/Kelurahan</label>
-                  <select 
-                    className="w-full border border-gray-200 rounded-lg p-2 text-sm focus:ring-emerald-500"
-                    value={selectedVillage}
-                    onChange={(e) => setSelectedVillage(e.target.value)}
-                    disabled={!selectedDistrict}
-                  >
-                    <option value="">Pilih Desa</option>
-                    {selectedDistrict && locations.Banyuwangi.districts[selectedDistrict as keyof typeof locations.Banyuwangi.districts].map(v => (
-                      <option key={v} value={v}>{v}</option>
-                    ))}
-                  </select>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-gray-100">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1 uppercase">Kota</label>
+                    <select 
+                      className="w-full border border-gray-200 rounded-lg p-2 text-sm bg-gray-50"
+                      value={selectedCity}
+                      onChange={(e) => setSelectedCity(e.target.value)}
+                    >
+                      <option value="Banyuwangi">Banyuwangi</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1 uppercase">Kecamatan</label>
+                    <select 
+                      className="w-full border border-gray-200 rounded-lg p-2 text-sm focus:ring-emerald-500"
+                      value={selectedDistrict}
+                      onChange={(e) => {
+                        setSelectedDistrict(e.target.value);
+                        setSelectedVillage('');
+                      }}
+                    >
+                      <option value="">Pilih Kecamatan</option>
+                      {Object.keys(locations.Banyuwangi.districts).map(d => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1 uppercase">Desa/Kelurahan</label>
+                    <select 
+                      className="w-full border border-gray-200 rounded-lg p-2 text-sm focus:ring-emerald-500"
+                      value={selectedVillage}
+                      onChange={(e) => setSelectedVillage(e.target.value)}
+                      disabled={!selectedDistrict}
+                    >
+                      <option value="">Pilih Desa</option>
+                      {selectedDistrict && locations.Banyuwangi.districts[selectedDistrict as keyof typeof locations.Banyuwangi.districts].map(v => (
+                        <option key={v} value={v}>{v}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Produk */}
             <div className="bg-white md:rounded-lg shadow-sm">
@@ -419,6 +431,13 @@ const Checkout: React.FC = () => {
                     />
                     <div className="flex-grow">
                       <div className="text-sm text-gray-900 line-clamp-1 font-medium">{item.product.name}</div>
+                      {item.product.isDigital && (
+                        <div className="mt-1 mb-1">
+                          <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">
+                            <Download className="h-2.5 w-2.5" /> Digital
+                          </span>
+                        </div>
+                      )}
                       {item.selectedVariant && (
                         <div className="text-xs text-gray-500">Variasi: {item.selectedVariant.name}</div>
                       )}
@@ -432,37 +451,39 @@ const Checkout: React.FC = () => {
               })}
 
               {/* Opsi Pengiriman */}
-              <div className="p-4 border-b border-gray-100">
-                <div className="flex items-center gap-2 mb-3">
-                  <Truck className="h-4 w-4 text-emerald-600" />
-                  <span className="text-sm font-bold text-gray-900">Pilih Kurir</span>
-                </div>
-                <div className="space-y-2">
-                  {couriers.map(courier => (
-                    <div 
-                      key={courier.id}
-                      className={`p-3 border rounded-lg cursor-pointer transition-all ${selectedCourier?.id === courier.id ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 hover:border-emerald-300'}`}
-                      onClick={() => setSelectedCourier(courier)}
-                    >
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <div className="text-sm font-bold text-gray-900">{courier.name}</div>
-                          <div className="text-xs text-gray-500 mt-1">
-                            {selectedDistrict ? (
-                              courier.rates && courier.rates[selectedDistrict] 
-                                ? `Tarif ke ${selectedDistrict}: Rp ${courier.rates[selectedDistrict].toLocaleString('id-ID')}`
-                                : `Tarif Dasar: Rp ${courier.baseRate.toLocaleString('id-ID')}`
-                            ) : 'Pilih kecamatan untuk lihat tarif'}
+              {!isAllDigital && (
+                <div className="p-4 border-b border-gray-100">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Truck className="h-4 w-4 text-emerald-600" />
+                    <span className="text-sm font-bold text-gray-900">Pilih Kurir</span>
+                  </div>
+                  <div className="space-y-2">
+                    {couriers.map(courier => (
+                      <div 
+                        key={courier.id}
+                        className={`p-3 border rounded-lg cursor-pointer transition-all ${selectedCourier?.id === courier.id ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 hover:border-emerald-300'}`}
+                        onClick={() => setSelectedCourier(courier)}
+                      >
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <div className="text-sm font-bold text-gray-900">{courier.name}</div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              {selectedDistrict ? (
+                                courier.rates && courier.rates[selectedDistrict] 
+                                  ? `Tarif ke ${selectedDistrict}: Rp ${courier.rates[selectedDistrict].toLocaleString('id-ID')}`
+                                  : `Tarif Dasar: Rp ${courier.baseRate.toLocaleString('id-ID')}`
+                              ) : 'Pilih kecamatan untuk lihat tarif'}
+                            </div>
+                          </div>
+                          <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${selectedCourier?.id === courier.id ? 'border-emerald-500 bg-emerald-500' : 'border-gray-300'}`}>
+                            {selectedCourier?.id === courier.id && <div className="h-2 w-2 bg-white rounded-full" />}
                           </div>
                         </div>
-                        <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${selectedCourier?.id === courier.id ? 'border-emerald-500 bg-emerald-500' : 'border-gray-300'}`}>
-                          {selectedCourier?.id === courier.id && <div className="h-2 w-2 bg-white rounded-full" />}
-                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Metode Pembayaran */}
@@ -512,10 +533,12 @@ const Checkout: React.FC = () => {
                   <span>Subtotal Produk</span>
                   <span>Rp{subtotalPesanan.toLocaleString('id-ID')}</span>
                 </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Ongkos Kirim</span>
-                  <span>{shippingCost === null ? '-' : `Rp${shippingCost.toLocaleString('id-ID')}`}</span>
-                </div>
+                {!isAllDigital && (
+                  <div className="flex justify-between text-gray-600">
+                    <span>Ongkos Kirim</span>
+                    <span>{shippingCost === null ? '-' : `Rp${shippingCost.toLocaleString('id-ID')}`}</span>
+                  </div>
+                )}
                 <div className="flex justify-between font-bold text-gray-900 pt-3 mt-3 border-t border-gray-100 text-lg">
                   <span>Total Tagihan</span>
                   <span className="text-emerald-600">Rp{totalPembayaran.toLocaleString('id-ID')}</span>
@@ -524,13 +547,13 @@ const Checkout: React.FC = () => {
 
               <button 
                 onClick={handlePlaceOrder}
-                disabled={isSubmitting || shippingCost === null}
+                disabled={isSubmitting || (!isAllDigital && shippingCost === null)}
                 className="w-full mt-6 bg-emerald-600 text-white py-3 rounded-xl font-bold text-lg shadow-lg shadow-emerald-100 hover:bg-emerald-700 transition-all disabled:opacity-50 disabled:bg-gray-400"
               >
                 {isSubmitting ? 'Memproses...' : 'Buat Pesanan'}
               </button>
               
-              {shippingCost === null && (
+              {!isAllDigital && shippingCost === null && (
                 <p className="text-[10px] text-center text-red-500 mt-2 italic">
                   * Pilih Kecamatan & Kurir untuk menghitung ongkir
                 </p>

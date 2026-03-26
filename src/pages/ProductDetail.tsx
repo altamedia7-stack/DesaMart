@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { doc, getDoc, collection, getDocs, query, where, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { Product, Review, ProductVariant } from '../types';
-import { MessageCircle, ArrowLeft, Store, Star, ShoppingCart, ChevronRight, Layers } from 'lucide-react';
+import { MessageCircle, ArrowLeft, Store, Star, ShoppingCart, ChevronRight, Layers, Download } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 
@@ -219,6 +219,16 @@ const ProductDetail: React.FC = () => {
               <h1 className="text-lg sm:text-xl font-medium text-gray-900 leading-snug mb-3">
                 {product.name}
               </h1>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                  {product.category}
+                </span>
+                {product.isDigital && (
+                  <span className="bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1">
+                    <Download className="h-3 w-3" /> Digital
+                  </span>
+                )}
+              </div>
               <div className="flex items-center justify-between text-sm text-gray-500">
                 <div className="flex items-center gap-1">
                   <Star className="h-4 w-4 text-yellow-400 fill-current" />

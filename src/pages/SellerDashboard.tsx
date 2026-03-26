@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc, updateDoc, serverTimestamp, setDoc, orderBy } from 'firebase/firestore';
 import { Product, Order, OrderStatus, ProductVariant } from '../types';
-import { Plus, Trash2, Edit, Save, X, Store, Package, Truck, CheckCircle, Clock, AlertCircle, Layers } from 'lucide-react';
+import { Plus, Trash2, Edit, Save, X, Store, Package, Truck, CheckCircle, Clock, AlertCircle, Layers, Download } from 'lucide-react';
 import SellerRevenue from '../components/SellerRevenue';
 
 const SellerDashboard: React.FC = () => {
@@ -38,7 +38,8 @@ const SellerDashboard: React.FC = () => {
     category: 'Sayur',
     imageUrl: '',
     discountPercentage: '',
-    variants: [] as ProductVariant[]
+    variants: [] as ProductVariant[],
+    isDigital: false
   });
   const [newProductImage, setNewProductImage] = useState<File | null>(null);
 
@@ -52,7 +53,8 @@ const SellerDashboard: React.FC = () => {
     category: 'Sayur',
     imageUrl: '',
     discountPercentage: '',
-    variants: [] as ProductVariant[]
+    variants: [] as ProductVariant[],
+    isDigital: false
   });
 
   const categories = ['Sayur', 'Sembako', 'Minuman', 'Snack', 'Lainnya'];
@@ -158,6 +160,7 @@ const SellerDashboard: React.FC = () => {
         category: newProduct.category || 'Lainnya',
         discountPercentage: newProduct.discountPercentage ? Number(newProduct.discountPercentage) : 0,
         variants: newProduct.variants || [],
+        isDigital: newProduct.isDigital || false,
         imageUrl,
         createdAt: serverTimestamp()
       });
@@ -178,7 +181,7 @@ const SellerDashboard: React.FC = () => {
       }
       
       setIsAddingProduct(false);
-      setNewProduct({ name: '', description: '', price: '', stock: '', category: 'Sayur', imageUrl: '', discountPercentage: '', variants: [] });
+      setNewProduct({ name: '', description: '', price: '', stock: '', category: 'Sayur', imageUrl: '', discountPercentage: '', variants: [], isDigital: false });
       setNewProductImage(null);
       alert('Produk berhasil ditambahkan!');
     } catch (error) {
@@ -208,7 +211,8 @@ const SellerDashboard: React.FC = () => {
       category: product.category,
       imageUrl: product.imageUrl || '',
       discountPercentage: product.discountPercentage?.toString() || '',
-      variants: product.variants || []
+      variants: product.variants || [],
+      isDigital: product.isDigital || false
     });
   };
 
@@ -235,6 +239,7 @@ const SellerDashboard: React.FC = () => {
         category: editProduct.category,
         discountPercentage: editProduct.discountPercentage ? Number(editProduct.discountPercentage) : 0,
         variants: editProduct.variants,
+        isDigital: editProduct.isDigital || false,
         imageUrl
       });
       
@@ -512,6 +517,19 @@ const SellerDashboard: React.FC = () => {
                         <input type="number" min="0" max="100" value={newProduct.discountPercentage} onChange={e => setNewProduct({...newProduct, discountPercentage: e.target.value})} className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all" placeholder="0" />
                       </div>
                     </div>
+                    
+                    <div className="mt-4 p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center gap-3">
+                      <input 
+                        type="checkbox" 
+                        id="isDigital" 
+                        checked={newProduct.isDigital} 
+                        onChange={e => setNewProduct({...newProduct, isDigital: e.target.checked})}
+                        className="w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500"
+                      />
+                      <label htmlFor="isDigital" className="text-sm text-emerald-900 font-medium cursor-pointer">
+                        Produk Digital (Tidak perlu ongkos kirim)
+                      </label>
+                    </div>
                   </div>
 
                   <div className="space-y-4">
@@ -769,6 +787,20 @@ const SellerDashboard: React.FC = () => {
                                   <input type="number" min="0" max="100" value={editProduct.discountPercentage} onChange={e => setEditProduct({...editProduct, discountPercentage: e.target.value})} className="w-full border border-gray-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none" placeholder="0" />
                                 </div>
                               </div>
+                              
+                              <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center gap-3">
+                                <input 
+                                  type="checkbox" 
+                                  id={`editIsDigitalMobile-${product.id}`}
+                                  checked={editProduct.isDigital} 
+                                  onChange={e => setEditProduct({...editProduct, isDigital: e.target.checked})}
+                                  className="w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500"
+                                />
+                                <label htmlFor={`editIsDigitalMobile-${product.id}`} className="text-sm text-emerald-900 font-medium cursor-pointer">
+                                  Produk Digital (Tidak perlu ongkos kirim)
+                                </label>
+                              </div>
+
                               <div>
                                 <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Deskripsi *</label>
                                 <textarea required rows={3} value={editProduct.description} onChange={e => setEditProduct({...editProduct, description: e.target.value})} className="w-full border border-gray-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"></textarea>
@@ -828,6 +860,20 @@ const SellerDashboard: React.FC = () => {
                                       <label className="block text-xs font-medium text-gray-700 mb-1">Diskon (%)</label>
                                       <input type="number" min="0" max="100" value={editProduct.discountPercentage} onChange={e => setEditProduct({...editProduct, discountPercentage: e.target.value})} className="w-full border border-gray-300 rounded p-1.5 text-sm" placeholder="0" />
                                     </div>
+                                    
+                                    <div className="md:col-span-2 p-3 bg-emerald-50 border border-emerald-100 rounded-lg flex items-center gap-3">
+                                      <input 
+                                        type="checkbox" 
+                                        id={`editIsDigitalDesktop-${product.id}`}
+                                        checked={editProduct.isDigital} 
+                                        onChange={e => setEditProduct({...editProduct, isDigital: e.target.checked})}
+                                        className="w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500"
+                                      />
+                                      <label htmlFor={`editIsDigitalDesktop-${product.id}`} className="text-sm text-emerald-900 font-medium cursor-pointer">
+                                        Produk Digital (Tidak perlu ongkos kirim)
+                                      </label>
+                                    </div>
+
                                     <div className="md:col-span-2">
                                       <label className="block text-xs font-medium text-gray-700 mb-1">Gambar Produk</label>
                                       <input 
@@ -1084,6 +1130,13 @@ const SellerDashboard: React.FC = () => {
                             <h4 className="text-sm font-bold text-gray-900 line-clamp-1">
                               {item.product.name}
                             </h4>
+                            {item.product.isDigital && (
+                              <div className="mt-0.5 mb-1">
+                                <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">
+                                  <Download className="h-2.5 w-2.5" /> Digital
+                                </span>
+                              </div>
+                            )}
                             <div className="flex items-center gap-2 mt-0.5">
                               {item.selectedVariant && (
                                 <span className="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-lg font-bold">
@@ -1105,6 +1158,24 @@ const SellerDashboard: React.FC = () => {
                           </div>
                         </div>
                       ))}
+                    </div>
+                    
+                    <div className="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-100">
+                      <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">Informasi Pengiriman</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Metode / Kurir</p>
+                          <p className="text-sm text-gray-900 font-medium">{order.shippingMethod || 'Tidak ada'}</p>
+                        </div>
+                        {order.shippingAddress && (
+                          <div>
+                            <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Alamat Tujuan</p>
+                            <p className="text-sm text-gray-900">
+                              {order.shippingAddress.village}, Kec. {order.shippingAddress.district}, {order.shippingAddress.city}
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     
                     <div className="border-t border-gray-100 pt-6">
