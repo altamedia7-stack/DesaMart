@@ -239,6 +239,8 @@ const AdminDashboard: React.FC = () => {
       const dummyProducts = [
         {
           sellerId: userProfile.uid,
+          sellerName: userProfile.name || 'Admin',
+          sellerWhatsapp: userProfile.whatsapp || '081234567890',
           name: 'Sayur Bayam Segar',
           description: 'Bayam segar langsung dari petani lokal.',
           price: 5000,
@@ -250,6 +252,8 @@ const AdminDashboard: React.FC = () => {
         },
         {
           sellerId: userProfile.uid,
+          sellerName: userProfile.name || 'Admin',
+          sellerWhatsapp: userProfile.whatsapp || '081234567890',
           name: 'Beras Premium 5kg',
           description: 'Beras putih pulen kualitas premium.',
           price: 65000,
@@ -261,6 +265,8 @@ const AdminDashboard: React.FC = () => {
         },
         {
           sellerId: userProfile.uid,
+          sellerName: userProfile.name || 'Admin',
+          sellerWhatsapp: userProfile.whatsapp || '081234567890',
           name: 'Kopi Susu Gula Aren',
           description: 'Kopi susu kekinian dengan gula aren asli.',
           price: 15000,
@@ -272,6 +278,8 @@ const AdminDashboard: React.FC = () => {
         },
         {
           sellerId: userProfile.uid,
+          sellerName: userProfile.name || 'Admin',
+          sellerWhatsapp: userProfile.whatsapp || '081234567890',
           name: 'Keripik Singkong Pedas',
           description: 'Keripik singkong renyah dengan bumbu pedas manis.',
           price: 12000,
@@ -283,6 +291,8 @@ const AdminDashboard: React.FC = () => {
         },
         {
           sellerId: userProfile.uid,
+          sellerName: userProfile.name || 'Admin',
+          sellerWhatsapp: userProfile.whatsapp || '081234567890',
           name: 'Voucher Game 100k',
           description: 'Voucher game online nominal 100.000.',
           price: 98000,
@@ -294,6 +304,8 @@ const AdminDashboard: React.FC = () => {
         },
         {
           sellerId: userProfile.uid,
+          sellerName: userProfile.name || 'Admin',
+          sellerWhatsapp: userProfile.whatsapp || '081234567890',
           name: 'Travel Banyuwangi - Surabaya',
           description: 'Tiket travel eksekutif Banyuwangi ke Surabaya PP.',
           price: 150000,
