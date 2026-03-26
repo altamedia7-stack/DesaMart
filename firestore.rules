@@ -164,11 +164,12 @@ service cloud.firestore {
     }
 
     function isValidOrder(data) {
-      return hasOnlyAllowedFields(['buyerId', 'buyerName', 'sellerId', 'sellerName', 'items', 'totalPrice', 'status', 'paymentMethod', 'payment_name', 'pay_code', 'qr_url', 'instructions', 'expired_time', 'shippingMethod', 'shippingCost', 'shippingAddress', 'tripay_reference', 'checkout_url', 'merchant_ref', 'createdAt', 'updatedAt']) &&
+      return hasOnlyAllowedFields(['buyerId', 'buyerName', 'sellerId', 'sellerName', 'sellerWhatsapp', 'items', 'totalPrice', 'status', 'paymentMethod', 'payment_name', 'pay_code', 'qr_url', 'instructions', 'expired_time', 'shippingMethod', 'shippingCost', 'shippingAddress', 'tripay_reference', 'checkout_url', 'merchant_ref', 'createdAt', 'updatedAt']) &&
              data.buyerId is string && data.buyerId.size() > 0 &&
              data.buyerName is string && data.buyerName.size() > 0 &&
              data.sellerId is string && data.sellerId.size() > 0 &&
              data.sellerName is string && data.sellerName.size() > 0 &&
+             (!('sellerWhatsapp' in data) || (data.sellerWhatsapp is string)) &&
              data.items is list && data.items.size() > 0 &&
              data.totalPrice is number && data.totalPrice >= 0 &&
              data.status in ['unpaid', 'paid', 'pending', 'shipped', 'in_transit', 'delivered', 'cancelled'] &&
