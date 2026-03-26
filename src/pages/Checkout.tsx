@@ -156,6 +156,7 @@ const Checkout: React.FC = () => {
             buyerName: userProfile?.name || currentUser.email || 'Unknown',
             sellerId: sellerId,
             sellerName: sellerName || 'Unknown',
+            sellerWhatsapp: sellerWhatsapp || '',
             items: JSON.parse(JSON.stringify(sellerItems)),
             totalPrice: totalPembayaran,
             status: 'pending',
@@ -258,6 +259,7 @@ const Checkout: React.FC = () => {
             buyerName: userProfile?.name || currentUser.email || 'Unknown',
             sellerId: sellerId,
             sellerName: sellerName || 'Unknown',
+            sellerWhatsapp: sellerWhatsapp || '',
             items: JSON.parse(JSON.stringify(sellerItems)),
             totalPrice: calculatedAmount,
             status: 'unpaid',
@@ -289,23 +291,6 @@ const Checkout: React.FC = () => {
             return;
           }
           
-          let phone = sellerWhatsapp;
-          if (phone.startsWith('0')) phone = '62' + phone.substring(1);
-
-          let message = `Halo ${sellerName}, saya telah membuat pesanan dan akan membayar menggunakan ${selectedPaymentMethod}:\n\n`;
-          sellerItems.forEach((item, index) => {
-            const basePrice = item.selectedVariant ? item.selectedVariant.price : item.product.price;
-            const discount = item.selectedVariant ? (item.selectedVariant.discountPercentage || 0) : (item.product.discountPercentage || 0);
-            const price = discount > 0 ? basePrice * (1 - discount / 100) : basePrice;
-            message += `${index + 1}. ${item.product.name} x${item.quantity} - Rp ${(price * item.quantity).toLocaleString('id-ID')}\n`;
-          });
-
-          message += `\n*Subtotal: Rp ${subtotalPesanan.toLocaleString('id-ID')}*\n`;
-          message += `*Ongkir: Rp ${shippingCost?.toLocaleString('id-ID')}*\n`;
-          message += `*Total: Rp ${calculatedAmount.toLocaleString('id-ID')}*\n\n`;
-          message += `Metode: ${selectedPaymentMethod} (Menunggu Pembayaran)\n`;
-          message += `Alamat: ${selectedVillage}, Kec. ${selectedDistrict}, ${selectedCity}`;
-          
           if (sellerId) {
             const notifRef = doc(collection(db, 'notifications'));
             try {
@@ -321,8 +306,6 @@ const Checkout: React.FC = () => {
               console.error("Gagal mengirim notifikasi:", error);
             }
           }
-          
-          window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
           
           setIsSuccess(true);
           navigate(`/order-confirmation/${docRef.id}`);

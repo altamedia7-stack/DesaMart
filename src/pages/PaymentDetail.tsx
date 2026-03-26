@@ -177,7 +177,34 @@ const PaymentDetail = () => {
 
         <div className="flex flex-col gap-3 pt-4">
           <button 
-            onClick={() => navigate('/orders')}
+            onClick={() => {
+              if (order?.sellerWhatsapp) {
+                let phone = order.sellerWhatsapp;
+                if (phone.startsWith('0')) phone = '62' + phone.substring(1);
+                
+                let message = `Halo ${order.sellerName || 'Admin'}, saya telah membuat pesanan dengan detail berikut:\n\n`;
+                message += `*Order ID:* ${order.merchant_ref}\n`;
+                message += `*Total Pembayaran:* Rp ${order.totalPrice?.toLocaleString('id-ID')}\n`;
+                message += `*Metode Pembayaran:* ${order.payment_name || order.paymentMethod}\n`;
+                
+                if (order.paymentMethod?.startsWith('QRIS') || order.qr_url) {
+                  message += `\nSaya akan segera melakukan pembayaran via QRIS.\n`;
+                  if (order.qr_url) {
+                    message += `Link QRIS: ${order.qr_url}\n`;
+                  }
+                  message += `\nMohon diproses setelah pembayaran terkonfirmasi.`;
+                } else {
+                  message += `\nSaya akan segera melakukan pembayaran.\n`;
+                  if (order.pay_code) {
+                    message += `Kode Pembayaran: ${order.pay_code}\n`;
+                  }
+                  message += `\nMohon diproses setelah pembayaran terkonfirmasi.`;
+                }
+                
+                window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+              }
+              navigate('/orders');
+            }}
             className="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-emerald-100"
           >
             Selesai & Cek Status Pesanan
