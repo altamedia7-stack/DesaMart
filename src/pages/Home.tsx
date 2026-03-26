@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { Product } from '../types';
 import ProductCard from '../components/ProductCard';
-import { Filter, ArrowUpDown, ChevronRight, ShoppingBag, Leaf, Coffee, Package, Download } from 'lucide-react';
+import { Filter, ArrowUpDown, ChevronRight, ShoppingBag, Leaf, Coffee, Package, Download, Car } from 'lucide-react';
 
 const Home: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -17,11 +17,12 @@ const Home: React.FC = () => {
 
   const categories = [
     { name: 'Semua', icon: <ShoppingBag className="h-5 w-5 sm:h-6 sm:w-6" />, color: 'bg-emerald-100 text-emerald-600' },
-    { name: 'Sayur', icon: <Leaf className="h-5 w-5 sm:h-6 sm:w-6" />, color: 'bg-green-100 text-green-600' },
+    { name: 'Digital', icon: <Download className="h-5 w-5 sm:h-6 sm:w-6" />, color: 'bg-blue-100 text-blue-600' },
+    { name: 'Travel', icon: <Car className="h-5 w-5 sm:h-6 sm:w-6" />, color: 'bg-indigo-100 text-indigo-600' },
     { name: 'Sembako', icon: <Package className="h-5 w-5 sm:h-6 sm:w-6" />, color: 'bg-amber-100 text-amber-600' },
+    { name: 'Sayur', icon: <Leaf className="h-5 w-5 sm:h-6 sm:w-6" />, color: 'bg-green-100 text-green-600' },
     { name: 'Minuman', icon: <Coffee className="h-5 w-5 sm:h-6 sm:w-6" />, color: 'bg-blue-100 text-blue-600' },
-    { name: 'Snack', icon: <ShoppingBag className="h-5 w-5 sm:h-6 sm:w-6" />, color: 'bg-orange-100 text-orange-600' },
-    { name: 'Digital', icon: <Download className="h-5 w-5 sm:h-6 sm:w-6" />, color: 'bg-blue-100 text-blue-600' }
+    { name: 'Snack', icon: <ShoppingBag className="h-5 w-5 sm:h-6 sm:w-6" />, color: 'bg-orange-100 text-orange-600' }
   ];
 
   useEffect(() => {
@@ -68,7 +69,7 @@ const Home: React.FC = () => {
               {isExpanded ? 'Tutup' : 'Lihat Semua'} <ChevronRight className={`h-3 w-3 sm:h-4 sm:w-4 transform transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
             </div>
           </div>
-          <div className="grid grid-cols-4 sm:grid-cols-6 gap-y-4 gap-x-2">
+          <div className="grid grid-cols-4 sm:grid-cols-7 gap-y-4 gap-x-2">
             {categories.map((category, index) => {
               const isHiddenOnMobile = index >= 4 && !isExpanded;
               

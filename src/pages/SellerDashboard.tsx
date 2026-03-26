@@ -57,7 +57,7 @@ const SellerDashboard: React.FC = () => {
     isDigital: false
   });
 
-  const categories = ['Sayur', 'Sembako', 'Minuman', 'Snack', 'Digital'];
+  const categories = ['Digital', 'Travel', 'Sembako', 'Sayur', 'Minuman', 'Snack'];
 
   useEffect(() => {
     if (!userProfile?.uid) return;
