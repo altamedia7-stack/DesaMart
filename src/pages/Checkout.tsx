@@ -149,26 +149,32 @@ const Checkout: React.FC = () => {
       
       if (selectedPaymentMethod === 'COD') {
         const path = 'orders';
-        const docRef = await addDoc(collection(db, path), {
-          buyerId: currentUser.uid,
-          buyerName: userProfile?.name || currentUser.email || 'Unknown',
-          sellerId: sellerId,
-          sellerName: sellerName || 'Unknown',
-          items: JSON.parse(JSON.stringify(sellerItems)),
-          totalPrice: totalPembayaran,
-          status: 'pending',
-          paymentMethod: 'COD',
-          shippingMethod: selectedCourier?.name || 'Unknown',
-          shippingCost: shippingCost || 0,
-          shippingAddress: {
-            city: selectedCity || '',
-            district: selectedDistrict || '',
-            village: selectedVillage || ''
-          },
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-          merchant_ref
-        });
+        let docRef;
+        try {
+          docRef = await addDoc(collection(db, path), {
+            buyerId: currentUser.uid,
+            buyerName: userProfile?.name || currentUser.email || 'Unknown',
+            sellerId: sellerId,
+            sellerName: sellerName || 'Unknown',
+            items: JSON.parse(JSON.stringify(sellerItems)),
+            totalPrice: totalPembayaran,
+            status: 'pending',
+            paymentMethod: 'COD',
+            shippingMethod: selectedCourier?.name || 'Unknown',
+            shippingCost: shippingCost || 0,
+            shippingAddress: {
+              city: selectedCity || '',
+              district: selectedDistrict || '',
+              village: selectedVillage || ''
+            },
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            merchant_ref
+          });
+        } catch (error) {
+          handleFirestoreError(error, OperationType.WRITE, path);
+          return;
+        }
         
         sellerItems.forEach(item => removeFromCart(item.product.id, item.selectedVariant?.id));
 
@@ -191,14 +197,19 @@ const Checkout: React.FC = () => {
         
         if (sellerId) {
           const notifRef = doc(collection(db, 'notifications'));
-          await setDoc(notifRef, {
-            id: notifRef.id,
-            userId: sellerId,
-            title: 'Pesanan Baru (COD)',
-            message: `Anda menerima pesanan baru dari ${userProfile?.name || currentUser.email}.`,
-            isRead: false,
-            createdAt: serverTimestamp()
-          });
+          try {
+            await setDoc(notifRef, {
+              id: notifRef.id,
+              userId: sellerId,
+              title: 'Pesanan Baru (COD)',
+              message: `Anda menerima pesanan baru dari ${userProfile?.name || currentUser.email}.`,
+              isRead: false,
+              createdAt: serverTimestamp()
+            });
+          } catch (error) {
+            console.error("Gagal mengirim notifikasi:", error);
+            // Don't block order if notification fails, but log it
+          }
         }
         
         window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
@@ -270,7 +281,13 @@ const Checkout: React.FC = () => {
             merchant_ref
           };
 
-          const docRef = await addDoc(collection(db, 'orders'), orderData);
+          let docRef;
+          try {
+            docRef = await addDoc(collection(db, 'orders'), orderData);
+          } catch (error) {
+            handleFirestoreError(error, OperationType.WRITE, 'orders');
+            return;
+          }
           
           let phone = sellerWhatsapp;
           if (phone.startsWith('0')) phone = '62' + phone.substring(1);
@@ -291,14 +308,18 @@ const Checkout: React.FC = () => {
           
           if (sellerId) {
             const notifRef = doc(collection(db, 'notifications'));
-            await setDoc(notifRef, {
-              id: notifRef.id,
-              userId: sellerId,
-              title: 'Pesanan Baru (QRIS/Online)',
-              message: `Pesanan baru dari ${userProfile?.name || currentUser.email} (Menunggu Pembayaran).`,
-              isRead: false,
-              createdAt: serverTimestamp()
-            });
+            try {
+              await setDoc(notifRef, {
+                id: notifRef.id,
+                userId: sellerId,
+                title: 'Pesanan Baru (QRIS/Online)',
+                message: `Pesanan baru dari ${userProfile?.name || currentUser.email} (Menunggu Pembayaran).`,
+                isRead: false,
+                createdAt: serverTimestamp()
+              });
+            } catch (error) {
+              console.error("Gagal mengirim notifikasi:", error);
+            }
           }
           
           window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
@@ -311,6 +332,7 @@ const Checkout: React.FC = () => {
         }
       }
     } catch (error: any) {
+      console.error("Order error:", error);
       alert(`Terjadi kesalahan: ${error.message || String(error)}`);
     } finally {
       setIsSubmitting(false);

@@ -263,8 +263,11 @@ service cloud.firestore {
       allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
 
       // System/Admin can create notifications, or users can create their own (like welcome notification)
+      // Also allow buyers to notify sellers about new orders
       allow create: if isAuthenticated() && isValidNotification(request.resource.data) &&
-                    (request.resource.data.userId == request.auth.uid || isAdmin());
+                    (request.resource.data.userId == request.auth.uid || 
+                     get(/databases/$(database)/documents/users/$(request.resource.data.userId)).data.role == 'seller' ||
+                     isAdmin());
 
       // Users can only update their own notifications (to mark as read)
       allow update: if isAuthenticated() && isValidNotification(request.resource.data) &&
