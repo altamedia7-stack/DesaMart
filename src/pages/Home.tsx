@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { Product } from '../types';
 import ProductCard from '../components/ProductCard';
-import { Filter, ArrowUpDown, ChevronRight, ShoppingBag, Leaf, Coffee, Package, MoreHorizontal } from 'lucide-react';
+import { Filter, ArrowUpDown, ChevronRight, ShoppingBag, Leaf, Coffee, Package, Download } from 'lucide-react';
 
 const Home: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -21,7 +21,7 @@ const Home: React.FC = () => {
     { name: 'Sembako', icon: <Package className="h-5 w-5 sm:h-6 sm:w-6" />, color: 'bg-amber-100 text-amber-600' },
     { name: 'Minuman', icon: <Coffee className="h-5 w-5 sm:h-6 sm:w-6" />, color: 'bg-blue-100 text-blue-600' },
     { name: 'Snack', icon: <ShoppingBag className="h-5 w-5 sm:h-6 sm:w-6" />, color: 'bg-orange-100 text-orange-600' },
-    { name: 'Lainnya', icon: <MoreHorizontal className="h-5 w-5 sm:h-6 sm:w-6" />, color: 'bg-gray-100 text-gray-600' }
+    { name: 'Digital', icon: <Download className="h-5 w-5 sm:h-6 sm:w-6" />, color: 'bg-blue-100 text-blue-600' }
   ];
 
   useEffect(() => {
@@ -62,23 +62,20 @@ const Home: React.FC = () => {
           <div className="flex justify-between items-center mb-3 sm:mb-4 px-1 sm:px-0">
             <h2 className="text-sm sm:text-lg font-bold text-gray-800">Kategori Pilihan</h2>
             <div 
-              className="flex items-center text-xs sm:text-sm text-emerald-600 font-medium cursor-pointer hover:underline"
-              onClick={() => setSelectedCategory('Semua')}
+              className="flex items-center text-xs sm:text-sm text-emerald-600 font-medium cursor-pointer hover:underline sm:hidden"
+              onClick={() => setIsExpanded(!isExpanded)}
             >
-              Lihat Semua <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
+              {isExpanded ? 'Tutup' : 'Lihat Semua'} <ChevronRight className={`h-3 w-3 sm:h-4 sm:w-4 transform transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
             </div>
           </div>
           <div className="grid grid-cols-4 sm:grid-cols-6 gap-y-4 gap-x-2">
-            {categories.map(category => {
-              const isHiddenOnMobile = (category.name === 'Minuman' || category.name === 'Snack') && !isExpanded;
+            {categories.map((category, index) => {
+              const isHiddenOnMobile = index >= 4 && !isExpanded;
               
               return (
                 <div 
                   key={category.name}
                   onClick={() => {
-                    if (category.name === 'Lainnya') {
-                      setIsExpanded(!isExpanded);
-                    }
                     setSelectedCategory(category.name);
                   }}
                   className={`${isHiddenOnMobile ? 'hidden sm:flex' : 'flex'} flex-col items-center justify-start cursor-pointer group`}

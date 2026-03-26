@@ -43,7 +43,7 @@ const AdminDashboard: React.FC = () => {
     variants: [] as ProductVariant[]
   });
 
-  const categories = ['Sayur', 'Sembako', 'Minuman', 'Snack', 'Lainnya'];
+  const categories = ['Sayur', 'Sembako', 'Minuman', 'Snack', 'Digital'];
 
   useEffect(() => {
     if (userProfile?.role !== 'admin') return;

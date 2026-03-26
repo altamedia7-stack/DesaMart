@@ -57,7 +57,7 @@ const SellerDashboard: React.FC = () => {
     isDigital: false
   });
 
-  const categories = ['Sayur', 'Sembako', 'Minuman', 'Snack', 'Lainnya'];
+  const categories = ['Sayur', 'Sembako', 'Minuman', 'Snack', 'Digital'];
 
   useEffect(() => {
     if (!userProfile?.uid) return;
@@ -157,7 +157,7 @@ const SellerDashboard: React.FC = () => {
         description: newProduct.description || '',
         price: Number(newProduct.price) || 0,
         stock: Number(newProduct.stock) || 0,
-        category: newProduct.category || 'Lainnya',
+        category: newProduct.category || 'Digital',
         discountPercentage: newProduct.discountPercentage ? Number(newProduct.discountPercentage) : 0,
         variants: newProduct.variants || [],
         isDigital: newProduct.isDigital || false,
