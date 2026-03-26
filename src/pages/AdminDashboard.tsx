@@ -246,7 +246,7 @@ const AdminDashboard: React.FC = () => {
           price: 5000,
           stock: 100,
           category: 'Sayur',
-          imageUrl: 'https://picsum.photos/seed/bayam/400/400',
+          imageUrl: 'https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=400&h=400&fit=crop',
           createdAt: serverTimestamp(),
           isDigital: false
         },
@@ -259,7 +259,7 @@ const AdminDashboard: React.FC = () => {
           price: 65000,
           stock: 50,
           category: 'Sembako',
-          imageUrl: 'https://picsum.photos/seed/beras/400/400',
+          imageUrl: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&h=400&fit=crop',
           createdAt: serverTimestamp(),
           isDigital: false
         },
@@ -272,7 +272,7 @@ const AdminDashboard: React.FC = () => {
           price: 15000,
           stock: 30,
           category: 'Minuman',
-          imageUrl: 'https://picsum.photos/seed/kopi/400/400',
+          imageUrl: 'https://images.unsplash.com/photo-1559525839-b184a4d698c7?w=400&h=400&fit=crop',
           createdAt: serverTimestamp(),
           isDigital: false
         },
@@ -285,7 +285,7 @@ const AdminDashboard: React.FC = () => {
           price: 12000,
           stock: 200,
           category: 'Snack',
-          imageUrl: 'https://picsum.photos/seed/keripik/400/400',
+          imageUrl: 'https://images.unsplash.com/photo-1566478989037-e924e50cb792?w=400&h=400&fit=crop',
           createdAt: serverTimestamp(),
           isDigital: false
         },
@@ -298,7 +298,7 @@ const AdminDashboard: React.FC = () => {
           price: 98000,
           stock: 999,
           category: 'Digital',
-          imageUrl: 'https://picsum.photos/seed/voucher/400/400',
+          imageUrl: 'https://images.unsplash.com/photo-1605901309584-818e25960b8f?w=400&h=400&fit=crop',
           createdAt: serverTimestamp(),
           isDigital: true
         },
@@ -311,7 +311,7 @@ const AdminDashboard: React.FC = () => {
           price: 150000,
           stock: 10,
           category: 'Travel',
-          imageUrl: 'https://picsum.photos/seed/travel/400/400',
+          imageUrl: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=400&h=400&fit=crop',
           createdAt: serverTimestamp(),
           isDigital: true
         }
