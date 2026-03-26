@@ -28,7 +28,7 @@ const TravelBooking: React.FC = () => {
   const [passengers, setPassengers] = useState<Passenger[]>([
     { name: '', idNumber: '', phone: '', seatNumber: '1' }
   ]);
-  const [paymentMethod, setPaymentMethod] = useState('Transfer Bank');
+  const [paymentMethod, setPaymentMethod] = useState('QRIS');
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -363,7 +363,7 @@ const TravelBooking: React.FC = () => {
                 <CreditCard className="h-5 w-5 text-emerald-600" /> Metode Pembayaran
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {['Transfer Bank', 'QRIS', 'Bayar di Tempat (COD)'].map(method => (
+                {['QRIS', 'Bayar di Tempat (COD)'].map(method => (
                   <div 
                     key={method}
                     onClick={() => setPaymentMethod(method)}

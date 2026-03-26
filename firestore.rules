@@ -255,7 +255,7 @@ service cloud.firestore {
              data.passengers is list && data.passengers.size() > 0 &&
              data.totalPrice is number && data.totalPrice >= 0 &&
              data.status in ['pending', 'confirmed', 'cancelled'] &&
-             data.paymentMethod in ['Transfer Bank', 'QRIS', 'Bayar di Tempat (COD)'] &&
+             data.paymentMethod in ['QRIS', 'Bayar di Tempat (COD)'] &&
              data.createdAt is timestamp &&
              data.updatedAt is timestamp;
     }
