@@ -127,7 +127,7 @@
         "passengers": { "type": "array" },
         "totalPrice": { "type": "number" },
         "status": { "type": "string", "enum": ["pending", "confirmed", "cancelled"] },
-        "paymentMethod": { "type": "string" },
+        "paymentMethod": { "type": "string", "enum": ["Transfer Bank", "QRIS", "Bayar di Tempat (COD)"] },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },

@@ -363,7 +363,7 @@ const TravelBooking: React.FC = () => {
                 <CreditCard className="h-5 w-5 text-emerald-600" /> Metode Pembayaran
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {['Transfer Bank', 'E-Wallet (OVO/Dana)', 'Bayar di Tempat (COD)'].map(method => (
+                {['Transfer Bank', 'QRIS', 'Bayar di Tempat (COD)'].map(method => (
                   <div 
                     key={method}
                     onClick={() => setPaymentMethod(method)}
