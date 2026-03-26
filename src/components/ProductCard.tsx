@@ -49,7 +49,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, showStock = true }) 
       phone = '62' + phone.substring(1);
     }
     
-    let message = `Halo, saya tertarik dengan produk ${product.name} yang dijual dengan harga Rp${minPrice.toLocaleString('id-ID')}${hasVariants ? ' (Harga mulai dari)' : ''}. Apakah masih tersedia?`;
+    let message = `Halo, saya tertarik dengan produk ${product.name} yang dijual dengan harga Rp${minPrice.toLocaleString('id-ID')}${hasVariants ? ' (Harga mulai dari)' : ''}. Apakah masih tersedia?\n\nLink Produk: ${window.location.origin}/products/${product.id}`;
     
     if (selectedCourier && showShipping) {
       const shippingCost = selectedCourier.baseRate + (selectedCourier.perKmRate * distance);
@@ -224,7 +224,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, showStock = true }) 
               className="flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-1.5 bg-[#25D366] hover:bg-[#1DA851] text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded text-[10px] sm:text-sm font-medium transition-colors"
             >
               <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Pesan WA</span>
+              <span className="hidden sm:inline">Chat Penjual</span>
               <span className="sm:hidden">Chat</span>
             </button>
           </div>

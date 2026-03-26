@@ -122,7 +122,7 @@ const ProductDetail: React.FC = () => {
       ? (selectedVariant.discountPercentage ? selectedVariant.price * (1 - selectedVariant.discountPercentage / 100) : selectedVariant.price)
       : (product.discountPercentage ? product.price * (1 - product.discountPercentage / 100) : product.price);
 
-    let message = `Halo, saya tertarik dengan produk ${product.name}${selectedVariant ? ` (Varian: ${selectedVariant.name})` : ''} yang dijual dengan harga Rp${currentPrice.toLocaleString('id-ID')}. Apakah masih tersedia?`;
+    let message = `Halo, saya tertarik dengan produk ${product.name}${selectedVariant ? ` (Varian: ${selectedVariant.name})` : ''} yang dijual dengan harga Rp${currentPrice.toLocaleString('id-ID')}. Apakah masih tersedia?\n\nLink Produk: ${window.location.origin}/products/${product.id}`;
     
     if (selectedCourier && showShipping) {
       const shippingCost = selectedCourier.baseRate + (selectedCourier.perKmRate * distance);
@@ -355,12 +355,20 @@ const ProductDetail: React.FC = () => {
                   <p className="text-xs text-gray-500 mt-0.5">Aktif 5 menit lalu</p>
                 </div>
               </div>
-              <Link 
-                to={`/seller/${product.sellerId}`} 
-                className="border border-emerald-600 text-emerald-600 px-3 py-1.5 rounded text-xs font-medium hover:bg-emerald-50 transition"
-              >
-                Kunjungi Toko
-              </Link>
+              <div className="flex gap-2">
+                <button 
+                  onClick={handleWhatsApp}
+                  className="bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded text-xs font-medium hover:bg-emerald-100 transition flex items-center gap-1"
+                >
+                  <MessageCircle className="h-3 w-3" /> Chat
+                </button>
+                <Link 
+                  to={`/seller/${product.sellerId}`} 
+                  className="border border-emerald-600 text-emerald-600 px-3 py-1.5 rounded text-xs font-medium hover:bg-emerald-50 transition"
+                >
+                  Kunjungi Toko
+                </Link>
+              </div>
             </div>
 
             {/* Description Block */}
@@ -465,7 +473,7 @@ const ProductDetail: React.FC = () => {
           className="flex flex-col items-center justify-center w-16 sm:w-20 border-r border-gray-200 text-emerald-600 hover:bg-emerald-50 transition"
         >
           <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" />
-          <span className="text-[10px] sm:text-xs mt-0.5">Chat</span>
+          <span className="text-[10px] sm:text-xs mt-0.5">Chat Penjual</span>
         </button>
         
         <button 
