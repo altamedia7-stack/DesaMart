@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { doc, getDoc, collection, getDocs, query, where, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
-import { Product, Courier, Review, ProductVariant } from '../types';
-import { MessageCircle, Truck, ArrowLeft, Store, Star, ShoppingCart, ChevronRight, Layers } from 'lucide-react';
+import { Product, Review, ProductVariant } from '../types';
+import { MessageCircle, ArrowLeft, Store, Star, ShoppingCart, ChevronRight, Layers } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 
@@ -16,11 +16,6 @@ const ProductDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   
-  // Shipping state
-  const [showShipping, setShowShipping] = useState(false);
-  const [couriers, setCouriers] = useState<Courier[]>([]);
-  const [distance, setDistance] = useState<number>(1);
-  const [selectedCourier, setSelectedCourier] = useState<Courier | null>(null);
 
   // Reviews state
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -53,20 +48,6 @@ const ProductDetail: React.FC = () => {
     fetchProduct();
   }, [id]);
 
-  useEffect(() => {
-    if (showShipping && couriers.length === 0) {
-      const fetchCouriers = async () => {
-        const snapshot = await getDocs(collection(db, 'couriers'));
-        const data: Courier[] = [];
-        snapshot.forEach((doc) => {
-          data.push({ id: doc.id, ...doc.data() } as Courier);
-        });
-        setCouriers(data);
-        if (data.length > 0) setSelectedCourier(data[0]);
-      };
-      fetchCouriers();
-    }
-  }, [showShipping, couriers.length]);
 
   useEffect(() => {
     if (!id) return;
@@ -124,10 +105,6 @@ const ProductDetail: React.FC = () => {
 
     let message = `Halo, saya tertarik dengan produk ${product.name}${selectedVariant ? ` (Varian: ${selectedVariant.name})` : ''} yang dijual dengan harga Rp${currentPrice.toLocaleString('id-ID')}. Apakah masih tersedia?\n\nLink Produk: ${window.location.origin}/products/${product.id}`;
     
-    if (selectedCourier && showShipping) {
-      const shippingCost = selectedCourier.baseRate + (selectedCourier.perKmRate * distance);
-      message += `\n\nSaya ingin menggunakan kurir ${selectedCourier.name} (Estimasi jarak: ${distance}km, Ongkir: Rp${shippingCost.toLocaleString('id-ID')}).`;
-    }
     
     const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
@@ -277,72 +254,6 @@ const ProductDetail: React.FC = () => {
               </div>
             )}
 
-            {/* Shipping Block */}
-            <div className="bg-white p-4 sm:p-6 mb-2 sm:mb-0 sm:border-t sm:border-gray-100">
-              {!showShipping ? (
-                <button 
-                  onClick={() => setShowShipping(true)}
-                  className="w-full flex items-center justify-between text-gray-700 hover:text-emerald-600 transition"
-                >
-                  <div className="flex items-center gap-3">
-                    <Truck className="h-5 w-5 text-emerald-600" />
-                    <div className="text-left">
-                      <p className="text-sm font-medium">Ongkos Kirim</p>
-                      <p className="text-xs text-gray-500">Cek estimasi ongkir ke lokasimu</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-gray-400" />
-                </button>
-              ) : (
-                <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
-                  <div className="flex justify-between items-center mb-3">
-                    <h4 className="font-semibold text-emerald-800 flex items-center gap-2">
-                      <Truck className="h-4 w-4" /> Estimasi Ongkir
-                    </h4>
-                    <button onClick={() => setShowShipping(false)} className="text-emerald-600 hover:text-emerald-800 text-sm font-medium">
-                      Tutup
-                    </button>
-                  </div>
-                  
-                  {couriers.length === 0 ? (
-                    <p className="text-sm text-emerald-600 italic">Belum ada kurir tersedia.</p>
-                  ) : (
-                    <div className="space-y-3">
-                      <div>
-                        <label className="block text-sm text-emerald-700 mb-1">Pilih Kurir Desa</label>
-                        <select 
-                          className="w-full border-emerald-200 rounded-lg p-2 text-sm bg-white focus:ring-emerald-500 focus:border-emerald-500"
-                          value={selectedCourier?.id || ''}
-                          onChange={(e) => setSelectedCourier(couriers.find(c => c.id === e.target.value) || null)}
-                        >
-                          {couriers.map(c => (
-                            <option key={c.id} value={c.id}>{c.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm text-emerald-700 mb-1">Estimasi Jarak (KM)</label>
-                        <input 
-                          type="number" 
-                          min="1" 
-                          value={distance} 
-                          onChange={(e) => setDistance(Number(e.target.value))}
-                          className="w-full border-emerald-200 rounded-lg p-2 text-sm bg-white focus:ring-emerald-500 focus:border-emerald-500"
-                        />
-                      </div>
-                      {selectedCourier && (
-                        <div className="pt-3 border-t border-emerald-200 mt-3 flex justify-between items-center">
-                          <span className="text-sm font-medium text-emerald-800">Total Ongkir:</span>
-                          <span className="text-lg font-bold text-emerald-700">
-                            Rp {(selectedCourier.baseRate + (selectedCourier.perKmRate * distance)).toLocaleString('id-ID')}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
 
             {/* Store Block */}
             <div className="bg-white p-4 sm:p-6 mb-2 sm:mb-0 sm:border-t sm:border-gray-100 flex items-center justify-between">
