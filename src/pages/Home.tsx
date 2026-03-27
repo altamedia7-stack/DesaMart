@@ -59,6 +59,19 @@ const Home: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-100 pb-4 sm:pb-12 pt-2 sm:pt-6">
       <div className="max-w-7xl mx-auto px-0 sm:px-6 lg:px-8">
+        {/* Bus & Travel Banner */}
+        <div 
+          onClick={() => navigate('/travel-booking')}
+          className="bg-gradient-to-r from-emerald-600 to-teal-600 mb-2 sm:mb-6 p-4 sm:p-6 sm:rounded-xl shadow-md cursor-pointer relative overflow-hidden group"
+        >
+          <div className="relative z-10">
+            <h3 className="text-white font-bold text-lg sm:text-2xl mb-1">Bus & Travel</h3>
+            <p className="text-emerald-50 text-xs sm:text-sm mb-4 max-w-[200px] sm:max-w-md">Pesan tiket travel antar kota dengan mudah. Banyuwangi ⇄ Surabaya, Malang, Bali, dan lainnya.</p>
+            <button className="bg-white text-emerald-600 px-4 py-2 rounded-lg text-xs font-bold shadow-sm group-hover:bg-emerald-50 transition-colors">Pesan Sekarang</button>
+          </div>
+          <Car className="absolute -right-4 -bottom-4 h-32 w-32 text-white/10 transform -rotate-12 group-hover:scale-110 transition-transform" />
+        </div>
+
         {/* Categories Grid (Shopee Style) */}
         <div className="bg-white mb-2 sm:mb-6 p-3 sm:p-6 sm:rounded-xl shadow-sm">
           <div className="flex justify-between items-center mb-3 sm:mb-4 px-1 sm:px-0">
@@ -96,19 +109,6 @@ const Home: React.FC = () => {
               );
             })}
           </div>
-        </div>
-
-        {/* Bus & Travel Banner */}
-        <div 
-          onClick={() => navigate('/travel-booking')}
-          className="bg-gradient-to-r from-emerald-600 to-teal-600 mb-2 sm:mb-6 p-4 sm:p-6 sm:rounded-xl shadow-md cursor-pointer relative overflow-hidden group"
-        >
-          <div className="relative z-10">
-            <h3 className="text-white font-bold text-lg sm:text-2xl mb-1">Bus & Travel</h3>
-            <p className="text-emerald-50 text-xs sm:text-sm mb-4 max-w-[200px] sm:max-w-md">Pesan tiket travel antar kota dengan mudah. Banyuwangi ⇄ Surabaya, Malang, Bali, dan lainnya.</p>
-            <button className="bg-white text-emerald-600 px-4 py-2 rounded-lg text-xs font-bold shadow-sm group-hover:bg-emerald-50 transition-colors">Pesan Sekarang</button>
-          </div>
-          <Car className="absolute -right-4 -bottom-4 h-32 w-32 text-white/10 transform -rotate-12 group-hover:scale-110 transition-transform" />
         </div>
 
         {/* Sort and Filter Bar */}
