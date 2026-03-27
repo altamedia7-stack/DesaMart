@@ -15,7 +15,9 @@ const TravelBooking: React.FC = () => {
   const [search, setSearch] = useState({
     origin: '',
     destination: '',
-    date: new Date().toISOString().split('T')[0]
+    date: new Date().toISOString().split('T')[0],
+    isRoundTrip: false,
+    returnDate: new Date(Date.now() + 86400000).toISOString().split('T')[0]
   });
   
   // Results state
@@ -23,6 +25,8 @@ const TravelBooking: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedListing, setSelectedListing] = useState<TravelListing | null>(null);
+  const [selectedReturnListing, setSelectedReturnListing] = useState<TravelListing | null>(null);
+  const [selectingLeg, setSelectingLeg] = useState<'departure' | 'return'>('departure');
   
   // Booking state
   const [passengers, setPassengers] = useState<Passenger[]>([
@@ -53,14 +57,19 @@ const TravelBooking: React.FC = () => {
     fetchChannels();
   }, []);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearch = async (e?: React.FormEvent, leg: 'departure' | 'return' = 'departure') => {
+    if (e) e.preventDefault();
     setLoading(true);
+    setSelectingLeg(leg);
+    
+    const origin = leg === 'departure' ? search.origin : search.destination;
+    const destination = leg === 'departure' ? search.destination : search.origin;
+    
     try {
       const q = query(
         collection(db, 'travel_listings'),
-        where('origin', '==', search.origin),
-        where('destination', '==', search.destination)
+        where('origin', '==', origin),
+        where('destination', '==', destination)
       );
       const snapshot = await getDocs(q);
       const results: TravelListing[] = [];
@@ -77,8 +86,16 @@ const TravelBooking: React.FC = () => {
   };
 
   const handleSelectListing = (listing: TravelListing) => {
-    setSelectedListing(listing);
-    setStep('details');
+    if (search.isRoundTrip && selectingLeg === 'departure') {
+      setSelectedListing(listing);
+      handleSearch(undefined, 'return');
+    } else if (search.isRoundTrip && selectingLeg === 'return') {
+      setSelectedReturnListing(listing);
+      setStep('details');
+    } else {
+      setSelectedListing(listing);
+      setStep('details');
+    }
   };
 
   const handleAddPassenger = () => {
@@ -106,7 +123,8 @@ const TravelBooking: React.FC = () => {
 
     try {
       const merchant_ref = `TRV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-      const totalPrice = selectedListing.price * passengers.length;
+      const basePrice = selectedListing.price + (selectedReturnListing?.price || 0);
+      const totalPrice = basePrice * passengers.length;
 
       let paymentData: any = {};
 
@@ -121,12 +139,20 @@ const TravelBooking: React.FC = () => {
             customer_name: userProfile.name,
             customer_email: userProfile.email || 'customer@example.com',
             customer_phone: userProfile.whatsapp || '',
-            order_items: [{
-              sku: selectedListing.id,
-              name: `Tiket Travel ${selectedListing.operatorName} (${search.origin} - ${search.destination})`,
-              price: selectedListing.price,
-              quantity: passengers.length
-            }]
+            order_items: [
+              {
+                sku: selectedListing.id,
+                name: `Tiket Pergi: ${selectedListing.operatorName} (${search.origin} - ${search.destination})`,
+                price: selectedListing.price,
+                quantity: passengers.length
+              },
+              ...(selectedReturnListing ? [{
+                sku: selectedReturnListing.id,
+                name: `Tiket Pulang: ${selectedReturnListing.operatorName} (${search.destination} - ${search.origin})`,
+                price: selectedReturnListing.price,
+                quantity: passengers.length
+              }] : [])
+            ]
           })
         });
 
@@ -172,6 +198,13 @@ const TravelBooking: React.FC = () => {
           destination: selectedListing.destination,
           departureDate: search.date,
           departureTime: selectedListing.departureTime,
+          // Return trip info
+          isRoundTrip: search.isRoundTrip,
+          returnListingId: selectedReturnListing?.id || null,
+          returnOperatorName: selectedReturnListing?.operatorName || null,
+          returnDate: search.isRoundTrip ? search.returnDate : null,
+          returnTime: selectedReturnListing?.departureTime || null,
+          
           passengers,
           totalPrice,
           status: paymentMethod !== 'COD' ? 'unpaid' : 'pending',
@@ -222,8 +255,13 @@ const TravelBooking: React.FC = () => {
           
           let message = `Halo ${selectedListing.sellerName || 'Admin'}, saya telah membuat booking travel berikut:\n\n`;
           message += `*Order ID:* ${merchant_ref}\n`;
-          message += `*Travel:* ${selectedListing.operatorName} (${search.origin} - ${search.destination})\n`;
-          message += `*Tanggal:* ${search.date} | Pukul ${selectedListing.departureTime}\n`;
+          message += `*Trip:* ${search.isRoundTrip ? 'Pulang-Pergi' : 'Sekali Jalan'}\n`;
+          message += `*Pergi:* ${selectedListing.operatorName} (${search.origin} - ${search.destination})\n`;
+          message += `*Tanggal Pergi:* ${search.date} | Pukul ${selectedListing.departureTime}\n`;
+          if (selectedReturnListing) {
+            message += `*Pulang:* ${selectedReturnListing.operatorName} (${search.destination} - ${search.origin})\n`;
+            message += `*Tanggal Pulang:* ${search.returnDate} | Pukul ${selectedReturnListing.departureTime}\n`;
+          }
           message += `*Jumlah Penumpang:* ${passengers.length}\n`;
           message += `*Total Pembayaran:* Rp ${totalPrice.toLocaleString('id-ID')}\n`;
           message += `*Metode Pembayaran:* COD (Bayar di Tempat)\n\n`;
@@ -264,7 +302,22 @@ const TravelBooking: React.FC = () => {
         )}
         {step === 'search' && (
           <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
-            <form onSubmit={handleSearch} className="space-y-6">
+            <div className="flex bg-gray-100 p-1 rounded-xl mb-6">
+              <button 
+                onClick={() => setSearch({...search, isRoundTrip: false})}
+                className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${!search.isRoundTrip ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500'}`}
+              >
+                Sekali Jalan
+              </button>
+              <button 
+                onClick={() => setSearch({...search, isRoundTrip: true})}
+                className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${search.isRoundTrip ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500'}`}
+              >
+                Pulang-Pergi
+              </button>
+            </div>
+
+            <form onSubmit={(e) => handleSearch(e)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="relative">
                   <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1.5 ml-1">Kota Asal</label>
@@ -296,19 +349,37 @@ const TravelBooking: React.FC = () => {
                 </div>
               </div>
 
-              <div className="relative">
-                <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1.5 ml-1">Tanggal Perjalanan</label>
-                <div className="flex items-center bg-gray-50 border border-gray-200 rounded-xl p-3">
-                  <Calendar className="h-5 w-5 text-emerald-500 mr-3" />
-                  <input 
-                    required 
-                    type="date" 
-                    min={new Date().toISOString().split('T')[0]}
-                    value={search.date}
-                    onChange={e => setSearch({...search, date: e.target.value})}
-                    className="bg-transparent w-full outline-none text-sm font-medium"
-                  />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="relative">
+                  <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1.5 ml-1">Tanggal Pergi</label>
+                  <div className="flex items-center bg-gray-50 border border-gray-200 rounded-xl p-3">
+                    <Calendar className="h-5 w-5 text-emerald-500 mr-3" />
+                    <input 
+                      required 
+                      type="date" 
+                      min={new Date().toISOString().split('T')[0]}
+                      value={search.date}
+                      onChange={e => setSearch({...search, date: e.target.value})}
+                      className="bg-transparent w-full outline-none text-sm font-medium"
+                    />
+                  </div>
                 </div>
+                {search.isRoundTrip && (
+                  <div className="relative">
+                    <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1.5 ml-1">Tanggal Pulang</label>
+                    <div className="flex items-center bg-gray-50 border border-gray-200 rounded-xl p-3">
+                      <Calendar className="h-5 w-5 text-emerald-500 mr-3" />
+                      <input 
+                        required 
+                        type="date" 
+                        min={search.date}
+                        value={search.returnDate}
+                        onChange={e => setSearch({...search, returnDate: e.target.value})}
+                        className="bg-transparent w-full outline-none text-sm font-medium"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               <button 
@@ -346,8 +417,17 @@ const TravelBooking: React.FC = () => {
           <div className="space-y-4">
             <div className="bg-white p-4 rounded-xl border border-gray-200 flex items-center justify-between">
               <div>
-                <h3 className="font-bold text-gray-900">{search.origin} → {search.destination}</h3>
-                <p className="text-xs text-gray-500">{search.date}</p>
+                <h3 className="font-bold text-gray-900">
+                  {selectingLeg === 'departure' ? `${search.origin} → ${search.destination}` : `${search.destination} → ${search.origin}`}
+                </h3>
+                <p className="text-xs text-gray-500">
+                  {selectingLeg === 'departure' ? `Pergi: ${search.date}` : `Pulang: ${search.returnDate}`}
+                </p>
+                {search.isRoundTrip && (
+                  <div className="mt-1 inline-block px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-full uppercase">
+                    Pilih Tiket {selectingLeg === 'departure' ? 'Pergi' : 'Pulang'}
+                  </div>
+                )}
               </div>
               <button onClick={() => setStep('search')} className="text-emerald-600 text-xs font-bold">Ubah</button>
             </div>
@@ -503,9 +583,21 @@ const TravelBooking: React.FC = () => {
             </div>
 
             <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-lg">
-              <div className="flex justify-between items-center mb-4">
-                <div className="text-sm text-gray-500">Total ({passengers.length} Kursi)</div>
-                <div className="text-xl font-bold text-emerald-600">Rp {(selectedListing.price * passengers.length).toLocaleString('id-ID')}</div>
+              <div className="space-y-2 mb-4">
+                <div className="flex justify-between items-center">
+                  <div className="text-sm text-gray-500">Tiket Pergi</div>
+                  <div className="text-sm font-bold text-gray-700">Rp {selectedListing.price.toLocaleString('id-ID')}</div>
+                </div>
+                {selectedReturnListing && (
+                  <div className="flex justify-between items-center">
+                    <div className="text-sm text-gray-500">Tiket Pulang</div>
+                    <div className="text-sm font-bold text-gray-700">Rp {selectedReturnListing.price.toLocaleString('id-ID')}</div>
+                  </div>
+                )}
+                <div className="pt-2 border-t border-gray-50 flex justify-between items-center">
+                  <div className="text-sm font-bold text-gray-900">Total ({passengers.length} Kursi)</div>
+                  <div className="text-xl font-bold text-emerald-600">Rp {((selectedListing.price + (selectedReturnListing?.price || 0)) * passengers.length).toLocaleString('id-ID')}</div>
+                </div>
               </div>
               <button 
                 onClick={handleBooking}

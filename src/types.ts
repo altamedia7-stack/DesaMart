@@ -139,6 +139,11 @@ export interface TravelBooking {
   destination: string;
   departureDate: string;
   departureTime: string;
+  isRoundTrip: boolean;
+  returnListingId: string | null;
+  returnOperatorName: string | null;
+  returnDate: string | null;
+  returnTime: string | null;
   passengers: Passenger[];
   totalPrice: number;
   status: OrderStatus;

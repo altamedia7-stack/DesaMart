@@ -243,7 +243,7 @@ service cloud.firestore {
     }
 
     function isValidTravelBooking(data) {
-      return hasOnlyAllowedFields(['buyerId', 'buyerName', 'sellerId', 'sellerName', 'sellerWhatsapp', 'listingId', 'operatorName', 'origin', 'destination', 'departureDate', 'departureTime', 'passengers', 'totalPrice', 'status', 'paymentMethod', 'payment_name', 'pay_code', 'qr_url', 'instructions', 'expired_time', 'tripay_reference', 'checkout_url', 'merchant_ref', 'createdAt', 'updatedAt']) &&
+      return hasOnlyAllowedFields(['buyerId', 'buyerName', 'sellerId', 'sellerName', 'sellerWhatsapp', 'listingId', 'operatorName', 'origin', 'destination', 'departureDate', 'departureTime', 'isRoundTrip', 'returnListingId', 'returnOperatorName', 'returnDate', 'returnTime', 'passengers', 'totalPrice', 'status', 'paymentMethod', 'payment_name', 'pay_code', 'qr_url', 'instructions', 'expired_time', 'tripay_reference', 'checkout_url', 'merchant_ref', 'createdAt', 'updatedAt']) &&
              data.buyerId is string && data.buyerId.size() > 0 &&
              data.buyerName is string && data.buyerName.size() > 0 &&
              data.sellerId is string && data.sellerId.size() > 0 &&
@@ -255,6 +255,11 @@ service cloud.firestore {
              data.destination is string && data.destination.size() > 0 &&
              data.departureDate is string && data.departureDate.size() > 0 &&
              data.departureTime is string && data.departureTime.size() > 0 &&
+             data.isRoundTrip is bool &&
+             (!('returnListingId' in data) || (data.returnListingId is string || data.returnListingId == null)) &&
+             (!('returnOperatorName' in data) || (data.returnOperatorName is string || data.returnOperatorName == null)) &&
+             (!('returnDate' in data) || (data.returnDate is string || data.returnDate == null)) &&
+             (!('returnTime' in data) || (data.returnTime is string || data.returnTime == null)) &&
              data.passengers is list && data.passengers.size() > 0 &&
              data.totalPrice is number && data.totalPrice >= 0 &&
              data.status in ['unpaid', 'paid', 'pending', 'confirmed', 'cancelled'] &&
