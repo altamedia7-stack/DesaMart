@@ -334,7 +334,7 @@ const MyOrders: React.FC = () => {
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <Car className="h-4 w-4 text-gray-400" />
-                      <span className="text-sm font-bold text-gray-700">{booking.travelListing.operatorName}</span>
+                      <span className="text-sm font-bold text-gray-700">{booking.operatorName}</span>
                     </div>
                     <div className="text-xs text-gray-400">
                       {booking.createdAt?.toDate ? new Date(booking.createdAt.toDate()).toLocaleDateString('id-ID', { 
@@ -349,29 +349,29 @@ const MyOrders: React.FC = () => {
                     <div className="flex-grow">
                       <div className="flex items-center gap-2 mb-1">
                         <MapPin className="h-4 w-4 text-emerald-600" />
-                        <span className="text-sm font-bold text-gray-900">{booking.travelListing.origin}</span>
+                        <span className="text-sm font-bold text-gray-900">{booking.origin}</span>
                       </div>
                       <div className="ml-2 border-l-2 border-dashed border-gray-200 h-4 my-1"></div>
                       <div className="flex items-center gap-2">
                         <MapPin className="h-4 w-4 text-emerald-600" />
-                        <span className="text-sm font-bold text-gray-900">{booking.travelListing.destination}</span>
+                        <span className="text-sm font-bold text-gray-900">{booking.destination}</span>
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
                         <Calendar className="h-3 w-3" />
-                        {booking.travelListing.departureTime}
+                        {booking.departureDate} {booking.departureTime}
                       </div>
                       <div className="flex items-center gap-1 text-xs text-gray-500">
                         <Users className="h-3 w-3" />
-                        {booking.passengers.length} Penumpang
+                        {booking.passengers?.length || 0} Penumpang
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-3">
                     <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Daftar Penumpang</h4>
-                    {booking.passengers.map((p, idx) => (
+                    {booking.passengers?.map((p, idx) => (
                       <div key={idx} className="flex items-center justify-between bg-gray-50 p-3 rounded-xl border border-gray-100">
                         <div>
                           <p className="text-sm font-bold text-gray-900">{p.name}</p>
@@ -383,6 +383,26 @@ const MyOrders: React.FC = () => {
                         </div>
                       </div>
                     ))}
+                  </div>
+
+                  <div className="mt-4 bg-gray-50 rounded-xl p-4 border border-gray-100">
+                    <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">Informasi Pembayaran</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Metode Pembayaran</p>
+                        <p className="text-sm text-gray-900 font-medium">{booking.paymentMethod || 'Tidak ada'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Status Pembayaran</p>
+                        <p className={`text-sm font-bold ${
+                          booking.status === 'confirmed' ? 'text-emerald-600' :
+                          booking.status === 'pending' ? 'text-yellow-600' :
+                          'text-red-600'
+                        }`}>
+                          {booking.status === 'confirmed' ? 'Lunas' : booking.status === 'pending' ? 'Belum Lunas' : 'Dibatalkan'}
+                        </p>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="mt-6 pt-6 border-t border-gray-50 flex justify-end">
