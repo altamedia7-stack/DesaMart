@@ -242,10 +242,12 @@ service cloud.firestore {
     }
 
     function isValidTravelBooking(data) {
-      return hasOnlyAllowedFields(['buyerId', 'buyerName', 'sellerId', 'listingId', 'operatorName', 'origin', 'destination', 'departureDate', 'departureTime', 'passengers', 'totalPrice', 'status', 'paymentMethod', 'payment_name', 'pay_code', 'qr_url', 'instructions', 'expired_time', 'tripay_reference', 'checkout_url', 'merchant_ref', 'createdAt', 'updatedAt']) &&
+      return hasOnlyAllowedFields(['buyerId', 'buyerName', 'sellerId', 'sellerName', 'sellerWhatsapp', 'listingId', 'operatorName', 'origin', 'destination', 'departureDate', 'departureTime', 'passengers', 'totalPrice', 'status', 'paymentMethod', 'payment_name', 'pay_code', 'qr_url', 'instructions', 'expired_time', 'tripay_reference', 'checkout_url', 'merchant_ref', 'createdAt', 'updatedAt']) &&
              data.buyerId is string && data.buyerId.size() > 0 &&
              data.buyerName is string && data.buyerName.size() > 0 &&
              data.sellerId is string && data.sellerId.size() > 0 &&
+             (!('sellerName' in data) || (data.sellerName is string)) &&
+             (!('sellerWhatsapp' in data) || (data.sellerWhatsapp is string)) &&
              data.listingId is string && data.listingId.size() > 0 &&
              data.operatorName is string && data.operatorName.size() > 0 &&
              data.origin is string && data.origin.size() > 0 &&

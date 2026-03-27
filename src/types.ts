@@ -125,6 +125,8 @@ export interface TravelBooking {
   buyerId: string;
   buyerName: string;
   sellerId: string;
+  sellerName?: string;
+  sellerWhatsapp?: string;
   listingId: string;
   operatorName: string;
   origin: string;
@@ -135,6 +137,14 @@ export interface TravelBooking {
   totalPrice: number;
   status: OrderStatus;
   paymentMethod: string;
+  merchant_ref?: string;
+  payment_name?: string;
+  pay_code?: string;
+  qr_url?: string;
+  instructions?: any[];
+  expired_time?: number;
+  tripay_reference?: string;
+  checkout_url?: string;
   createdAt: any; // Firestore Timestamp
   updatedAt: any; // Firestore Timestamp
 }

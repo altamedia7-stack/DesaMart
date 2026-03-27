@@ -425,7 +425,19 @@ const MyOrders: React.FC = () => {
                         Bayar Sekarang
                       </button>
                     )}
-                    <div className="flex justify-end">
+                    <div className="flex justify-between items-center">
+                      {booking.sellerWhatsapp ? (
+                        <a 
+                          href={`https://wa.me/${booking.sellerWhatsapp.startsWith('0') ? '62' + booking.sellerWhatsapp.substring(1) : booking.sellerWhatsapp}?text=Halo, saya ingin bertanya tentang tiket travel saya dengan ID ${booking.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-emerald-600 text-sm font-bold flex items-center gap-1 hover:underline"
+                        >
+                          Hubungi Penjual <ChevronRight className="h-4 w-4" />
+                        </a>
+                      ) : (
+                        <div></div>
+                      )}
                       <button className="text-emerald-600 text-sm font-bold flex items-center gap-1 hover:underline">
                         Lihat E-Tiket <ChevronRight className="h-4 w-4" />
                       </button>

@@ -164,6 +164,8 @@ const TravelBooking: React.FC = () => {
           buyerId: userProfile.uid,
           buyerName: userProfile.name,
           sellerId: selectedListing.sellerId,
+          sellerName: selectedListing.sellerName || 'Admin',
+          sellerWhatsapp: selectedListing.sellerWhatsapp || '',
           listingId: selectedListing.id,
           operatorName: selectedListing.operatorName,
           origin: selectedListing.origin,
@@ -214,6 +216,21 @@ const TravelBooking: React.FC = () => {
       if (paymentMethod !== 'COD') {
         navigate(`/payment/${merchant_ref}`);
       } else {
+        if (selectedListing.sellerWhatsapp) {
+          let phone = selectedListing.sellerWhatsapp;
+          if (phone.startsWith('0')) phone = '62' + phone.substring(1);
+          
+          let message = `Halo ${selectedListing.sellerName || 'Admin'}, saya telah membuat booking travel berikut:\n\n`;
+          message += `*Order ID:* ${merchant_ref}\n`;
+          message += `*Travel:* ${selectedListing.operatorName} (${search.origin} - ${search.destination})\n`;
+          message += `*Tanggal:* ${search.date} | Pukul ${selectedListing.departureTime}\n`;
+          message += `*Jumlah Penumpang:* ${passengers.length}\n`;
+          message += `*Total Pembayaran:* Rp ${totalPrice.toLocaleString('id-ID')}\n`;
+          message += `*Metode Pembayaran:* COD (Bayar di Tempat)\n\n`;
+          message += `Mohon diproses. Terima kasih.`;
+          
+          window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+        }
         setStep('success');
       }
     } catch (err: any) {
