@@ -226,11 +226,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, showStock = true }) 
             </button>
             <button 
               onClick={handleWhatsApp}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-1.5 bg-[#25D366] hover:bg-[#1DA851] text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded text-[10px] sm:text-sm font-medium transition-colors"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-1.5 bg-[#25D366] hover:bg-[#1DA851] text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded text-[10px] sm:text-sm font-medium transition-colors whitespace-nowrap"
             >
               <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Chat Penjual</span>
-              <span className="sm:hidden">Chat</span>
+              <span>Chat</span>
             </button>
           </div>
         </div>

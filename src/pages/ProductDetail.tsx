@@ -394,7 +394,7 @@ const ProductDetail: React.FC = () => {
           className="flex flex-col items-center justify-center w-16 sm:w-20 border-r border-gray-200 text-emerald-600 hover:bg-emerald-50 transition"
         >
           <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" />
-          <span className="text-[10px] sm:text-xs mt-0.5">Chat Penjual</span>
+          <span className="text-[10px] sm:text-xs mt-0.5">Chat</span>
         </button>
         
         <button 
