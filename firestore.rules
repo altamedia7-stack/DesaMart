@@ -242,7 +242,7 @@ service cloud.firestore {
     }
 
     function isValidTravelBooking(data) {
-      return hasOnlyAllowedFields(['buyerId', 'buyerName', 'sellerId', 'listingId', 'operatorName', 'origin', 'destination', 'departureDate', 'departureTime', 'passengers', 'totalPrice', 'status', 'paymentMethod', 'createdAt', 'updatedAt']) &&
+      return hasOnlyAllowedFields(['buyerId', 'buyerName', 'sellerId', 'listingId', 'operatorName', 'origin', 'destination', 'departureDate', 'departureTime', 'passengers', 'totalPrice', 'status', 'paymentMethod', 'payment_name', 'pay_code', 'qr_url', 'instructions', 'expired_time', 'tripay_reference', 'checkout_url', 'merchant_ref', 'createdAt', 'updatedAt']) &&
              data.buyerId is string && data.buyerId.size() > 0 &&
              data.buyerName is string && data.buyerName.size() > 0 &&
              data.sellerId is string && data.sellerId.size() > 0 &&
@@ -254,8 +254,16 @@ service cloud.firestore {
              data.departureTime is string && data.departureTime.size() > 0 &&
              data.passengers is list && data.passengers.size() > 0 &&
              data.totalPrice is number && data.totalPrice >= 0 &&
-             data.status in ['pending', 'confirmed', 'cancelled'] &&
-             data.paymentMethod in ['QRIS', 'Bayar di Tempat (COD)'] &&
+             data.status in ['unpaid', 'paid', 'pending', 'confirmed', 'cancelled'] &&
+             (!('paymentMethod' in data) || (data.paymentMethod is string || data.paymentMethod == null)) &&
+             (!('payment_name' in data) || (data.payment_name is string || data.payment_name == null)) &&
+             (!('pay_code' in data) || (data.pay_code is string || data.pay_code == null)) &&
+             (!('qr_url' in data) || (data.qr_url is string || data.qr_url == null)) &&
+             (!('instructions' in data) || (data.instructions is list || data.instructions == null)) &&
+             (!('expired_time' in data) || (data.expired_time is number || data.expired_time == null)) &&
+             (!('tripay_reference' in data) || (data.tripay_reference is string || data.tripay_reference == null)) &&
+             (!('checkout_url' in data) || (data.checkout_url is string || data.checkout_url == null)) &&
+             (!('merchant_ref' in data) || (data.merchant_ref is string || data.merchant_ref == null)) &&
              data.createdAt is timestamp &&
              data.updatedAt is timestamp;
     }
