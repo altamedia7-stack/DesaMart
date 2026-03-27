@@ -21,24 +21,45 @@ const PaymentDetail = () => {
 
     console.log("Listening to order updates for merchantRef:", merchantRef);
     const ordersRef = collection(db, 'orders');
-    const q = query(ordersRef, where('merchant_ref', '==', merchantRef), limit(1));
+    const travelRef = collection(db, 'travel_bookings');
+    
+    const qOrders = query(ordersRef, where('merchant_ref', '==', merchantRef), limit(1));
+    const qTravel = query(travelRef, where('merchant_ref', '==', merchantRef), limit(1));
 
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+    let unsubscribeTravel: () => void;
+
+    const unsubscribeOrders = onSnapshot(qOrders, (querySnapshot) => {
       if (!querySnapshot.empty) {
         const data = querySnapshot.docs[0].data();
         console.log("Order update received:", data);
         setOrder(data);
+        setLoading(false);
       } else {
-        console.error("Order not found for merchantRef:", merchantRef);
+        // If not found in orders, check travel_bookings
+        unsubscribeTravel = onSnapshot(qTravel, (travelSnapshot) => {
+          if (!travelSnapshot.empty) {
+            const data = travelSnapshot.docs[0].data();
+            console.log("Travel booking update received:", data);
+            setOrder(data);
+          } else {
+            console.error("Order not found for merchantRef:", merchantRef);
+          }
+          setLoading(false);
+        }, (error) => {
+          console.error("Error listening to travel booking:", error);
+          setLoading(false);
+        });
       }
-      setLoading(false);
     }, (error) => {
       console.error("Error listening to order:", error);
       handleFirestoreError(error, OperationType.GET, 'orders');
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribeOrders();
+      if (unsubscribeTravel) unsubscribeTravel();
+    };
   }, [merchantRef]);
 
   useEffect(() => {

@@ -82,6 +82,47 @@ const TravelBooking: React.FC = () => {
     setError(null);
 
     try {
+      const merchant_ref = `TRV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      const totalPrice = selectedListing.price * passengers.length;
+
+      let paymentData: any = {};
+
+      if (paymentMethod === 'QRIS') {
+        const response = await fetch('/api/tripay/create-transaction', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            method: 'QRIS',
+            merchant_ref,
+            amount: totalPrice,
+            customer_name: userProfile.name,
+            customer_email: userProfile.email || 'customer@example.com',
+            customer_phone: userProfile.whatsapp || '',
+            order_items: [{
+              sku: selectedListing.id,
+              name: `Tiket Travel ${selectedListing.operatorName} (${search.origin} - ${search.destination})`,
+              price: selectedListing.price,
+              quantity: passengers.length
+            }]
+          })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          paymentData = {
+            payment_name: data.data.payment_name || null,
+            pay_code: data.data.pay_code || null,
+            qr_url: data.data.qr_url || null,
+            instructions: data.data.instructions || null,
+            expired_time: data.data.expired_time || null,
+            tripay_reference: data.data.reference || null,
+            checkout_url: data.data.checkout_url || null,
+          };
+        } else {
+          throw new Error(`Gagal membuat transaksi QRIS: ${data.message}`);
+        }
+      }
+
       await runTransaction(db, async (transaction) => {
         const listingRef = doc(db, 'travel_listings', selectedListing.id);
         const listingDoc = await transaction.get(listingRef);
@@ -107,9 +148,11 @@ const TravelBooking: React.FC = () => {
           departureDate: search.date,
           departureTime: selectedListing.departureTime,
           passengers,
-          totalPrice: selectedListing.price * passengers.length,
-          status: 'pending' as OrderStatus,
+          totalPrice,
+          status: paymentMethod === 'QRIS' ? 'unpaid' : 'pending',
           paymentMethod,
+          merchant_ref,
+          ...paymentData,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         };
@@ -145,7 +188,11 @@ const TravelBooking: React.FC = () => {
         });
       });
 
-      setStep('success');
+      if (paymentMethod === 'QRIS') {
+        navigate(`/payment/${merchant_ref}`);
+      } else {
+        setStep('success');
+      }
     } catch (err: any) {
       setError(err.message || "Gagal melakukan pemesanan.");
       console.error(err);
