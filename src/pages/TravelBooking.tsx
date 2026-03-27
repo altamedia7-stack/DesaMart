@@ -28,7 +28,30 @@ const TravelBooking: React.FC = () => {
   const [passengers, setPassengers] = useState<Passenger[]>([
     { name: '', idNumber: '', phone: '', seatNumber: '1' }
   ]);
-  const [paymentMethod, setPaymentMethod] = useState('QRIS');
+  const [paymentMethod, setPaymentMethod] = useState('COD');
+  const [paymentChannels, setPaymentChannels] = useState<any[]>([]);
+  const [isLoadingChannels, setIsLoadingChannels] = useState(false);
+
+  useEffect(() => {
+    const fetchChannels = async () => {
+      setIsLoadingChannels(true);
+      try {
+        const response = await fetch('/api/tripay/payment-channels');
+        if (!response.ok) throw new Error("Gagal memuat metode pembayaran");
+        const data = await response.json();
+        if (data && data.success) {
+          // Filter only QRIS or other relevant channels if needed, or just show all
+          setPaymentChannels(data.data);
+        }
+      } catch (error) {
+        console.error("Gagal memuat metode pembayaran", error);
+      } finally {
+        setIsLoadingChannels(false);
+      }
+    };
+
+    fetchChannels();
+  }, []);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,12 +110,12 @@ const TravelBooking: React.FC = () => {
 
       let paymentData: any = {};
 
-      if (paymentMethod === 'QRIS') {
+      if (paymentMethod !== 'COD') {
         const response = await fetch('/api/tripay/create-transaction', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            method: 'QRIS',
+            method: paymentMethod,
             merchant_ref,
             amount: totalPrice,
             customer_name: userProfile.name,
@@ -119,7 +142,7 @@ const TravelBooking: React.FC = () => {
             checkout_url: data.data.checkout_url || null,
           };
         } else {
-          throw new Error(`Gagal membuat transaksi QRIS: ${data.message}`);
+          throw new Error(`Gagal membuat transaksi: ${data.message}`);
         }
       }
 
@@ -149,7 +172,7 @@ const TravelBooking: React.FC = () => {
           departureTime: selectedListing.departureTime,
           passengers,
           totalPrice,
-          status: paymentMethod === 'QRIS' ? 'unpaid' : 'pending',
+          status: paymentMethod !== 'COD' ? 'unpaid' : 'pending',
           paymentMethod,
           merchant_ref,
           ...paymentData,
@@ -188,7 +211,7 @@ const TravelBooking: React.FC = () => {
         });
       });
 
-      if (paymentMethod === 'QRIS') {
+      if (paymentMethod !== 'COD') {
         navigate(`/payment/${merchant_ref}`);
       } else {
         setStep('success');
@@ -432,15 +455,33 @@ const TravelBooking: React.FC = () => {
                 <CreditCard className="h-5 w-5 text-emerald-600" /> Metode Pembayaran
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {['QRIS', 'Bayar di Tempat (COD)'].map(method => (
-                  <div 
-                    key={method}
-                    onClick={() => setPaymentMethod(method)}
-                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${paymentMethod === method ? 'border-emerald-500 bg-emerald-50' : 'border-gray-100 hover:border-emerald-200'}`}
-                  >
-                    <span className={`text-sm font-bold ${paymentMethod === method ? 'text-emerald-700' : 'text-gray-600'}`}>{method}</span>
+                <div 
+                  className={`flex justify-between items-center cursor-pointer p-3 rounded-lg border transition-all ${paymentMethod === 'COD' ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200'}`}
+                  onClick={() => setPaymentMethod('COD')}
+                >
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className={`h-5 w-5 ${paymentMethod === 'COD' ? 'text-emerald-600' : 'text-gray-300'}`} />
+                    <span className="text-sm font-medium text-gray-900">COD (Bayar di Tempat)</span>
                   </div>
-                ))}
+                </div>
+
+                {isLoadingChannels ? (
+                  <div className="col-span-full text-center text-sm text-gray-500 py-2">Memuat metode pembayaran...</div>
+                ) : (
+                  paymentChannels.map(channel => (
+                    <div 
+                      key={channel.code}
+                      className={`flex justify-between items-center cursor-pointer p-3 rounded-lg border transition-all ${paymentMethod === channel.code ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200'} ${!channel.active ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+                      onClick={() => channel.active && setPaymentMethod(channel.code)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <img src={channel.icon_url} alt={channel.name} className="h-5 w-auto" referrerPolicy="no-referrer" />
+                        <span className="text-sm font-medium text-gray-900">{channel.name}</span>
+                      </div>
+                      {paymentMethod === channel.code && <CheckCircle className="h-5 w-5 text-emerald-600" />}
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
