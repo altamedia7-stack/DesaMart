@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc, updateDoc, serverTimestamp, setDoc, orderBy } from 'firebase/firestore';
 import { Product, Order, OrderStatus, ProductVariant } from '../types';
-import { Plus, Trash2, Edit, Save, X, Store, Package, Truck, CheckCircle, Clock, AlertCircle, Layers, Download, Car, MapPin, Calendar, Users } from 'lucide-react';
+import { Plus, Trash2, Edit, Save, X, Store, Package, Truck, CheckCircle, Clock, AlertCircle, Layers, Download, Car, MapPin, Calendar, Users, Upload } from 'lucide-react';
 import SellerRevenue from '../components/SellerRevenue';
 
 const SellerDashboard: React.FC = () => {
@@ -55,6 +55,7 @@ const SellerDashboard: React.FC = () => {
     totalSeats: '10',
     imageUrl: ''
   });
+  const [newTravelImage, setNewTravelImage] = useState<File | null>(null);
   const [travelListings, setTravelListings] = useState<any[]>([]);
   const [travelBookings, setTravelBookings] = useState<any[]>([]);
 
@@ -373,7 +374,17 @@ const SellerDashboard: React.FC = () => {
     if (!userProfile?.uid) return;
     
     setTravelError(null);
+    setUploadingImage(true);
     try {
+      let imageUrl = newTravel.imageUrl;
+      if (newTravelImage) {
+        imageUrl = await uploadToCloudinary(newTravelImage);
+      }
+      
+      if (!imageUrl) {
+        imageUrl = `https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=400&h=400&fit=crop`;
+      }
+
       await addDoc(collection(db, 'travel_listings'), {
         sellerId: userProfile.uid,
         sellerName: userProfile.name || 'Unknown',
@@ -385,16 +396,19 @@ const SellerDashboard: React.FC = () => {
         price: Number(newTravel.price),
         totalSeats: Number(newTravel.totalSeats),
         availableSeats: Number(newTravel.totalSeats),
-        imageUrl: newTravel.imageUrl || `https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=400&h=400&fit=crop`,
+        imageUrl,
         createdAt: serverTimestamp()
       });
       
       setIsAddingTravel(false);
       setNewTravel({ operatorName: '', origin: '', destination: '', departureTime: '', price: '', totalSeats: '10', imageUrl: '' });
+      setNewTravelImage(null);
       alert('Layanan Travel berhasil ditambahkan!');
     } catch (error: any) {
       setTravelError(error.message || "Gagal menyimpan data travel.");
       handleFirestoreError(error, OperationType.WRITE, 'travel_listings');
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -1230,13 +1244,47 @@ const SellerDashboard: React.FC = () => {
                       <input required type="number" value={newTravel.totalSeats} onChange={e => setNewTravel({...newTravel, totalSeats: e.target.value})} className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all" />
                     </div>
                     <div>
-                      <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1.5">URL Gambar Armada (Opsional)</label>
-                      <input type="text" value={newTravel.imageUrl} onChange={e => setNewTravel({...newTravel, imageUrl: e.target.value})} className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all" placeholder="https://..." />
+                      <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1.5">Gambar Armada (Opsional)</label>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <label className="cursor-pointer bg-emerald-50 text-emerald-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-100 transition-colors border border-emerald-200 flex items-center gap-2">
+                            <Upload className="h-4 w-4" />
+                            {newTravelImage ? 'Ganti Gambar' : 'Pilih Gambar'}
+                            <input 
+                              type="file" 
+                              accept="image/*" 
+                              className="hidden" 
+                              onChange={(e) => {
+                                if (e.target.files && e.target.files[0]) {
+                                  setNewTravelImage(e.target.files[0]);
+                                  setNewTravel({...newTravel, imageUrl: ''}); // Clear URL if file selected
+                                }
+                              }} 
+                            />
+                          </label>
+                          {newTravelImage && (
+                            <span className="text-sm text-gray-600 truncate max-w-[150px]">
+                              {newTravelImage.name}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-gray-500 mt-1">Atau masukkan URL gambar jika tidak ingin upload:</p>
+                        <input type="text" placeholder="Atau tempel URL gambar di sini..." value={newTravel.imageUrl} onChange={e => { setNewTravel({...newTravel, imageUrl: e.target.value}); setNewTravelImage(null); }} className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all" />
+                      </div>
                     </div>
                   </div>
                 </div>
                 <div className="mt-8 flex justify-end">
-                  <button type="submit" className="bg-emerald-600 text-white px-8 py-3 rounded-xl font-bold text-sm hover:bg-emerald-700 shadow-md transition-all">Simpan Layanan</button>
+                  <button type="submit" disabled={uploadingImage} className="bg-emerald-600 text-white px-8 py-3 rounded-xl font-bold text-sm hover:bg-emerald-700 shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                    {uploadingImage ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Mengunggah...
+                      </>
+                    ) : (
+                      'Simpan Layanan'
+                    )}
+                  </button>
                 </div>
               </form>
             )}
