@@ -143,13 +143,14 @@ service cloud.firestore {
     // Domain Validators
 
     function isValidUser(data) {
-      return hasOnlyAllowedFields(['uid', 'name', 'email', 'role', 'whatsapp', 'address', 'location', 'createdAt']) &&
+      return hasOnlyAllowedFields(['uid', 'name', 'email', 'role', 'whatsapp', 'address', 'shippingAddress', 'location', 'createdAt']) &&
              data.uid is string && data.uid.size() > 0 && data.uid.size() < 128 &&
              data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
              data.email is string && isValidEmail(data.email) &&
              data.role in ['admin', 'seller', 'buyer'] &&
              (!('whatsapp' in data) || (data.whatsapp is string && data.whatsapp.size() < 20)) &&
              (!('address' in data) || (data.address is string && data.address.size() < 500)) &&
+             (!('shippingAddress' in data) || (data.shippingAddress is map)) &&
              (!('location' in data) || (data.location is map && data.location.lat is number && data.location.lng is number)) &&
              data.createdAt is timestamp;
     }
@@ -412,6 +413,12 @@ service cloud.firestore {
                       request.resource.data.listingId == resource.data.listingId &&
                       request.resource.data.createdAt == resource.data.createdAt) || isAdmin());
       allow delete: if isAuthenticated() && (resource.data.sellerId == request.auth.uid || isAdmin());
+    }
+
+    match /favorites/{favoriteId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
   }
 }

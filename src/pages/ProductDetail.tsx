@@ -1,20 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { doc, getDoc, collection, getDocs, query, where, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { Product, Review, ProductVariant } from '../types';
-import { MessageCircle, ArrowLeft, Store, Star, ShoppingCart, ChevronRight, Layers, Download } from 'lucide-react';
+import { MessageCircle, ArrowLeft, Store, Star, ShoppingCart, ChevronRight, Layers, Download, Heart } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { userProfile } = useAuth();
+  const { userProfile, currentUser } = useAuth();
   const { addToCart, totalItems } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteId, setFavoriteId] = useState<string | null>(null);
   
 
   // Reviews state
@@ -35,6 +37,17 @@ const ProductDetail: React.FC = () => {
           if (data.variants && data.variants.length > 0) {
             setSelectedVariant(data.variants[0]);
           }
+
+          // Save to history
+          const storedHistory = localStorage.getItem('viewed_products');
+          let history = storedHistory ? JSON.parse(storedHistory) as string[] : [];
+          // Remove if already exists to move it to front
+          history = history.filter(pid => pid !== id);
+          // Add to front
+          history.unshift(id);
+          // Limit to 20
+          history = history.slice(0, 20);
+          localStorage.setItem('viewed_products', JSON.stringify(history));
         } else {
           setProduct(null);
         }
@@ -48,6 +61,43 @@ const ProductDetail: React.FC = () => {
     fetchProduct();
   }, [id]);
 
+  useEffect(() => {
+    if (!currentUser || !id) return;
+
+    const q = query(collection(db, 'favorites'), where('userId', '==', currentUser.uid), where('productId', '==', id));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      if (!snapshot.empty) {
+        setIsFavorite(true);
+        setFavoriteId(snapshot.docs[0].id);
+      } else {
+        setIsFavorite(false);
+        setFavoriteId(null);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [currentUser, id]);
+
+  const toggleFavorite = async () => {
+    if (!currentUser) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      if (isFavorite && favoriteId) {
+        await deleteDoc(doc(db, 'favorites', favoriteId));
+      } else {
+        await addDoc(collection(db, 'favorites'), {
+          userId: currentUser.uid,
+          productId: id,
+          createdAt: serverTimestamp()
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -391,12 +441,20 @@ const ProductDetail: React.FC = () => {
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 flex h-14 sm:h-16">
         <button 
           onClick={handleWhatsApp} 
-          className="flex flex-col items-center justify-center w-16 sm:w-20 border-r border-gray-200 text-emerald-600 hover:bg-emerald-50 transition"
+          className="flex flex-col items-center justify-center w-14 sm:w-16 border-r border-gray-200 text-emerald-600 hover:bg-emerald-50 transition"
         >
           <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" />
           <span className="text-[10px] sm:text-xs mt-0.5">Chat</span>
         </button>
         
+        <button 
+          onClick={toggleFavorite}
+          className={`flex flex-col items-center justify-center w-14 sm:w-16 border-r border-gray-200 transition ${isFavorite ? 'text-red-500 bg-red-50' : 'text-gray-500 hover:bg-gray-50'}`}
+        >
+          <Heart className={`h-5 w-5 sm:h-6 sm:w-6 ${isFavorite ? 'fill-current' : ''}`} />
+          <span className="text-[10px] sm:text-xs mt-0.5">{isFavorite ? 'Favorit' : 'Suka'}</span>
+        </button>
+
         <button 
           onClick={() => {
             if (product.variants && product.variants.length > 0 && !selectedVariant) {
@@ -406,7 +464,7 @@ const ProductDetail: React.FC = () => {
             addToCart(product, selectedVariant || undefined);
             alert('Produk ditambahkan ke keranjang!');
           }} 
-          className="flex flex-col items-center justify-center w-16 sm:w-20 border-r border-gray-200 text-emerald-600 hover:bg-emerald-50 transition"
+          className="flex flex-col items-center justify-center w-14 sm:w-16 border-r border-gray-200 text-emerald-600 hover:bg-emerald-50 transition"
         >
           <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6" />
           <span className="text-[10px] sm:text-xs mt-0.5">Keranjang</span>

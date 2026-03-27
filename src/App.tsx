@@ -20,6 +20,14 @@ import CourierDashboard from './pages/CourierDashboard';
 import ErrorBoundary from './components/ErrorBoundary';
 import PaymentDetail from './pages/PaymentDetail';
 import TravelBooking from './pages/TravelBooking';
+import PlaceholderPage from './pages/PlaceholderPage';
+import EditProfile from './pages/EditProfile';
+import AddressManager from './pages/AddressManager';
+import Favorites from './pages/Favorites';
+import OrderHistory from './pages/OrderHistory';
+import Reviews from './pages/Reviews';
+import Settings from './pages/Settings';
+import HelpCenter from './pages/HelpCenter';
 
 import Checkout from './pages/Checkout';
 import OrderConfirmation from './pages/OrderConfirmation';
@@ -51,6 +59,15 @@ function App() {
                     <Route path="/courier" element={<CourierDashboard />} />
                     <Route path="/admin" element={<AdminDashboard />} />
                     <Route path="/travel-booking" element={<TravelBooking />} />
+                    
+                    {/* Profile Menu Routes */}
+                    <Route path="/favorites" element={<Favorites />} />
+                    <Route path="/history" element={<OrderHistory />} />
+                    <Route path="/reviews" element={<Reviews />} />
+                    <Route path="/edit-profile" element={<EditProfile />} />
+                    <Route path="/address" element={<AddressManager />} />
+                    <Route path="/settings" element={<Settings />} />
+                    <Route path="/help" element={<HelpCenter />} />
                   </Routes>
                 </main>
                 <footer className="bg-white border-t border-gray-200 py-8 text-center text-gray-500 text-sm hidden sm:block">
