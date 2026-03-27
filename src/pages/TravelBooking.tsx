@@ -121,6 +121,28 @@ const TravelBooking: React.FC = () => {
         transaction.update(listingRef, {
           availableSeats: currentAvailable - passengers.length
         });
+
+        // Create notification for seller
+        const sellerNotifRef = doc(collection(db, 'notifications'));
+        transaction.set(sellerNotifRef, {
+          id: sellerNotifRef.id,
+          userId: selectedListing.sellerId,
+          title: 'Booking Travel Baru!',
+          message: `Ada booking baru untuk ${selectedListing.operatorName} (${search.origin} - ${search.destination}) dari ${userProfile.name}.`,
+          isRead: false,
+          createdAt: serverTimestamp()
+        });
+
+        // Create notification for buyer
+        const buyerNotifRef = doc(collection(db, 'notifications'));
+        transaction.set(buyerNotifRef, {
+          id: buyerNotifRef.id,
+          userId: userProfile.uid,
+          title: 'Booking Berhasil',
+          message: `Booking tiket travel ${selectedListing.operatorName} (${search.origin} - ${search.destination}) berhasil dibuat.`,
+          isRead: false,
+          createdAt: serverTimestamp()
+        });
       });
 
       setStep('success');
