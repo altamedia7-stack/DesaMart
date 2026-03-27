@@ -1540,7 +1540,7 @@ const SellerDashboard: React.FC = () => {
           )}
         </div>
       ) : activeTab === 'revenue' ? (
-        <SellerRevenue orders={orders} />
+        <SellerRevenue orders={orders} travelBookings={travelBookings} />
       ) : (
         /* Profile Section */
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-8">

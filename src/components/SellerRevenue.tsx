@@ -6,25 +6,27 @@ import { id } from 'date-fns/locale';
 
 interface SellerRevenueProps {
   orders: Order[];
+  travelBookings?: any[];
 }
 
-const SellerRevenue: React.FC<SellerRevenueProps> = ({ orders }) => {
+const SellerRevenue: React.FC<SellerRevenueProps> = ({ orders, travelBookings = [] }) => {
   const chartData = useMemo(() => {
-    // Filter only completed orders
-    const completedOrders = orders.filter(order => order.status === 'completed');
+    // Filter only completed orders and confirmed/paid travel bookings
+    const completedOrders = orders.filter(order => order.status === 'completed' || order.status === 'paid');
+    const completedTravel = travelBookings.filter(booking => booking.status === 'confirmed' || booking.status === 'paid');
 
     // Group by month
     const monthlyData: Record<string, { month: string; revenue: number; sales: number }> = {};
 
-    completedOrders.forEach(order => {
+    const processItem = (item: any) => {
       // Handle Firestore Timestamp or string
       let date: Date;
-      if (order.createdAt?.toDate) {
-        date = order.createdAt.toDate();
-      } else if (typeof order.createdAt === 'string') {
-        date = parseISO(order.createdAt);
-      } else if (typeof order.createdAt === 'number') {
-        date = new Date(order.createdAt);
+      if (item.createdAt?.toDate) {
+        date = item.createdAt.toDate();
+      } else if (typeof item.createdAt === 'string') {
+        date = parseISO(item.createdAt);
+      } else if (typeof item.createdAt === 'number') {
+        date = new Date(item.createdAt);
       } else {
         date = new Date(); // Fallback
       }
@@ -40,18 +42,21 @@ const SellerRevenue: React.FC<SellerRevenueProps> = ({ orders }) => {
         };
       }
 
-      // Calculate revenue (totalPrice - shippingCost)
-      const revenue = order.totalPrice - (order.shippingCost || 0);
+      // Calculate revenue (totalPrice - shippingCost for orders, totalPrice for travel)
+      const revenue = item.totalPrice - (item.shippingCost || 0);
       
       monthlyData[monthKey].revenue += revenue;
       monthlyData[monthKey].sales += 1;
-    });
+    };
+
+    completedOrders.forEach(processItem);
+    completedTravel.forEach(processItem);
 
     // Convert to array and sort by month
     return Object.entries(monthlyData)
       .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
       .map(([, data]) => data);
-  }, [orders]);
+  }, [orders, travelBookings]);
 
   const totalRevenue = chartData.reduce((sum, data) => sum + data.revenue, 0);
   const totalSales = chartData.reduce((sum, data) => sum + data.sales, 0);
