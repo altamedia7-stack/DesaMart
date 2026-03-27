@@ -303,21 +303,30 @@ const MyOrders: React.FC = () => {
                   <div className="flex items-center gap-3">
                     <div className={`p-2 rounded-xl border ${
                       booking.status === 'confirmed' ? 'text-emerald-600 bg-emerald-50 border-emerald-100' :
+                      booking.status === 'paid' ? 'text-emerald-600 bg-emerald-50 border-emerald-100' :
                       booking.status === 'pending' ? 'text-yellow-600 bg-yellow-50 border-yellow-100' :
+                      booking.status === 'unpaid' ? 'text-orange-600 bg-orange-50 border-orange-100' :
                       'text-red-600 bg-red-50 border-red-100'
                     }`}>
-                      {booking.status === 'confirmed' ? <CheckCircle className="h-5 w-5" /> : <Clock className="h-5 w-5" />}
+                      {(booking.status === 'confirmed' || booking.status === 'paid') ? <CheckCircle className="h-5 w-5" /> : 
+                       (booking.status === 'pending' || booking.status === 'unpaid') ? <Clock className="h-5 w-5" /> : 
+                       <AlertCircle className="h-5 w-5" />}
                     </div>
                     <div>
                       <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5">
                         Booking ID: {booking.id.substring(0, 8)}
                       </div>
                       <div className={`text-sm font-bold ${
-                        booking.status === 'confirmed' ? 'text-emerald-600' :
+                        (booking.status === 'confirmed' || booking.status === 'paid') ? 'text-emerald-600' :
                         booking.status === 'pending' ? 'text-yellow-600' :
+                        booking.status === 'unpaid' ? 'text-orange-600' :
                         'text-red-600'
                       }`}>
-                        {booking.status === 'confirmed' ? 'Terkonfirmasi' : booking.status === 'pending' ? 'Menunggu Konfirmasi' : 'Dibatalkan'}
+                        {booking.status === 'confirmed' ? 'Terkonfirmasi' : 
+                         booking.status === 'paid' ? 'Sudah Dibayar' :
+                         booking.status === 'pending' ? 'Menunggu Konfirmasi' : 
+                         booking.status === 'unpaid' ? 'Belum Dibayar' :
+                         'Dibatalkan'}
                       </div>
                     </div>
                   </div>
@@ -395,20 +404,32 @@ const MyOrders: React.FC = () => {
                       <div>
                         <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Status Pembayaran</p>
                         <p className={`text-sm font-bold ${
-                          booking.status === 'confirmed' ? 'text-emerald-600' :
-                          booking.status === 'pending' ? 'text-yellow-600' :
+                          (booking.status === 'confirmed' || booking.status === 'paid') ? 'text-emerald-600' :
+                          (booking.status === 'pending' || booking.status === 'unpaid') ? 'text-yellow-600' :
                           'text-red-600'
                         }`}>
-                          {booking.status === 'confirmed' ? 'Lunas' : booking.status === 'pending' ? 'Belum Lunas' : 'Dibatalkan'}
+                          {(booking.status === 'confirmed' || booking.status === 'paid') ? 'Lunas' : 
+                           (booking.status === 'pending' || booking.status === 'unpaid') ? 'Belum Lunas' : 
+                           'Dibatalkan'}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="mt-6 pt-6 border-t border-gray-50 flex justify-end">
-                    <button className="text-emerald-600 text-sm font-bold flex items-center gap-1 hover:underline">
-                      Lihat E-Tiket <ChevronRight className="h-4 w-4" />
-                    </button>
+                  <div className="mt-6 pt-6 border-t border-gray-50 flex flex-col gap-3">
+                    {booking.status === 'unpaid' && booking.merchant_ref && (
+                      <button 
+                        onClick={() => navigate(`/payment/${booking.merchant_ref}`)}
+                        className="w-full inline-flex items-center justify-center px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-orange-200"
+                      >
+                        Bayar Sekarang
+                      </button>
+                    )}
+                    <div className="flex justify-end">
+                      <button className="text-emerald-600 text-sm font-bold flex items-center gap-1 hover:underline">
+                        Lihat E-Tiket <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

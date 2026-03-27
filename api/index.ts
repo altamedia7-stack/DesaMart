@@ -234,14 +234,23 @@ app.post(["/api/tripay/callback", "/api/tripay/callback/"], async (req: any, res
     if (event === 'payment_status') {
       const { merchant_ref, status } = req.body;
       
-      if (status === 'PAID') {
-        const db = getDb();
-        const ordersRef = db.collection('orders');
-        const snapshot = await ordersRef.where('merchant_ref', '==', merchant_ref).get();
-        
-        if (!snapshot.empty) {
-          const orderDoc = snapshot.docs[0];
-          const orderData = orderDoc.data();
+      const db = getDb();
+      const ordersRef = db.collection('orders');
+      const travelRef = db.collection('travel_bookings');
+      
+      let snapshot = await ordersRef.where('merchant_ref', '==', merchant_ref).get();
+      let isTravel = false;
+
+      if (snapshot.empty) {
+        snapshot = await travelRef.where('merchant_ref', '==', merchant_ref).get();
+        isTravel = true;
+      }
+      
+      if (!snapshot.empty) {
+        const orderDoc = snapshot.docs[0];
+        const orderData = orderDoc.data();
+
+        if (status === 'PAID') {
           await orderDoc.ref.update({
             status: 'paid',
             updatedAt: FieldValue.serverTimestamp()
@@ -259,11 +268,16 @@ app.post(["/api/tripay/callback", "/api/tripay/callback/"], async (req: any, res
               createdAt: FieldValue.serverTimestamp()
             });
           }
-          
-          console.log(`Order ${merchant_ref} updated to PAID in Firestore`);
-        } else {
-          console.warn(`Order ${merchant_ref} not found in Firestore`);
+          console.log(`Order ${merchant_ref} updated to PAID in Firestore (${isTravel ? 'travel_bookings' : 'orders'})`);
+        } else if (status === 'EXPIRED' || status === 'FAILED' || status === 'REFUND') {
+          await orderDoc.ref.update({
+            status: 'cancelled',
+            updatedAt: FieldValue.serverTimestamp()
+          });
+          console.log(`Order ${merchant_ref} updated to cancelled in Firestore (${isTravel ? 'travel_bookings' : 'orders'}) due to status: ${status}`);
         }
+      } else {
+        console.warn(`Order ${merchant_ref} not found in Firestore`);
       }
     }
 

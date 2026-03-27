@@ -1362,12 +1362,12 @@ const SellerDashboard: React.FC = () => {
                           <p className="text-lg font-bold text-emerald-600">Rp {booking.totalPrice.toLocaleString('id-ID')}</p>
                         </div>
                         <div className="flex gap-2">
-                          {booking.status === 'pending' && (
+                          {(booking.status === 'pending' || booking.status === 'paid') && (
                             <button 
                               onClick={() => handleUpdateTravelBookingStatus(booking.id, 'confirmed')}
                               className="px-3 py-1.5 bg-emerald-600 text-white text-[10px] font-bold rounded-lg hover:bg-emerald-700"
                             >
-                              Konfirmasi Bayar
+                              Konfirmasi Tiket
                             </button>
                           )}
                           {booking.status !== 'cancelled' && (
