@@ -1,5 +1,5 @@
 export type Role = 'admin' | 'seller' | 'buyer' | 'courier';
-export type OrderStatus = 'pending' | 'shipped' | 'in_transit' | 'delivered' | 'cancelled' | 'unpaid' | 'paid';
+export type OrderStatus = 'pending' | 'shipped' | 'in_transit' | 'delivered' | 'cancelled' | 'unpaid' | 'paid' | 'confirmed';
 
 export interface UserProfile {
   uid: string;

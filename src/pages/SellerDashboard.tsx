@@ -332,7 +332,8 @@ const SellerDashboard: React.FC = () => {
         delivered: 'Diterima',
         cancelled: 'Dibatalkan',
         unpaid: 'Belum Dibayar',
-        paid: 'Sudah Dibayar'
+        paid: 'Sudah Dibayar',
+        confirmed: 'Terkonfirmasi'
       };
 
       try {
@@ -419,6 +420,16 @@ const SellerDashboard: React.FC = () => {
     }
   };
 
+  const handleDeleteTravelBooking = async (id: string) => {
+    if (window.confirm('Hapus booking travel ini?')) {
+      try {
+        await deleteDoc(doc(db, 'travel_bookings', id));
+      } catch (error) {
+        handleFirestoreError(error, OperationType.DELETE, `travel_bookings/${id}`);
+      }
+    }
+  };
+
   const getStatusIcon = (status: OrderStatus) => {
     switch (status) {
       case 'pending': return <Clock className="h-4 w-4 text-yellow-500" />;
@@ -426,6 +437,7 @@ const SellerDashboard: React.FC = () => {
       case 'in_transit': return <Truck className="h-4 w-4 text-indigo-500" />;
       case 'delivered': return <CheckCircle className="h-4 w-4 text-emerald-500" />;
       case 'cancelled': return <AlertCircle className="h-4 w-4 text-red-500" />;
+      case 'confirmed': return <CheckCircle className="h-4 w-4 text-emerald-500" />;
       default: return null;
     }
   };
@@ -439,6 +451,7 @@ const SellerDashboard: React.FC = () => {
       case 'in_transit': return 'bg-indigo-100 text-indigo-800';
       case 'delivered': return 'bg-emerald-100 text-emerald-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
+      case 'confirmed': return 'bg-emerald-100 text-emerald-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -452,6 +465,7 @@ const SellerDashboard: React.FC = () => {
       case 'in_transit': return 'Dalam Perjalanan';
       case 'delivered': return 'Diterima';
       case 'cancelled': return 'Dibatalkan';
+      case 'confirmed': return 'Terkonfirmasi';
       default: return status;
     }
   };
@@ -1300,17 +1314,27 @@ const SellerDashboard: React.FC = () => {
                           <p className="text-lg font-bold text-emerald-600">Rp {booking.totalPrice.toLocaleString('id-ID')}</p>
                         </div>
                         <div className="flex gap-2">
+                          {booking.status === 'pending' && (
+                            <button 
+                              onClick={() => handleUpdateTravelBookingStatus(booking.id, 'confirmed')}
+                              className="px-3 py-1.5 bg-emerald-600 text-white text-[10px] font-bold rounded-lg hover:bg-emerald-700"
+                            >
+                              Konfirmasi Bayar
+                            </button>
+                          )}
+                          {booking.status !== 'cancelled' && (
+                            <button 
+                              onClick={() => handleUpdateTravelBookingStatus(booking.id, 'cancelled')}
+                              className="px-3 py-1.5 bg-red-50 text-red-600 text-[10px] font-bold rounded-lg hover:bg-red-100"
+                            >
+                              Batalkan
+                            </button>
+                          )}
                           <button 
-                            onClick={() => handleUpdateTravelBookingStatus(booking.id, 'paid')}
-                            className="px-3 py-1.5 bg-emerald-600 text-white text-[10px] font-bold rounded-lg hover:bg-emerald-700"
+                            onClick={() => handleDeleteTravelBooking(booking.id)}
+                            className="px-3 py-1.5 bg-gray-100 text-gray-600 text-[10px] font-bold rounded-lg hover:bg-gray-200"
                           >
-                            Konfirmasi Bayar
-                          </button>
-                          <button 
-                            onClick={() => handleUpdateTravelBookingStatus(booking.id, 'cancelled')}
-                            className="px-3 py-1.5 bg-red-50 text-red-600 text-[10px] font-bold rounded-lg hover:bg-red-100"
-                          >
-                            Batalkan
+                            Hapus
                           </button>
                         </div>
                       </div>

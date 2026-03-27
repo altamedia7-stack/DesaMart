@@ -401,7 +401,7 @@ service cloud.firestore {
                       request.resource.data.sellerId == resource.data.sellerId &&
                       request.resource.data.listingId == resource.data.listingId &&
                       request.resource.data.createdAt == resource.data.createdAt) || isAdmin());
-      allow delete: if isAdmin();
+      allow delete: if isAuthenticated() && (resource.data.sellerId == request.auth.uid || isAdmin());
     }
   }
 }
